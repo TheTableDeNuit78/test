@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Hologramme</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Hologramme » : un projecteur au sol s'allume, un cône de lumière monte, et la marque se
+ * matérialise de bas en haut en hologramme cyan — lignes de balayage, scintillement, décalage
+ * chromatique, léger pivot en 3D. Puis le signal se verrouille et la marque prend ses vraies
+ * couleurs. CSS (3D, masques, animations) et Canvas 2D pour le cône ; son : mise sous tension,
+ * ronronnement, bips numériques, verrouillage, signature.
  */
 :root {
   color-scheme: dark;
@@ -186,14 +187,33 @@ body {
 }
 
 
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
+.scene { perspective: 900px; }
+.scene > .marque { grid-area: 1 / 1; }
+.holo { pointer-events: none; transform-style: preserve-3d; }
+.holo .a path { stroke: #8ff6ff; filter: drop-shadow(0 0 6px #36e3ff); }
+.holo .nom, .holo .sous .l {
+  color: #a8f7ff;
+  text-shadow: -2px 0 rgb(255 40 120 / .55), 2px 0 rgb(40 200 255 / .6), 0 0 14px rgb(54 227 255 / .8);
 }
+.holo .trait { background: #7ef3ff; box-shadow: 0 0 10px #36e3ff; }
+.holo::after {
+  content: '';
+  position: absolute;
+  inset: -10% -6%;
+  background: repeating-linear-gradient(180deg, rgb(10 10 14 / .55) 0 2px, transparent 2px 4px);
+  animation: lignes .5s linear infinite;
+}
+@keyframes lignes { to { background-position: 0 8px; } }
+.balayage {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  height: 2px;
+  background: #d8fdff;
+  box-shadow: 0 0 14px 3px rgb(54 227 255 / .8);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) { .holo::after { animation: none; } }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +237,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +247,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Hologramme</b> · CSS 3D, Canvas 2D, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,114 +871,82 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
-}`;
-
+  const T_VERROU = 2.35;
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  const marque = $('marque');
+  const holo = marque.cloneNode(true);
+  holo.removeAttribute('id');
+  holo.classList.add('holo');
+  holo.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+  const balayage = document.createElement('span');
+  balayage.className = 'balayage';
+  holo.append(balayage);
+  marque.after(holo);
+  const T = toile2D($('toile'));
+  let poussiere = [];
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
+  function preparer(reduit) {
+    $('toile').hidden = reduit;
+    holo.hidden = reduit;
+    const alea = hasard(4);
+    poussiere = Array.from({ length: 90 }, () => ({ x: alea() - .5, v: .25 + alea() * .6, ph: alea(), r: .6 + alea() * 1.4 }));
+  }
+
+  function dessiner(t) {
+    if ($('toile').hidden) return;
+    const { x } = T, { W, H } = T.cadre();
+    const r = marque.getBoundingClientRect(), cx = r.left + r.width / 2, sol = Math.min(H - 30, r.bottom + 70 * echelle());
+    const allume = lisse(.1, .5, t) * (1 - lisse(2.7, 3.2, t));
+    const scint = .85 + .15 * Math.sin(t * 47) * Math.sin(t * 13);
+    x.globalCompositeOperation = 'lighter';
+    // Le disque du projecteur.
+    const rx = r.width * .42, g0 = x.createRadialGradient(cx, sol, 0, cx, sol, rx);
+    g0.addColorStop(0, `rgba(160,250,255,${.9 * allume})`); g0.addColorStop(.4, `rgba(54,227,255,${.45 * allume})`); g0.addColorStop(1, 'rgba(54,227,255,0)');
+    x.save(); x.translate(cx, sol); x.scale(1, .22); x.translate(-cx, -sol);
+    x.fillStyle = g0; x.beginPath(); x.arc(cx, sol, rx, 0, 6.283); x.fill(); x.restore();
+    // Le cône de lumière.
+    const cone = lisse(.35, .9, t) * (1 - lisse(T_VERROU, T_VERROU + .5, t)) * scint;
+    if (cone > 0) {
+      const haut = r.top - 30, g = x.createLinearGradient(0, sol, 0, haut);
+      g.addColorStop(0, `rgba(54,227,255,${.32 * cone})`); g.addColorStop(1, 'rgba(54,227,255,0)');
+      x.fillStyle = g;
+      x.beginPath(); x.moveTo(cx - rx * .55, sol); x.lineTo(cx - r.width * .62, haut); x.lineTo(cx + r.width * .62, haut); x.lineTo(cx + rx * .55, sol); x.fill();
+      for (const p of poussiere) {
+        const y = sol - ((t * p.v + p.ph) % 1) * (sol - haut), k = (sol - y) / (sol - haut), px = cx + p.x * mix(rx * 1.1, r.width * 1.2, k);
+        x.fillStyle = `rgba(200,250,255,${.6 * cone * (1 - k)})`; x.fillRect(px, y, p.r, p.r);
+      }
     }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
-    }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
-    }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    o.ton(b + .1, 70, { duree: 1, crete: .1, attaque: .8, vers: 420, humide: .3, courbe: 'lin' });
+    o.souffle(b + .1, { duree: .9, f0: 200, f1: 2500, q: 2, crete: .05, attaque: .8, humide: .3 });
+    o.ton(b + .6, 120, { duree: 2.2, crete: .04, attaque: .3, humide: .1, courbe: 'lin' });
+    o.ton(b + .6, 240, { duree: 2.2, crete: .012, attaque: .3, type: 'sawtooth', filtre: 900, humide: .1, courbe: 'lin' });
+    const alea = hasard(9);
+    for (let i = 0; i < 16; i++) o.ton(b + .7 + alea() * 1.6, 1800 + alea() * 3600, { duree: .04, crete: .022, attaque: .002, type: 'square', humide: .25, pan: alea() * 1.6 - .8 });
+    o.ton(b + T_VERROU, 1318.5, { duree: .12, crete: .07, type: 'square', filtre: 4000, humide: .3 });
+    o.ton(b + T_VERROU + .1, 1760, { duree: .25, crete: .07, type: 'square', filtre: 4000, humide: .4 });
+    o.signature(b + T_VERROU + .25, 'electrique');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.75,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    volume: 1.2,
+    sonFin: (o, b) => o.signature(b + .05, 'electrique', .8),
+    preparer,
+    dessiner,
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = [];
+      const anim = (cible, kf, d, duree, easing = 'linear') => L.push(cible.animate(kf, { delay: d * 1000, duration: duree * 1000, easing, fill: 'both' }));
+      // L'hologramme se matérialise de bas en haut, scintille, pivote un peu, puis cède la place.
+      anim(holo, [{ clipPath: 'inset(100% -20% -20% -20%)' }, { clipPath: 'inset(-20% -20% -20% -20%)' }], .65, .85, 'cubic-bezier(.4,0,.2,1)');
+      anim(balayage, [{ top: '100%', opacity: 1 }, { top: '0%', opacity: 1, offset: .95 }, { top: '0%', opacity: 0 }], .65, .9, 'cubic-bezier(.4,0,.2,1)');
+      anim(holo, [{ transform: 'rotateY(26deg) rotateX(8deg)' }, { transform: 'rotateY(-7deg) rotateX(0deg)', offset: .6 }, { transform: 'rotateY(0deg)' }], .65, 1.7, 'cubic-bezier(.3,.6,.3,1)');
+      anim(holo, [{ opacity: .85 }, { opacity: .45, offset: .1 }, { opacity: .9, offset: .14 }, { opacity: .8, offset: .5 }, { opacity: .3, offset: .53 }, { opacity: .9, offset: .56 }, { opacity: .85, offset: .9 }, { opacity: 0 }], .65, T_VERROU + .25 - .65);
+      anim(holo, [{ translate: '0 0' }, { translate: '6px 0', offset: .31 }, { translate: '-4px 0', offset: .33 }, { translate: '0 0', offset: .35 }, { translate: '0 0', offset: .8 }, { translate: '-8px 0', offset: .82 }, { translate: '0 0', offset: .84 }], .65, T_VERROU - .65);
+      anim(marque, [{ opacity: 0, filter: 'brightness(2.2) saturate(.2)' }, { opacity: 1, filter: 'brightness(1.6) saturate(.6)', offset: .3 }, { opacity: 1, filter: 'brightness(1) saturate(1)' }], T_VERROU, .5, 'ease-out');
       return L;
     },
   });

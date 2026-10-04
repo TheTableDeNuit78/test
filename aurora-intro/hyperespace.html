@@ -395,6 +395,22 @@ body {
     return { boiteA: $('boiteA'), trace: $('trace'), nom, trait: $('trait'), boiteTrait: $('boiteTrait'), sous, lettresNom: nom ? eclater(nom, false) : [], lettresSous: sous ? eclater(sous, true) : [] };
   }
 
+  // Un canvas 2D net sur les écrans haute densité, effacé à chaque image.
+  function toile2D(toile) {
+    const x = toile.getContext('2d');
+    return {
+      x,
+      cadre() {
+        const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight, lw = Math.round(W * dpr), lh = Math.round(H * dpr);
+        if (toile.width !== lw || toile.height !== lh) { toile.width = lw; toile.height = lh; }
+        x.setTransform(dpr, 0, 0, dpr, 0, 0);
+        x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.shadowBlur = 0;
+        x.clearRect(0, 0, W, H);
+        return { W, H };
+      },
+    };
+  }
+
   /* ───────────── WebGL ───────────── */
 
   function compilerGL(gl, vs, fs) {
@@ -529,7 +545,7 @@ void main() {
    * son » apparaît ; dans l'app (Electron), rien ne le bloque.
    */
   const Sono = (() => {
-    const api = { actif: true, bloque: false };
+    const api = { actif: true, bloque: false, volume: 1 };
     let ac = null, chaine = null, voix = [], bouton = null, rejouer = null;
     try { if (localStorage.getItem('aurora-son') === '0') api.actif = false; } catch { /* stockage indisponible */ }
 
@@ -543,12 +559,13 @@ void main() {
       comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .22;
       const m = c.createGain(); m.gain.value = .8;
       const vol = c.createGain(); vol.gain.value = api.actif ? 1 : 0;
-      m.connect(comp); comp.connect(vol); vol.connect(c.destination);
+      const an = c.createAnalyser(); an.fftSize = 512; an.smoothingTimeConstant = .72;
+      m.connect(comp); comp.connect(vol); vol.connect(an); an.connect(c.destination);
       const r = c.createConvolver(); r.buffer = reponse(c, 3.4, 2.3);
       const ret = c.createGain(); ret.gain.value = .5; r.connect(ret); ret.connect(m);
       const b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      return { m, r, b, vol };
+      return { m, r, b, vol, an };
     }
 
     // La boîte à outils, liée à un contexte (réel, ou hors ligne pour les tests).
@@ -686,6 +703,7 @@ void main() {
     let session = null;
     function ouvrirSession(c, b) {
       const sec = c.createGain(), mouille = c.createGain();
+      sec.gain.value = mouille.gain.value = api.volume;
       sec.connect(chaine.m); mouille.connect(chaine.r);
       session = { sec, mouille, sources: [] };
       voix = session.sources;
@@ -715,12 +733,17 @@ void main() {
       session = null;
       voix = [];
     };
+    // L'analyseur de fréquences du son en cours, quand il joue vraiment (sinon null).
+    api.analyseur = () => (ac && ac.state === 'running' && api.actif && session ? chaine.an : null);
     // Pour les tests : rend une partition hors ligne et mesure crête et niveau moyen.
     api.mesurer = async (partition, duree = 6) => {
       const c = new OfflineAudioContext(2, Math.round(44100 * duree), 44100);
       const g = brancher(c);
       g.vol.gain.value = 1;
-      partition(outils(c, g, []), .05);
+      const sec = c.createGain(), mouille = c.createGain();
+      sec.gain.value = mouille.gain.value = api.volume;
+      sec.connect(g.m); mouille.connect(g.r);
+      partition(outils(c, { m: sec, r: mouille, b: g.b }, []), .05);
       const buf = await c.startRendering();
       let crete = 0, somme = 0;
       for (let k = 0; k < 2; k++) { const d = buf.getChannelData(k); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > crete) crete = v; somme += v * v; } }
@@ -741,7 +764,8 @@ void main() {
   const figerPiste = (a, t) => (estWaapi(a) ? (a.pause(), (a.currentTime = t * 1000)) : a.aller(t));
   const annulerPiste = (a) => (estWaapi(a) ? a.cancel() : a.annuler());
 
-  function lancer({ FIN, preparer, dessiner, animer, sons, sonFin, ambiant = false }) {
+  function lancer({ FIN, preparer, dessiner, animer, sons, sonFin, ambiant = false, volume = 1 }) {
+    Sono.volume = volume;
     let anims = [], t0 = 0, raf = 0, reduit = false;
     let fige = params.has('t') ? Math.max(0, parseFloat(params.get('t')) || 0) : null;
     const maintenant = () => (document.timeline && document.timeline.currentTime) ?? performance.now();

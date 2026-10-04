@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Synthwave</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Synthwave » : 1986 dans un shader. Le soleil rayé se lève derrière des montagnes en fil
+ * de fer, la grille néon défile vers nous, et le titre AURORA arrive en chrome, avec un reflet qui le
+ * balaie. Le son est un vrai petit morceau : basse en croches, batterie à réverbération, nappes, puis
+ * la signature au synthé.
  */
 :root {
   color-scheme: dark;
@@ -186,14 +186,29 @@ body {
 }
 
 
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
+@property --reflet { syntax: '<percentage>'; inherits: false; initial-value: 140%; }
+.a-boite { width: calc(var(--k) * 92px); }
+.a path { stroke: #ff7bd5; filter: drop-shadow(0 0 4px #ff3ea5) drop-shadow(0 0 12px #b03cff); }
+.nom {
+  margin-top: calc(var(--k) * 14px);
+  font-size: calc(var(--k) * 118px);
+  font-weight: 700;
+  letter-spacing: .02em;
+  padding-left: .02em;
+  text-transform: uppercase;
+  transform: skewX(-9deg);
+  color: transparent;
+  background:
+    linear-gradient(100deg, transparent calc(var(--reflet) - 12%), rgb(255 255 255 / .95) var(--reflet), transparent calc(var(--reflet) + 12%)),
+    linear-gradient(180deg, #ffffff 0%, #cfe9ff 36%, #6b8cff 48%, #1a0f3d 50%, #3a1460 54%, #ff7bd5 78%, #ffe1f4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-stroke: 1px rgb(255 255 255 / .35);
+  filter: drop-shadow(0 0 18px rgb(255 62 165 / .45)) drop-shadow(0 4px 0 #2a0c4a);
 }
+.trait-boite { width: calc(var(--k) * 420px); margin-top: calc(var(--k) * 18px); }
+.trait { background: linear-gradient(90deg, #36e3ff, #ff3ea5); box-shadow: 0 0 12px #ff3ea5; }
+.sous { color: #7ef3ff; text-shadow: 0 0 10px rgb(54 227 255 / .8); letter-spacing: .5em; padding-left: .5em; }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +232,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +242,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Synthwave</b> · shader WebGL2, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,114 +866,113 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
+  const T_TITRE = 1.85;
+  const FS = `#version 300 es
+precision highp float;
+out vec4 sortie;
+uniform vec2 u_res;
+uniform float u_t, u_lever, u_grille, u_flash, u_fondu;
+${GLSL_OUTILS}
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_res;
+  float asp = u_res.x / u_res.y;
+  vec2 p = vec2((uv.x - .5) * asp, uv.y);
+  float hz = .42;
+  vec3 c;
+  if (p.y > hz) {
+    // Le ciel : violet profond vers rose à l'horizon.
+    float h = (p.y - hz) / (1. - hz);
+    c = mix(vec3(1., .22, .55), vec3(.05, .01, .14), pow(h, .45));
+    c = mix(c, vec3(.02, .0, .06), smoothstep(.7, 1., h));
+    // Les étoiles.
+    vec2 g = floor(gl_FragCoord.xy / 3.);
+    c += vec3(.9, .8, 1.) * step(.997, hash21(g)) * smoothstep(.25, .7, h) * .7;
+    // Le soleil rayé, qui se lève.
+    vec2 sp = vec2(p.x, p.y - (hz - .2 + u_lever * .38));
+    float d = length(sp), R = .26;
+    if (d < R) {
+      float k = (sp.y + R) / (2. * R);
+      vec3 sol = mix(vec3(1., .2, .6), vec3(1., .86, .3), k);
+      float rayure = step(.5, fract((sp.y + u_t * .03) * 26.)) + step(.62, k);
+      float coupe = k < .62 ? step(.35 + (1. - k) * .55, fract((sp.y - u_t * .04) * 22.)) : 0.;
+      c = mix(c, sol, (1. - coupe) * smoothstep(R, R - .004, d));
+    }
+    c += vec3(1., .3, .6) * .5 * exp(-d * d * 18.) * u_lever;
+    // Les montagnes en fil de fer.
+    float x = p.x * 3.;
+    float m = hz + .08 * (fbm(vec2(x * .8, 1.)) - .2) * (1. + abs(p.x) * 1.2);
+    if (p.y < m) {
+      c = vec3(.04, .0, .09);
+      float bord = exp(-pow((m - p.y) * 260., 2.));
+      float lignes = exp(-pow(fract((m - p.y) * 60.) - .5, 2.) * 60.) * .25 * smoothstep(0., .05, m - p.y);
+      c += vec3(.9, .25, 1.) * (bord + lignes);
+    }
+  } else {
+    // La grille au sol, en perspective, qui défile vers nous.
+    float z = .2 / max(hz - p.y, .002);
+    float gx = p.x * z * 2.2, gz = z + u_t * 3.2;
+    float lx = abs(fract(gx) - .5), lz = abs(fract(gz) - .5);
+    float w = .006 + .008 * z, fl = fwidth(gx) + .004, fz = fwidth(gz) + .004;
+    float ligne = max(smoothstep(w + fl, w, lx), smoothstep(w + fz, w, lz));
+    c = mix(vec3(.04, 0., .08), vec3(.12, .0, .2), smoothstep(0., .3, hz - p.y));
+    c += mix(vec3(1., .2, .7), vec3(.2, .9, 1.), smoothstep(.0, .35, hz - p.y)) * ligne * u_grille * exp(-z * .08);
+    c += vec3(1., .2, .6) * .35 * exp(-(hz - p.y) * 18.);
   }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
+  c += vec3(1., .85, 1.) * u_flash;
+  sortie = vec4(mix(vec3(.039, .039, .055), c, u_fondu), 1.);
 }`;
 
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  let gl = null, prog = null, u = {};
+  try {
+    gl = $('toile').getContext('webgl2', { antialias: false, alpha: false });
+    if (!gl) throw new Error('WebGL2 indisponible');
+    prog = compilerGL(gl, VS_ECRAN, FS);
+    for (const n of ['res', 't', 'lever', 'grille', 'flash', 'fondu']) u[n] = gl.getUniformLocation(prog, 'u_' + n);
+  } catch (err) { console.warn('Aurora : décor désactivé —', err.message); gl = null; $('toile').hidden = true; }
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
-    }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
-    }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
-    }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+  function dessiner(t) {
+    if (!gl || $('toile').hidden) return;
+    const toile = $('toile'), dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+    if (toile.width !== W || toile.height !== H) { toile.width = W; toile.height = H; }
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(prog);
+    gl.uniform2f(u.res, W, H);
+    gl.uniform1f(u.t, t);
+    gl.uniform1f(u.lever, sortie4(lisse(.2, 1.8, t)));
+    gl.uniform1f(u.grille, lisse(0, .7, t));
+    gl.uniform1f(u.flash, t > T_TITRE ? .55 * Math.exp(-(t - T_TITRE) * 7) : 0);
+    gl.uniform1f(u.fondu, lisse(0, .4, t));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    const TEMPS = .6, t0 = b + .05;
+    const ACCORDS = [[110, 130.81, 164.81], [87.31, 110, 130.81], [65.41, 98, 130.81], [98, 123.47, 146.83]];
+    const BASSE = [55, 55, 110, 55, 43.65, 43.65, 87.31, 43.65, 65.41, 65.41, 130.81, 65.41];
+    for (let i = 0; i < 12; i++) o.basse(t0 + i * TEMPS / 2, BASSE[i], { duree: .22, crete: .15 });
+    for (let i = 0; i < 6; i++) {
+      o.kick(t0 + i * TEMPS, .55);
+      if (i % 2) { o.caisse(t0 + i * TEMPS, .16); o.souffle(t0 + i * TEMPS, { duree: .35, f0: 2500, f1: 1800, q: .6, crete: .05, attaque: .005, humide: .9 }); }
+      o.charley(t0 + i * TEMPS + TEMPS / 2, .04);
+    }
+    ACCORDS.slice(0, 3).forEach((ac, i) => o.nappe(t0 + i * TEMPS * 1.2, ac.map((f) => f * 2), { duree: TEMPS * 1.3, attaque: .15, crete: .05, filtre: 1800 }));
+    o.souffle(b + T_TITRE, { duree: 1.6, f0: 9000, f1: 6000, type: 'highpass', q: .5, crete: .07, attaque: .01, humide: .6 });
+    o.impact(b + T_TITRE, { crete: .45, grave: 55, duree: 1 });
+    o.signature(b + T_TITRE + .15, 'synthe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.7,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    sonFin: (o, b) => o.signature(b + .05, 'synthe', .8),
+    preparer(reduit) { if (gl) $('toile').hidden = reduit; },
+    dessiner,
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = revelerMarque(el, { a: 1.55, trait: T_TITRE + .35, sous: T_TITRE + .55, dureeA: .5 });
+      const anim = (cible, kf, d, duree, easing) => L.push(cible.animate(kf, { delay: d * 1000, duration: duree * 1000, easing, fill: 'both' }));
+      anim(el.nom, [{ transform: 'skewX(-9deg) scale(2.6) translateZ(0)', opacity: 0, filter: 'blur(14px)' }, { opacity: 1, offset: .3 }, { transform: 'skewX(-9deg) scale(1)', opacity: 1, filter: 'drop-shadow(0 0 18px rgb(255 62 165 / .45)) drop-shadow(0 4px 0 #2a0c4a)' }], T_TITRE - .25, .45, 'cubic-bezier(.5,0,.2,1)');
+      anim(el.nom, [{ '--reflet': '-30%' }, { '--reflet': '140%' }], T_TITRE + .5, .9, 'ease-in-out');
       return L;
     },
   });

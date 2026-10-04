@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Vortex</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Vortex » : un tourbillon s'ouvre au milieu de l'écran et nous aspire — bandes spirales
+ * aux couleurs de la marque, de plus en plus serrées et rapides —, puis il se referme d'un coup sur
+ * le Λ, qui en jaillit avec une onde. Shader WebGL2 en coordonnées polaires ; son : souffle tournant
+ * (filtre qui balaie), montée, implosion, signature.
  */
 :root {
   color-scheme: dark;
@@ -186,13 +186,19 @@ body {
 }
 
 
-.eclair {
+.onde {
   position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 2px solid rgb(196 160 255 / .9);
+  box-shadow: 0 0 30px rgb(157 92 255 / .6), inset 0 0 30px rgb(157 92 255 / .4);
   opacity: 0;
   pointer-events: none;
+  z-index: 3;
 }
 </style>
 <style>
@@ -217,7 +223,7 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
+<div class="onde" id="onde"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +234,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Vortex</b> · shader WebGL2, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,114 +858,87 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
+  const T_FERME = 1.95;
+  const FS = `#version 300 es
+precision highp float;
+out vec4 sortie;
+uniform vec2 u_res, u_centre;
+uniform float u_t, u_ouvre, u_vitesse, u_ferme, u_ech;
+${GLSL_OUTILS}
+void main() {
+  vec2 p = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_ech;
+  vec2 d = (p - u_centre) / (u_res.y / u_ech);
+  float r = length(d), a = atan(d.y, d.x);
+  float rayon = mix(.0, 1.6, u_ouvre) * (1. - u_ferme);
+  float z = .12 / max(r, .001);
+  float tour = a / TAU + z * .35 + u_vitesse;
+  float bandes = .5 + .5 * sin(tour * TAU * 6. + z * 2.);
+  float filets = fbm(vec2(cos(tour * TAU), sin(tour * TAU)) * 2.2 + vec2(z * 1.5 - u_vitesse * 3., 0.));
+  vec3 c = marque(.5 + .5 * sin((tour + z * .05) * TAU)) * (.35 + bandes * .9) * (.55 + filets);
+  c += vec3(1., .9, 1.) * pow(bandes, 12.) * .6;
+  c *= smoothstep(.0, .06, r) * .8 + .2 * exp(-r * 3.);
+  c += vec3(.9, .85, 1.) * exp(-r * 22.) * 1.5 * u_ouvre;
+  float masque = 1. - smoothstep(rayon * .8, rayon + .001, r);
+  vec3 fond = vec3(.039, .039, .055);
+  sortie = vec4(mix(fond, c, masque * u_ouvre), 1.);
 }`;
 
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  let gl = null, prog = null, u = {}, geo = null;
+  try {
+    gl = $('toile').getContext('webgl2', { antialias: false, alpha: false });
+    if (!gl) throw new Error('WebGL2 indisponible');
+    prog = compilerGL(gl, VS_ECRAN, FS);
+    for (const n of ['res', 'centre', 't', 'ouvre', 'vitesse', 'ferme', 'ech']) u[n] = gl.getUniformLocation(prog, 'u_' + n);
+  } catch (err) { console.warn('Aurora : vortex désactivé —', err.message); gl = null; $('toile').hidden = true; }
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
-    }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
-    }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
-    }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+  function dessiner(t) {
+    if (!gl || $('toile').hidden || !geo) return;
+    const toile = $('toile'), dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+    if (toile.width !== W || toile.height !== H) { toile.width = W; toile.height = H; }
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(prog);
+    gl.uniform2f(u.res, W, H);
+    gl.uniform1f(u.ech, W / innerWidth);
+    gl.uniform2f(u.centre, ...geo.centre);
+    gl.uniform1f(u.t, t);
+    gl.uniform1f(u.ouvre, sortie4(lisse(.05, .9, t)));
+    // La vitesse : on intègre l'accélération pour un tourbillon sans à-coup.
+    const v = t < T_FERME ? .25 * t + .45 * t * t * t / 3 : .25 * T_FERME + .45 * Math.pow(T_FERME, 3) / 3 + (t - T_FERME) * 1.5;
+    gl.uniform1f(u.vitesse, v);
+    gl.uniform1f(u.ferme, Math.pow(lisse(T_FERME - .3, T_FERME, t), 2));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    // Le souffle tourne : on enchaîne des balayages de filtre qui accélèrent, à gauche puis à droite.
+    let t = .05, i = 0;
+    while (t < T_FERME - .25) {
+      const d = Math.max(.12, .5 - t * .2);
+      o.souffle(b + t, { duree: d, f0: 400 + t * 400, f1: 1800 + t * 1600, q: 3, crete: .05 + t * .03, attaque: d * .5, humide: .3, pan0: i % 2 ? .7 : -.7, pan1: i % 2 ? -.7 : .7 });
+      t += d * .8; i++;
+    }
+    o.ton(b + .1, 55, { duree: T_FERME, crete: .1, attaque: .8, type: 'sawtooth', vers: 220, filtre: 700, humide: .2, courbe: 'lin' });
+    o.souffle(b + T_FERME - .35, { duree: .35, f0: 6000, f1: 300, q: 1, crete: .14, attaque: .3, humide: .4 });
+    o.impact(b + T_FERME, { crete: .6, grave: 45, duree: 1.6 });
+    o.signature(b + T_FERME + .25, 'synthe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.5,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    sonFin: (o, b) => o.signature(b + .05, 'synthe', .8),
+    preparer(reduit) {
+      geo = geometrieA(el.boiteA);
+      $('onde').style.left = geo.centre[0] + 'px'; $('onde').style.top = geo.centre[1] + 'px';
+      if (gl) $('toile').hidden = reduit;
+    },
+    dessiner,
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = revelerMarque(el, { nom: T_FERME + .3, trait: T_FERME + .6, sous: T_FERME + .8, style: 'monte' });
+      const anim = (cible, kf, d, duree, easing) => L.push(cible.animate(kf, { delay: d * 1000, duration: duree * 1000, easing, fill: 'both' }));
+      anim(el.boiteA, [{ transform: 'scale(.05) rotate(-200deg)', opacity: 0, filter: 'blur(8px)' }, { opacity: 1, offset: .2 }, { transform: 'scale(1.12) rotate(6deg)', filter: 'blur(0px)', offset: .6 }, { transform: 'scale(1) rotate(0deg)', opacity: 1 }], T_FERME - .05, .75, 'cubic-bezier(.2,.8,.2,1)');
+      anim($('onde'), [{ transform: 'scale(.2)', opacity: 0 }, { opacity: 1, offset: .1 }, { transform: 'scale(30)', opacity: 0 }], T_FERME, .9, 'cubic-bezier(.1,.6,.3,1)');
       return L;
     },
   });

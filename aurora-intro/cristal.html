@@ -5,14 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Cristal</title>
 <script>document.documentElement.classList.add('js')</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+  }
+}
+</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Cristal » : le Λ se cristallise. Des éclats de verre poussent le long du trait, du pied
+ * gauche au pied droit, et derrière ce front le cristal massif prend forme — il réfracte la lumière
+ * et la disperse en arcs-en-ciel sur ses arêtes. Three.js r186 (WebGLRenderer) : verre physique
+ * (transmission, dispersion, iridescence), éclats instanciés, plan de coupe qui avance, bloom.
+ * Son : mille petits tintements qui suivent la croissance, craquements de glace, signature en verre.
  */
 :root {
   color-scheme: dark;
@@ -186,14 +195,7 @@ body {
 }
 
 
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-}
+.cristal-ok .a { opacity: 0; }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +219,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +229,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Cristal</b> · Three.js r186, verre physique, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -240,9 +241,7 @@ body {
   </button>
 </div>
 
-<script>
-'use strict';
-(() => {
+<script type="module">
   const $ = (id) => document.getElementById(id);
   const racine = document.documentElement;
   const params = new URLSearchParams(location.search);
@@ -852,118 +851,175 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
-}`;
-
+  const G = [.25, 1.45];          // la croissance, du pied gauche au pied droit
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
+  async function creer3D() {
+    const THREE = await import('three');
+    const { EffectComposer } = await import('three/addons/postprocessing/EffectComposer.js');
+    const { RenderPass } = await import('three/addons/postprocessing/RenderPass.js');
+    const { UnrealBloomPass } = await import('three/addons/postprocessing/UnrealBloomPass.js');
+    const { OutputPass } = await import('three/addons/postprocessing/OutputPass.js');
+
+    const renderer = new THREE.WebGLRenderer({ canvas: $('toile'), antialias: true });
+    renderer.localClippingEnabled = true;
+    renderer.toneMapping = THREE.NoToneMapping;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0a0a0e');
+    const camera = new THREE.PerspectiveCamera(30, 1, 10, 40000);
+
+    // Le studio que le verre reflète, aux couleurs d'Aurora.
+    const studio = new THREE.Scene();
+    studio.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ color: 0x050508, side: THREE.BackSide })));
+    const panneau = (c, f, x, y, z, w, h) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(f), side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); studio.add(m); };
+    panneau('#4ea8f5', 4, -30, 10, 16, 8, 40); panneau('#ff6cab', 4, 30, 6, 14, 8, 40); panneau('#9d5cff', 3, 0, 32, -6, 40, 6);
+    panneau('#ffffff', 2.2, 0, 4, 44, 50, 26); panneau('#ffffff', 8, -16, 24, 38, 3, 22); panneau('#ffffff', 8, 18, -10, 38, 3, 18);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(studio, .02).texture;
+
+    // Derrière le cristal, un fond lumineux et doux : c'est lui que le verre réfracte et décompose.
+    const fondTex = (() => {
+      const c = document.createElement('canvas'); c.width = 512; c.height = 320;
+      const p = c.getContext('2d'); p.fillStyle = '#0a0a0e'; p.fillRect(0, 0, 512, 320);
+      for (const [x, y, r, col] of [[150, 170, 170, 'rgba(78,168,245,.55)'], [256, 140, 120, 'rgba(240,232,255,.95)'], [360, 170, 170, 'rgba(255,108,171,.5)'], [256, 230, 220, 'rgba(157,92,255,.35)']]) {
+        const g = p.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)'); p.fillStyle = g; p.fillRect(0, 0, 512, 320);
+      }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    })();
+    const fond = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: fondTex }));
+    scene.add(fond);
+    const barres = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(3, 420), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .12 }));
+      m.position.set((i - 1) * 70, 0, -380); m.rotation.z = .35; barres.add(m);
     }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
+    scene.add(barres);
+
+    const verre = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff, vertexColors: true, metalness: 0, roughness: .05, transmission: 1, thickness: 18, ior: 1.6, dispersion: 6,
+      clearcoat: 1, clearcoatRoughness: .02,
+      iridescence: .35, iridescenceIOR: 1.3, envMapIntensity: 1.8, specularIntensity: 1,
+    });
+    const coupe = new THREE.Plane(new THREE.Vector3(-1, 0, 0), -1e5);
+    const verreCoupe = verre.clone(); verreCoupe.clippingPlanes = [coupe];
+    const pivot = new THREE.Group(); scene.add(pivot);
+    const lumiere = new THREE.PointLight(0xffffff, 0, 0, 0); scene.add(lumiere);
+    let corps = null, eclats = null, infos = [];
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), .32, .4, .86));
+    composer.addPass(new OutputPass());
+
+    function contour(L, S, R, w) {
+      const v = (a, b) => [b[0] - a[0], b[1] - a[1]], n = (d) => { const l = Math.hypot(...d); return [-d[1] / l, d[0] / l]; };
+      const d1 = v(L, S), d2 = v(S, R), n1 = n(d1), n2 = n(d2), pts = [];
+      const arc = (c, a0, a1) => { for (let i = 0; i <= 20; i++) { const a = a0 + (a1 - a0) * i / 20; pts.push(new THREE.Vector2(c[0] + Math.cos(a) * w, c[1] + Math.sin(a) * w)); } };
+      const ang = (p) => Math.atan2(p[1], p[0]);
+      const p1 = [S[0] - n1[0] * w, S[1] - n1[1] * w], p2 = [S[0] - n2[0] * w, S[1] - n2[1] * w], den = d1[0] * d2[1] - d1[1] * d2[0];
+      const tt = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den, I = [p1[0] + d1[0] * tt, p1[1] + d1[1] * tt];
+      let a0 = ang([-n1[0], -n1[1]]); arc(L, a0, a0 - Math.PI);
+      a0 = ang(n1); let a1 = ang(n2); while (a1 > a0) a1 -= Math.PI * 2; arc(S, a0, a1);
+      a0 = ang(n2); arc(R, a0, a0 - Math.PI);
+      pts.push(new THREE.Vector2(...I));
+      return new THREE.Shape(pts);
     }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
+
+    function construire(geo, W, H, k) {
+      const mon = (p) => [p[0] - W / 2, H / 2 - p[1]];
+      const L = mon(geo.L), S = mon(geo.S), R = mon(geo.R), c = mon(geo.centre);
+      const b = 5 * k, ep = 16 * k, rel = 6 * k;
+      const g = new THREE.ExtrudeGeometry(contour(L, S, R, geo.w - b), { depth: ep, bevelEnabled: true, bevelThickness: rel, bevelSize: b, bevelSegments: 6, curveSegments: 24 });
+      g.translate(-c[0], -c[1], -(ep + rel));
+      // Le dégradé de la marque, dans la masse du verre.
+      const pos = g.attributes.position, cols = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) { const col = geo.couleur(pos.getX(i) + c[0] + W / 2, H / 2 - pos.getY(i) - c[1]); cols.set(col.map((u) => Math.pow(u, 2.2)), i * 3); }
+      g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      if (corps) { pivot.remove(corps); corps.geometry.dispose(); }
+      corps = new THREE.Mesh(g, verreCoupe); pivot.add(corps);
+      pivot.position.set(c[0], c[1], 0);
+      // Les éclats, posés sur le trait, chacun avec son abscisse s pour la vague de croissance.
+      const alea = hasard(3), n = 240;
+      const { pts } = pointsDuA(geo, n, alea);
+      if (eclats) { pivot.remove(eclats); eclats.geometry.dispose(); }
+      const geoEclat = new THREE.OctahedronGeometry(1, 0);
+      geoEclat.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geoEclat.attributes.position.count * 3).fill(1), 3));
+      eclats = new THREE.InstancedMesh(geoEclat, verre, n);
+      infos = pts.map((p) => { const m = mon([p.x, p.y]); return { x: m[0] - c[0], y: m[1] - c[1], z: (alea() - .3) * geo.w, s: p.s, rx: alea() * 6, ry: alea() * 6, h: (.9 + alea() * 1.3) * geo.w * 1.15 }; });
+      pivot.add(eclats);
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      renderer.setSize(W, H, false); composer.setSize(W, H);
+      camera.aspect = W / H;
+      camera.userData.D = H / (2 * Math.tan(THREE.MathUtils.degToRad(15)));
+      camera.position.set(0, 0, camera.userData.D); camera.lookAt(0, 0, 0); camera.updateProjectionMatrix();
+      camera.userData.bornes = [L[0] - geo.w * 2 - c[0], R[0] + geo.w * 2 - c[0]];
+      const zf = -700, hf = (camera.userData.D - zf) / camera.userData.D * H;
+      fond.position.set(0, 0, zf); fond.scale.set(hf * W / H * 1.05, hf * 1.05, 1);
     }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v3 = new THREE.Vector3(), sc = new THREE.Vector3();
+    function dessiner(t, W, H) {
+      if (!corps) return;
+      const k = sortie4(lisse(0, 2.6, t));
+      pivot.rotation.set(mix(.18, 0, k), mix(.42, 0, k), 0);
+      // Le front de cristallisation avance de gauche à droite ; le cristal massif le suit.
+      const [x0, x1] = camera.userData.bornes, front = mix(x0, x1, lisse(G[0] + .25, G[1] + .35, t));
+      coupe.constant = front; coupe.normal.set(-1, 0, 0);
+      coupe.applyMatrix4(pivot.matrixWorld);
+      for (let i = 0; i < infos.length; i++) {
+        const f = infos[i], ts = mix(G[0], G[1], f.s), g = sortie4((t - ts) / .3) * (1 - lisse(1.9, 2.4, t));
+        e.set(f.rx + t * .3, f.ry, 0); q.setFromEuler(e);
+        v3.set(f.x, f.y, f.z); sc.set(f.h * .32 * g + .001, f.h * g + .001, f.h * .32 * g + .001);
+        eclats.setMatrixAt(i, m4.compose(v3, q, sc));
+      }
+      eclats.instanceMatrix.needsUpdate = true;
+      fond.material.color.setScalar(lisse(0, .9, t));
+      barres.children.forEach((b2, i) => { b2.material.opacity = .12 * lisse(0, .8, t) * (1 - lisse(2.4, 3.2, t)); b2.position.x = (i - 1) * 70 + t * 18; });
+      const bal = lisse(2.3, 3.2, t);
+      lumiere.position.set(mix(-W * .45, W * .45, bal), H * .1, 260); lumiere.intensity = Math.sin(bal * Math.PI) * 1.2;
+      composer.render();
+    }
+    return { construire, dessiner };
+  }
+
+  let trois = null;
+  try {
+    trois = await Promise.race([creer3D(), attendre(8000).then(() => { throw new Error('délai dépassé'); })]);
+    racine.classList.add('cristal-ok');
+  } catch (err) {
+    console.warn('Aurora : 3D indisponible, logo à plat —', err.message);
+    $('toile').hidden = true;
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    o.nappe(b, [110, 164.81, 220], { duree: 3.4, attaque: 1, crete: .045, filtre: 800, type: 'sine' });
+    const alea = hasard(12);
+    for (let i = 0; i < 46; i++) {
+      const s = i / 46, t = mix(G[0], G[1], s) + alea() * .05;
+      o.ton(b + t, 2200 + alea() * 4200, { duree: .25 + alea() * .4, crete: .012 + alea() * .014, attaque: .001, humide: .65, pan: -.8 + s * 1.6 });
+    }
+    o.crepite(b + G[0], { duree: G[1] - G[0], densite: 60, crete: .035, f: 7500, humide: .4, pan: .8 });
+    o.souffle(b + 1.9, { duree: .5, f0: 2000, f1: 8000, q: 1, crete: .03, humide: .6 });
+    o.signature(b + 2.35, 'verre');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.85,
+    ambiant: !!trois,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    volume: 1.6,
+    sonFin: (o, b) => o.signature(b + .05, 'verre', .8),
+    preparer(reduit) {
+      if (!trois) return;
+      $('toile').hidden = false;
+      trois.construire(geometrieA(el.boiteA), innerWidth, innerHeight, echelle());
+    },
+    dessiner(t, reduit) { if (trois) trois.dessiner(reduit ? 4 : t, innerWidth, innerHeight); },
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = revelerMarque(el, { nom: 2.4, trait: 2.85, sous: 3.05, style: 'espace' });
+      if (!trois) L.push(...revelerMarque(el, { a: .4, dureeA: 1.2 }));
       return L;
     },
   });
-})();
 </script>
 </body>
 </html>

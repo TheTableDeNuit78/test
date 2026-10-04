@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Éclipse</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Éclipse » : une éclipse totale. La lune glisse devant un soleil blanc, le ciel s'éteint,
+ * les grains de Baily scintillent sur le bord, puis l'anneau de diamant — un seul point de lumière,
+ * avec ses aigrettes —, et la couronne se déploie aux couleurs d'Aurora. Quand elle pâlit, le Λ est
+ * là où était le soleil. Shader WebGL2 (couronne en bruit fractal polaire) ; son : bourdon, chœur
+ * synthétique, tintement du diamant, signature.
  */
 :root {
   color-scheme: dark;
@@ -185,15 +186,6 @@ body {
   .etiquette { left: 16px; }
 }
 
-
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-}
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +209,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +219,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Éclipse</b> · shader WebGL2, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,116 +843,88 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
+  const T_DIAMANT = 1.55, T_TOTALE = 1.75;
+  const FS = `#version 300 es
+precision highp float;
+out vec4 sortie;
+uniform vec2 u_res, u_centre;
+uniform float u_t, u_R, u_lune, u_couronne, u_diamant, u_fin, u_ech;
+${GLSL_OUTILS}
+void main() {
+  vec2 p = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_ech;
+  vec2 d = p - u_centre;
+  float r = length(d), a = atan(d.y, d.x);
+  vec2 lune = u_centre + vec2(mix(-2.6, 0., u_lune) * u_R, mix(.35, 0., u_lune) * u_R);
+  float dl = length(p - lune);
+  float cache = smoothstep(u_R * 1.005, u_R * .995, dl);
+  // Le soleil et sa lumière diffuse, que la lune éteint.
+  float decouvert = 1. - u_lune;
+  vec3 c = vec3(.039, .039, .055);
+  float soleil = smoothstep(u_R, u_R * .99, r);
+  c += vec3(1., .97, .92) * soleil * (1. - cache);
+  c += vec3(.55, .5, .9) * exp(-r / (u_R * 1.4)) * .35 * (.2 + decouvert) * (1. - u_couronne * .5);
+  // La couronne : des jets de lumière en bruit fractal polaire, aux couleurs de la marque.
+  float rr = max(r - u_R * .98, 0.) / u_R;
+  float jets = fbm(vec2(a * 3.2 + 3., rr * 1.4 - u_t * .08)) * .7 + fbm(vec2(a * 9. - 1., rr * 3. + u_t * .05)) * .5;
+  float cour = exp(-rr * 2.4) * (.35 + jets * 1.3) * step(u_R * .995, r);
+  vec3 teinte = marque(.5 + .5 * sin(a + 1.2));
+  c += mix(vec3(1.), teinte, .55) * cour * u_couronne * 1.15;
+  // Les protubérances roses au ras du bord.
+  c += vec3(1., .35, .6) * exp(-pow((r - u_R) / (u_R * .025), 2.)) * smoothstep(.55, .8, bruit(vec2(a * 6., u_t * .3))) * u_couronne * .9;
+  // L'anneau de diamant : un point aveuglant sur le bord, avec ses aigrettes.
+  vec2 pd = u_centre + vec2(cos(-.75), sin(-.75)) * u_R;
+  vec2 dd = p - pd;
+  float diam = exp(-dot(dd, dd) / (u_R * u_R * .004)) * 2. + exp(-abs(dd.y) / 1.5) * exp(-abs(dd.x) / (u_R * 1.2)) * .8 + exp(-abs(dd.x) / 1.5) * exp(-abs(dd.y) / (u_R * .9)) * .6;
+  c += vec3(1., .98, .95) * diam * u_diamant;
+  c += vec3(.8, .78, 1.) * exp(-r / (u_R * 2.2)) * u_diamant * .18;
+  c = mix(c, vec3(.039, .039, .055), u_fin);
+  sortie = vec4(c, 1.);
 }`;
 
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  let gl = null, prog = null, u = {}, geo = null;
+  try {
+    gl = $('toile').getContext('webgl2', { antialias: false, alpha: false });
+    if (!gl) throw new Error('WebGL2 indisponible');
+    prog = compilerGL(gl, VS_ECRAN, FS);
+    for (const n of ['res', 'centre', 't', 'R', 'lune', 'couronne', 'diamant', 'fin', 'ech']) u[n] = gl.getUniformLocation(prog, 'u_' + n);
+  } catch (err) { console.warn('Aurora : éclipse désactivée —', err.message); gl = null; $('toile').hidden = true; }
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
-    }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
-    }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
-    }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+  function dessiner(t) {
+    if (!gl || $('toile').hidden || !geo) return;
+    const toile = $('toile'), dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
+    if (toile.width !== W || toile.height !== H) { toile.width = W; toile.height = H; }
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(prog);
+    gl.uniform2f(u.res, W, H);
+    gl.uniform1f(u.ech, W / innerWidth);
+    gl.uniform2f(u.centre, ...geo.centre);
+    gl.uniform1f(u.t, t);
+    gl.uniform1f(u.R, 88 * echelle());
+    gl.uniform1f(u.lune, sortie4(lisse(0, T_DIAMANT + .15, t) * .9 + lisse(T_DIAMANT, T_TOTALE, t) * .1));
+    gl.uniform1f(u.couronne, lisse(T_DIAMANT - .1, T_TOTALE + .3, t) * (1 - lisse(2.55, 3.0, t)));
+    gl.uniform1f(u.diamant, Math.exp(-Math.pow((t - T_DIAMANT) / .12, 2)));
+    gl.uniform1f(u.fin, lisse(2.75, 3.15, t));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    o.ton(b, 55, { duree: 3.6, crete: .09, attaque: 1.2, type: 'sawtooth', filtre: 260, humide: .4, courbe: 'lin' });
+    o.nappe(b + .5, [220, 277.18, 329.63, 440], { duree: 2.6, attaque: 1.1, crete: .04, filtre: 900, type: 'triangle' });
+    o.souffle(b + .4, { duree: 1.2, f0: 1200, f1: 400, q: 3, crete: .03, attaque: .9, humide: .8 });
+    o.cloche(b + T_DIAMANT, 2637, { crete: .07, duree: 3 });
+    o.cloche(b + T_DIAMANT + .02, 3520, { crete: .035, duree: 2.4 });
+    o.impact(b + T_TOTALE, { crete: .3, grave: 45, duree: 2.2, bruit: .2, humide: .7 });
+    o.signature(b + 2.7, 'nappe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.85,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
-    animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
-      return L;
-    },
+    sonFin: (o, b) => o.signature(b + .05, 'nappe', .8),
+    preparer(reduit) { geo = geometrieA(el.boiteA); if (gl) $('toile').hidden = reduit; },
+    dessiner,
+    animer: () => revelerMarque(el, { a: 2.6, nom: 2.85, trait: 3.15, sous: 3.35, dureeA: .7, style: 'espace' }),
   });
 })();
 </script>

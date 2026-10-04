@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Prisme</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Prisme » : le Λ est un prisme de verre. Un rayon blanc entre par la gauche, se réfracte
+ * dans le Λ et ressort en éventail de couleurs — l'image de The Dark Side of the Moon. Puis les
+ * couleurs remontent dans le prisme, qui les garde : c'est son dégradé. Canvas 2D additif ; le son
+ * fait la même chose que la lumière — une note pure qui se divise en accord, chaque couleur sa note,
+ * de gauche à droite.
  */
 :root {
   color-scheme: dark;
@@ -185,15 +186,6 @@ body {
   .etiquette { left: 16px; }
 }
 
-
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-}
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +209,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +219,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Prisme</b> · Canvas 2D, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,116 +843,91 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
-}`;
-
+  const C = { ENTREE: [.25, .85], DEDANS: [.85, 1.08], EVENTAIL: [1.08, 1.65], RETOUR: [2.15, 2.75] };
+  const SPECTRE = ['#4ea8f5', '#58c4f0', '#6a5cff', '#9d5cff', '#c46cff', '#ff6cab', '#ff8f8f'];
+  const NOTES = [220, 277.18, 329.63, 440, 493.88, 554.37, 659.25];
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  const T = toile2D($('toile'));
+  let geo = null;
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
+  function preparer(reduit) {
+    $('toile').hidden = reduit;
+    if (!reduit) geo = geometrieA(el.boiteA);
+  }
+
+  const versAvec = (a, b, k) => [mix(a[0], b[0], k), mix(a[1], b[1], k)];
+
+  function dessiner(t) {
+    if ($('toile').hidden || !geo) return;
+    const { x } = T, { W, H } = T.cadre();
+    const PL = versAvec(geo.L, geo.S, .55), PR = versAvec(geo.S, geo.R, .5);
+    const depart = [-20, PL[1] - (PL[0] + 20) * .32];
+    const retour = 1 - lisse(...C.RETOUR, t);
+    // Le prisme : du verre clair, qui se remplit du dégradé quand il garde les couleurs.
+    x.lineCap = 'round'; x.lineJoin = 'round';
+    const verre = lisse(0, .5, t);
+    x.globalCompositeOperation = 'lighter';
+    x.lineWidth = geo.w * 2; x.strokeStyle = `rgba(220,215,255,${.1 * verre})`;
+    x.beginPath(); x.moveTo(...geo.L); x.lineTo(...geo.S); x.lineTo(...geo.R); x.stroke();
+    x.lineWidth = 1.4; x.strokeStyle = `rgba(240,236,255,${.55 * verre * (1 - lisse(2.6, 2.9, t))})`;
+    for (const d of [-1, 1]) {
+      x.beginPath();
+      for (const [i, s] of [0, .5, 1].entries()) { const p = geo.trace(s); const px = p.x - p.uy * geo.w * d, py = p.y + p.ux * geo.w * d; if (i === 0) x.moveTo(px, py); else x.lineTo(px, py); }
+      x.stroke();
     }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
+    // Le rayon blanc.
+    const ke = lisse(...C.ENTREE, t);
+    if (ke > 0) {
+      const tete = versAvec(depart, PL, ke), a = retour;
+      for (const [l, al] of [[14, .06], [5, .2], [1.8, .95]]) { x.lineWidth = l; x.strokeStyle = `rgba(255,255,255,${al * a})`; x.beginPath(); x.moveTo(...depart); x.lineTo(...tete); x.stroke(); }
     }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
+    const kd = lisse(...C.DEDANS, t);
+    if (kd > 0) {
+      const tete = versAvec(PL, PR, kd);
+      x.lineWidth = 3; x.strokeStyle = `rgba(255,255,255,${.8 * retour})`; x.beginPath(); x.moveTo(...PL); x.lineTo(...tete); x.stroke();
+      const g = x.createRadialGradient(...PL, 0, ...PL, 50); g.addColorStop(0, `rgba(255,255,255,${.6 * retour * (1 + Math.exp(-(t - C.DEDANS[0]) * 8))})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.fillRect(PL[0] - 50, PL[1] - 50, 100, 100);
     }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+    // L'éventail : sept rayons, chacun sa couleur, qui partent du flanc droit et s'ouvrent vers le bord.
+    const kv = lisse(...C.EVENTAIL, t) * retour;
+    if (kv > 0) {
+      SPECTRE.forEach((c, i) => {
+        const ang = -.32 + i * .095 + Math.sin(t * 2 + i) * .005, long = Math.hypot(W, H) * lisse(C.EVENTAIL[0] + i * .03, C.EVENTAIL[1] + i * .03, t) * retour;
+        const fin = [PR[0] + Math.cos(ang) * long, PR[1] + Math.sin(ang) * long], larg = 3 + long * .022;
+        const nx = -Math.sin(ang), ny = Math.cos(ang);
+        const g = x.createLinearGradient(...PR, ...fin);
+        const [r, v, b] = rvb(c).map((u) => Math.round(u * 255));
+        g.addColorStop(0, `rgba(${r},${v},${b},.85)`); g.addColorStop(1, `rgba(${r},${v},${b},.25)`);
+        x.fillStyle = g;
+        x.beginPath(); x.moveTo(PR[0] + nx * 1.5, PR[1] + ny * 1.5); x.lineTo(fin[0] + nx * larg, fin[1] + ny * larg); x.lineTo(fin[0] - nx * larg, fin[1] - ny * larg); x.lineTo(PR[0] - nx * 1.5, PR[1] - ny * 1.5); x.fill();
+      });
+    }
+    // Le prisme garde les couleurs : son trait s'emplit du dégradé.
+    const plein = lisse(2.3, 2.75, t) * (1 - lisse(2.85, 3.05, t));
+    if (plein > 0) {
+      const g = x.createLinearGradient(geo.L[0], geo.L[1], geo.R[0], geo.S[1]);
+      g.addColorStop(0, '#4ea8f5'); g.addColorStop(.5, '#9d5cff'); g.addColorStop(1, '#ff6cab');
+      x.globalCompositeOperation = 'source-over'; x.globalAlpha = plein; x.lineWidth = geo.w * 2; x.strokeStyle = g;
+      x.beginPath(); x.moveTo(...geo.L); x.lineTo(...geo.S); x.lineTo(...geo.R); x.stroke();
+      x.globalAlpha = 1;
+    }
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    o.ton(b + C.ENTREE[0], 440, { duree: C.EVENTAIL[0] - C.ENTREE[0] + .3, crete: .07, attaque: .5, humide: .5, courbe: 'lin' });
+    NOTES.forEach((f, i) => o.ton(b + C.EVENTAIL[0] + i * .05, f, { duree: 1.6, crete: .045, attaque: .12, type: 'triangle', humide: .65, pan: -.85 + i * .28, courbe: 'lin' }));
+    o.souffle(b + C.RETOUR[0] - .1, { duree: .7, f0: 3000, f1: 400, q: 1, crete: .06, humide: .5, pan0: .7, pan1: -.2 });
+    o.signature(b + 2.6, 'nappe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.85,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
-    animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
-      return L;
-    },
+    volume: 1.3,
+    sonFin: (o, b) => o.signature(b + .05, 'nappe', .8),
+    preparer,
+    dessiner,
+    animer: () => revelerMarque(el, { a: 2.75, nom: 2.85, trait: 3.15, sous: 3.35, dureeA: .3, style: 'espace' }),
   });
 })();
 </script>

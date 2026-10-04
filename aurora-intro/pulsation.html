@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Pulsation</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Pulsation » : l'intro est une musique, et l'image l'écoute. Un spectre circulaire bat
+ * au rythme du kick (120 BPM), la tension monte, puis le drop : le cercle s'effondre, le Λ claque au
+ * centre et le trait sous le nom naît d'un égaliseur qui s'aplatit. Quand le son joue, les barres
+ * lisent son spectre réel (AnalyserNode) ; sinon, un spectre calculé sur la même partition.
  */
 :root {
   color-scheme: dark;
@@ -185,15 +185,6 @@ body {
   .etiquette { left: 16px; }
 }
 
-
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-}
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +208,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +218,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Pulsation</b> · Canvas 2D, Web Audio + AnalyserNode</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,114 +842,102 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
-}`;
-
+  const TEMPS = .5, DROP = 2.0, N = 96;
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  const T = toile2D($('toile'));
+  let geo = null, donnees = null;
+  const kicks = [0, .5, 1, 1.5, DROP, DROP + .5].map((x) => x + .1);
 
-  function construire() {
-    geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
+  // Le spectre calculé sur la partition : kick dans le grave, charleston dans l'aigu, montée avant le drop.
+  function spectreCalcule(t, i) {
+    const f = i / N;
+    let kick = 0;
+    for (const k of kicks) if (t >= k) kick = Math.max(kick, Math.exp(-(t - k) * 9));
+    const charley = t < DROP ? Math.exp(-((t - .1) % .25) * 22) : 0;
+    const montee = lisse(1, DROP, t) * (1 - lisse(DROP, DROP + .1, t));
+    const bruit = .5 + .5 * Math.sin(i * 12.9898 + Math.floor(t * 20) * 78.233);
+    return clamp(kick * Math.exp(-f * 5) * 1.1 + charley * f * .6 * bruit + montee * (.25 + f * .6) * bruit + .05 * bruit, 0, 1);
+  }
+  function spectre(t) {
+    const an = Sono.analyseur(), v = new Array(N);
+    if (an) {
+      if (!donnees) donnees = new Uint8Array(an.frequencyBinCount);
+      an.getByteFrequencyData(donnees);
+      for (let i = 0; i < N; i++) { const j = Math.floor(Math.pow(i / N, 1.6) * donnees.length * .7); v[i] = donnees[j] / 255; }
+    } else for (let i = 0; i < N; i++) v[i] = spectreCalcule(t, i);
+    return v;
+  }
+
+  function preparer(reduit) {
+    $('toile').hidden = reduit;
+    if (!reduit) geo = geometrieA(el.boiteA);
+  }
+
+  function dessiner(t) {
+    if ($('toile').hidden || !geo) return;
+    const { x } = T, { W, H } = T.cadre();
+    const k = echelle(), v = spectre(t), c = geo.centre;
+    let kick = 0;
+    for (const kt of kicks) if (t >= kt) kick = Math.max(kick, Math.exp(-(t - kt) * 7));
+    x.globalCompositeOperation = 'lighter';
+    // Les ondes de chaque kick.
+    for (const kt of kicks) {
+      const a = t - kt;
+      if (a < 0 || a > 1.2 || kt > DROP + .2) continue;
+      x.strokeStyle = `rgba(157,92,255,${.35 * (1 - a / 1.2)})`; x.lineWidth = 2;
+      x.beginPath(); x.arc(...c, (110 + a * 520) * k, 0, 6.283); x.stroke();
     }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
+    // Le cercle de barres, qui tourne de plus en plus vite pendant la montée, puis s'effondre au drop.
+    const effondre = lisse(DROP, DROP + .25, t), present = lisse(0, .3, t) * (1 - effondre);
+    if (present > 0) {
+      const R0 = (115 + kick * 14) * k * (1 - effondre), rot = t * .4 + lisse(1, DROP, t) * 2.5;
+      for (let i = 0; i < N; i++) {
+        const a = rot + i / N * 6.283, l = (8 + v[i] * 150) * k, col = teinteMarque(i / N).map((u) => Math.round(u * 255));
+        x.strokeStyle = `rgba(${col},${.85 * present})`; x.lineWidth = Math.max(2, 4.2 * k); x.lineCap = 'round';
+        x.beginPath(); x.moveTo(c[0] + Math.cos(a) * R0, c[1] + Math.sin(a) * R0); x.lineTo(c[0] + Math.cos(a) * (R0 + l), c[1] + Math.sin(a) * (R0 + l)); x.stroke();
+      }
+      const g = x.createRadialGradient(...c, 0, ...c, (70 + kick * 25) * k);
+      g.addColorStop(0, `rgba(255,255,255,${(.25 + kick * .5) * present})`); g.addColorStop(1, 'rgba(157,92,255,0)');
+      x.fillStyle = g; x.beginPath(); x.arc(...c, (95 + kick * 25) * k, 0, 6.283); x.fill();
     }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
+    // L'éclair du drop.
+    const flash = t > DROP ? Math.exp(-(t - DROP) * 6) : 0;
+    if (flash > .01) { const g = x.createRadialGradient(...c, 0, ...c, Math.max(W, H) * .6); g.addColorStop(0, `rgba(255,255,255,${.75 * flash})`); g.addColorStop(1, 'rgba(157,92,255,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
+    // L'égaliseur qui devient le trait.
+    const r = el.boiteTrait.getBoundingClientRect(), eq = lisse(DROP + .3, DROP + .45, t) * (1 - lisse(DROP + .95, DROP + 1.1, t));
+    if (eq > 0) {
+      const nb = 32, pas = r.width / nb, plat = lisse(DROP + .5, DROP + .95, t);
+      x.globalCompositeOperation = 'source-over';
+      for (let i = 0; i < nb; i++) {
+        const h = mix((4 + v[(i * 3) % N] * 46) * k, r.height, plat), col = teinteMarque(.15 + i / nb * .85).map((u) => Math.round(u * 255));
+        x.fillStyle = `rgba(${col},${eq})`;
+        x.fillRect(r.left + i * pas + (1 - plat) * pas * .15, r.top + r.height - h, pas * mix(.7, 1.02, plat), h);
+      }
     }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    const t0 = b + .1;
+    for (let i = 0; i < 4; i++) { o.kick(t0 + i * TEMPS, .75); o.basse(t0 + i * TEMPS, 55, { duree: .3, crete: .16 }); }
+    for (let i = 0; i < 8; i++) o.charley(t0 + i * TEMPS / 2 + TEMPS / 2 * .5, .05);
+    for (let i = 0; i < 8; i++) o.caisse(t0 + 1.5 + i * TEMPS / 8, .04 + i * .015);
+    o.montee(t0 + 1, { duree: DROP - 1, crete: .12, f0: 200, f1: 7000 });
+    o.kick(t0 + DROP, 1); o.impact(t0 + DROP, { crete: .5, grave: 50, duree: 1.4 });
+    o.nappe(t0 + DROP, [110, 164.81, 220, 277.18, 329.63], { duree: 2, attaque: .01, crete: .07, filtre: 3200 });
+    o.kick(t0 + DROP + TEMPS, .5);
+    o.signature(t0 + DROP + .2, 'synthe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.6,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    sonFin: (o, b) => o.signature(b + .05, 'synthe', .8),
+    preparer,
+    dessiner,
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = revelerMarque(el, { nom: DROP + .2, sous: DROP + .9, style: 'monte' });
+      L.push(el.boiteA.animate([{ transform: 'scale(.2)', opacity: 0, filter: 'blur(6px)' }, { transform: 'scale(1.18)', opacity: 1, filter: 'blur(0px)', offset: .35 }, { transform: 'scale(1)', opacity: 1 }], { delay: (DROP + .1) * 1000, duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' }));
+      L.push(el.trait.animate([{ opacity: 0 }, { opacity: 1 }], { delay: (DROP + 1.0) * 1000, duration: 150, fill: 'both' }));
       return L;
     },
   });

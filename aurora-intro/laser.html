@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Supernova</title>
+<title>Aurora — Laser</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Supernova » : une étoile au cœur d'un disque de matière qui tourne de plus en plus
- * vite, s'effondre, puis explose — éclair, onde de choc en anneau, débris. Une partie des débris
- * revient former le Λ. ~11 000 particules sur le GPU, flou de mouvement ; son : montée, impact,
- * crépitements, signature.
+ * Variante « Laser » : un spectacle laser à 128 BPM. Trois projecteurs au sol balaient la brume en
+ * rythme, puis leurs faisceaux convergent sur un point qui trace le Λ — deux allers-retours, comme
+ * un scanner de concert —, et une nappe laser horizontale descend pour révéler le nom. Canvas 2D en
+ * mode additif, brume précalculée ; son : arpège synthétique, kick, zaps, signature.
  */
 :root {
   color-scheme: dark;
@@ -185,15 +185,6 @@ body {
   .etiquette { left: 16px; }
 }
 
-
-.eclair {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(circle at var(--x, 50%) var(--y, 45%), rgb(255 255 255 / .95), rgb(196 160 255 / .45) 12%, rgb(106 92 255 / .12) 32%, transparent 60%);
-  opacity: 0;
-  pointer-events: none;
-}
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -217,7 +208,6 @@ body {
   </defs>
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="eclair" id="eclair"></div>
 <div class="scene" aria-hidden="true">
   <div class="marque" id="marque">
     <div class="a-boite" id="boiteA">
@@ -228,7 +218,7 @@ body {
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Supernova</b> · particules WebGL2, Web Audio</p>
+<p class="etiquette"><b>Laser</b> · Canvas 2D, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -852,114 +842,134 @@ void main() {
   }
 
 
-  const GLSL = `
-uniform vec2 u_centre;
-uniform float u_k;
-// a0 : rayon d'orbite, angle, vitesse d'éjection, graine
-// a1 : cible x, y, abscisse sur le Λ, genre (0 débris, 1 Λ, 2 anneau, 3 cœur)
-// a2 : couleur, alpha
-// a3 : rayon, angle d'éjection, retard, -
-const float T0 = 1.22;
-Etat etat(float t) {
-  Etat e; e.doux = .35; e.c = a2.rgb; e.r = a3.x;
-  float genre = a1.w, g = a0.w;
-  float k = clamp(t / T0, 0., 1.);
-  float rr = a0.x * (1. - .94 * k * k * k);
-  float ang = a0.y + (t * .6 + t * t * 1.1) * (220. / (a0.x + 60.));
-  float apparition = smoothstep(0., .5, t - g * .3);
-  if (genre > 2.5) {
-    e.p = u_centre + vec2(cos(ang * 3.), sin(ang * 3.)) * a0.x * (1. - k);
-    e.a = t < T0 ? a2.a * apparition * (1. + 2. * k * k) : 0.;
-    e.r = a3.x * (1. + .25 * sin(t * 11. + g * 6.)) * (1. - .55 * k);
-    e.c = mix(a2.rgb, vec3(1.), k);
-    e.doux = 1.;
-    return e;
-  }
-  if (t < T0) {
-    e.p = u_centre + vec2(cos(ang), sin(ang) * .42) * rr;
-    e.a = a2.a * apparition * (.45 + .9 * k);
-    e.c = mix(a2.rgb, vec3(1.), k * k * .6);
-    return e;
-  }
-  float tau = t - T0;
-  vec2 dir = vec2(cos(a3.y), sin(a3.y));
-  vec2 depart = u_centre + vec2(cos(ang), sin(ang) * .42) * a0.x * .06;
-  float eclat = exp(-tau * 5.);
-  if (genre > 1.5) {
-    e.p = depart + dir * tau * a0.z;
-    e.a = a2.a * exp(-tau * 2.2);
-    e.c = mix(a2.rgb, vec3(1.), eclat * .8);
-    e.r = a3.x * (1. + tau * 1.5);
-    return e;
-  }
-  vec2 ex = depart + dir * a0.z * (1. - exp(-tau * 2.6)) / 2.6;
-  if (genre < .5) {
-    e.p = ex + vec2(0., tau * tau * 6.);
-    e.a = a2.a * exp(-tau * 1.15) * (1. + 2. * eclat);
-    e.c = mix(a2.rgb, vec3(1.), eclat);
-    return e;
-  }
-  float ts = 1.6 + a3.z, ta = ts + .7 + g * .22;
-  vec2 p0 = depart + dir * a0.z * (1. - exp(-(ts - T0) * 2.6)) / 2.6;
-  float q = easeInOut((t - ts) / (ta - ts));
-  e.p = t < ts ? ex : bezier(p0, p0 + dir * 140. * u_k, a1.xy + vec2(0., -70. * u_k), a1.xy, q);
-  float arrive = t > ta ? exp(-(t - ta) * 6.) : 0.;
-  e.a = a2.a * (t < ts ? .6 + 1.5 * eclat : mix(.6, 1., q)) * (1. + arrive);
-  e.c = mix(a2.rgb, vec3(1.), max(eclat, arrive) * .7);
-  e.a *= 1. - smoothstep(2.6, 3.05, t) * (hash11(g * 91.) > .9 ? .35 : 1.);
-  return e;
-}`;
-
+  const BPM = 128, DOUBLE = 60 / BPM / 4;            // une double croche
+  const T_TRACE = [1.3, 2.05], T_NAPPE = 2.3;
   const el = elementsMarque();
-  const eclair = $('eclair');
-  let P = null, geo = null;
-  try { P = creerParticules($('toile'), { glsl: GLSL, uniformes: ['centre', 'k'] }); }
-  catch (err) { console.warn('Aurora : particules désactivées —', err.message); $('toile').hidden = true; }
+  const T = toile2D($('toile'));
+  let geo = null, brume = null, sources = [];
 
-  function construire() {
+  function preparerBrume() {
+    const c = document.createElement('canvas'), w = 200, h = 120, alea = hasard(8);
+    c.width = w; c.height = h;
+    const p = c.getContext('2d');
+    for (let i = 0; i < 60; i++) {
+      const x = alea() * w, y = alea() * h, r = 15 + alea() * 40, g = p.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(150,140,220,.18)'); g.addColorStop(1, 'rgba(150,140,220,0)');
+      p.fillStyle = g; p.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    return c;
+  }
+
+  function preparer(reduit) {
+    $('toile').hidden = reduit;
+    if (reduit) return;
     geo = geometrieA(el.boiteA);
-    const alea = hasard(7), k = echelle(), W = innerWidth, H = innerHeight, R = Math.max(W, H) * .55;
-    const { pts } = pointsDuA(geo, Math.round(clamp(geo.w * 2 * 330 * .42 * k, 900, 3200)), alea);
-    const nD = Math.round(7000 * clamp(W * H / (1440 * 900), .5, 1.2)), nR = 900, nC = 60;
-    const L = lot(nD + pts.length + nR + nC);
-    const chaud = [[1, .96, .9], rvb('#c4d8ff'), MARQUE[0], MARQUE[1], MARQUE[2]];
-    for (let i = 0; i < nD; i++) {
-      const r0 = 30 + Math.sqrt(alea()) * R, a = alea() * 6.283, c = chaud[Math.min(4, Math.floor(alea() * 2 + (r0 / R) * 3.5))];
-      L.mettre(r0, a, (250 + alea() * 1300) * k, alea(), 0, 0, 0, 0, ...c, .55 + alea() * .35, .7 + alea() * 1.1, a + (alea() - .5) * .6, 0, 0);
+    const W = innerWidth, H = innerHeight;
+    brume = preparerBrume();
+    sources = [
+      { x: W * .08, y: H + 8, c: '78,168,245', ph: 0 },
+      { x: W * .5, y: H + 8, c: '157,92,255', ph: 2.1 },
+      { x: W * .92, y: H + 8, c: '255,108,171', ph: 4.2 },
+    ];
+  }
+
+  // Le point que balaie le scanner pendant le tracé : deux allers-retours sur le Λ.
+  function pointTrace(t) {
+    const k = clamp((t - T_TRACE[0]) / (T_TRACE[1] - T_TRACE[0]), 0, 1);
+    const s = k < .5 ? k * 2 : 2 - k * 2;
+    return { s: k < .25 ? k * 4 : 1, p: geo.trace(clamp(k < .5 ? s : s, 0, 1)), k };
+  }
+
+  function faisceau(x, src, cible, a) {
+    x.lineCap = 'round';
+    for (const [l, al] of [[10, .06], [3.5, .25], [1.2, .9]]) {
+      x.lineWidth = l; x.strokeStyle = `rgba(${src.c},${al * a})`;
+      x.beginPath(); x.moveTo(src.x, src.y); x.lineTo(...cible); x.stroke();
     }
-    for (const p of pts) {
-      const r0 = 40 + Math.sqrt(alea()) * R * .8, a = alea() * 6.283;
-      L.mettre(r0, a, (300 + alea() * 700) * k, alea(), p.x, p.y, p.s, 1, ...p.c, .9, (1 + alea() * .9) * Math.sqrt(k), alea() * 6.283, p.s * .35, 0);
+  }
+
+  function dessiner(t) {
+    if ($('toile').hidden || !geo) return;
+    const { x } = T, { W, H } = T.cadre();
+    x.globalCompositeOperation = 'lighter';
+    // La brume dérive lentement.
+    x.globalAlpha = .3 * lisse(0, .5, t) * (1 - lisse(2.6, 3.2, t));
+    x.drawImage(brume, -40 + Math.sin(t * .3) * 30, -20, W + 80, H + 40);
+    x.globalAlpha = 1;
+    const allume = lisse(.15, .3, t) * (1 - lisse(2.15, 2.4, t));
+    if (allume > 0) {
+      for (const [i, src] of sources.entries()) {
+        let cible;
+        if (t < T_TRACE[0]) {
+          // Balayages calés sur la musique : l'angle saute à chaque temps, glisse entre deux.
+          const pas = Math.floor(t / (DOUBLE * 4)), f = (t / (DOUBLE * 4)) % 1;
+          const a0 = Math.sin(pas * 1.7 + src.ph) * .6, a1 = Math.sin((pas + 1) * 1.7 + src.ph) * .6;
+          const ang = -Math.PI / 2 + mix(a0, a1, enDouceur(f)) + Math.sin(t * 6 + src.ph) * .08;
+          const conv = lisse(.95, T_TRACE[0], t);
+          const loin = [src.x + Math.cos(ang) * H * 1.6, src.y + Math.sin(ang) * H * 1.6];
+          cible = [mix(loin[0], geo.S[0], conv), mix(loin[1], geo.S[1], conv)];
+          // En éventail : chaque source lance trois rayons.
+          for (const d of [-.12, .12]) {
+            const l2 = [src.x + Math.cos(ang + d) * H * 1.6, src.y + Math.sin(ang + d) * H * 1.6];
+            faisceau(x, src, [mix(l2[0], geo.S[0], conv), mix(l2[1], geo.S[1], conv)], allume * .45 * (1 - conv));
+          }
+        } else {
+          const p = pointTrace(t).p;
+          cible = [p.x, p.y];
+        }
+        faisceau(x, src, cible, allume * (i === 1 ? 1 : .8));
+      }
     }
-    for (let i = 0; i < nR; i++) {
-      const a = i / nR * 6.283;
-      L.mettre(30 + alea() * R * .5, alea() * 6.283, (1050 + alea() * 90) * k, alea(), 0, 0, 0, 2, .78, .82, 1, .7, 1.6, a, 0, 0);
+    // Le tracé laser du Λ, qui persiste sur la rétine.
+    if (t > T_TRACE[0]) {
+      const k = clamp((t - T_TRACE[0]) / (T_TRACE[1] - T_TRACE[0]), 0, 1);
+      const fait = Math.min(1, k * 2), fondu = 1 - lisse(2.35, 2.75, t);
+      x.lineCap = 'round'; x.lineJoin = 'round';
+      const chemin = new Path2D();
+      const n = 40;
+      for (let i = 0; i <= n * fait; i++) { const p = geo.trace(i / n); if (i === 0) chemin.moveTo(p.x, p.y); else chemin.lineTo(p.x, p.y); }
+      for (const [l, al, c] of [[geo.w * 3, .12, '157,92,255'], [geo.w * 1.2, .35, '196,160,255'], [2.2, 1, '255,255,255']]) {
+        x.lineWidth = l; x.strokeStyle = `rgba(${c},${al * fondu})`; x.stroke(chemin);
+      }
+      const p = pointTrace(t).p, g = x.createRadialGradient(p.x, p.y, 0, p.x, p.y, 26);
+      g.addColorStop(0, `rgba(255,255,255,${(1 - lisse(2.05, 2.2, t)) * .9})`); g.addColorStop(1, 'rgba(157,92,255,0)');
+      x.fillStyle = g; x.fillRect(p.x - 26, p.y - 26, 52, 52);
     }
-    for (let i = 0; i < nC; i++) L.mettre(6 + alea() * 14 * k, alea() * 6.283, 0, alea(), 0, 0, 0, 3, 1, .85, .95, .22, (10 + alea() * 16) * k, 0, 0, 0);
-    P.charger(L.f);
-    eclair.style.setProperty('--x', geo.centre[0] / W * 100 + '%');
-    eclair.style.setProperty('--y', geo.centre[1] / H * 100 + '%');
+    // La nappe laser horizontale qui descend sur le nom.
+    const r = el.nom.getBoundingClientRect(), kn = clamp((t - T_NAPPE) / .45, 0, 1);
+    if (kn > 0 && kn < 1) {
+      const y = r.top + r.height * kn, g = x.createLinearGradient(0, y - 30, 0, y + 30);
+      g.addColorStop(0, 'rgba(255,108,171,0)'); g.addColorStop(.5, 'rgba(255,190,225,.85)'); g.addColorStop(1, 'rgba(255,108,171,0)');
+      x.fillStyle = g; x.fillRect(0, y - 30, W, 60);
+      x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(0, y - .75, W, 1.5);
+    }
   }
 
   function sons(o, b) {
-    o.nappe(b, [55, 82.41], { duree: 1.5, attaque: 1.1, crete: .05, filtre: 420 });
-    o.montee(b + .05, { duree: 1.15, crete: .14, f0: 120, f1: 5200 });
-    o.impact(b + 1.22, { crete: .78, grave: 40, duree: 2.4, bruit: .75 });
-    o.souffle(b + 1.22, { duree: 1.6, f0: 6000, f1: 260, q: .4, crete: .18, attaque: .01, humide: .65, type: 'lowpass' });
-    o.crepite(b + 1.3, { duree: 1.1, densite: 55, crete: .07, f: 4200, humide: .4, pan: 1 });
-    o.souffle(b + 1.65, { duree: .95, f0: 500, f1: 3600, q: 1.2, crete: .06, humide: .5 });
-    o.signature(b + 2.62, 'cloche');
+    const ARP = [220, 261.63, 329.63, 392, 440, 392, 329.63, 261.63];
+    const n = Math.floor(T_TRACE[1] / DOUBLE);
+    for (let i = 0; i < n; i++) {
+      const t = b + .2 + i * DOUBLE;
+      o.ton(t, ARP[i % 8] * (i >= 24 ? 2 : 1), { duree: .12, crete: .045, attaque: .003, type: 'sawtooth', filtre: 1400 + 1800 * (i / n), q: 6, humide: .25, pan: Math.sin(i * .9) * .5 });
+      if (i % 4 === 0) { o.kick(t, .5); o.basse(t, 55, { duree: .2 }); }
+      if (i % 4 === 2) o.charley(t, .04);
+      if (i % 8 === 4) o.ton(t, 2400, { duree: .08, crete: .04, vers: 300, type: 'square', humide: .2, pan: i % 16 === 4 ? -.6 : .6 });
+    }
+    o.montee(b + .7, { duree: T_TRACE[0] - .7, crete: .09, f0: 300, f1: 6000, ton: false });
+    o.nappe(b + T_TRACE[0], [110, 164.81, 220, 277.18], { duree: 1.2, attaque: .02, crete: .05, filtre: 2600 });
+    o.souffle(b + T_NAPPE, { duree: .45, f0: 6000, f1: 1500, q: 1, crete: .06, attaque: .05, humide: .3 });
+    o.signature(b + 2.45, 'synthe');
   }
 
   lancer({
-    FIN: 3.95,
+    FIN: 3.7,
     sons,
-    sonFin: (o, b) => o.signature(b + .05, 'cloche', .8),
-    preparer(reduit) { if (P) { $('toile').hidden = reduit; if (!reduit) construire(); } },
-    dessiner(t) { if (P && !$('toile').hidden) P.dessiner(t, (gl, u) => { gl.uniform2f(u.centre, ...geo.centre); gl.uniform1f(u.k, echelle()); }); },
+    sonFin: (o, b) => o.signature(b + .05, 'synthe', .8),
+    preparer,
+    dessiner,
     animer() {
-      const L = revelerMarque(el, { a: 2.6, nom: 2.78, trait: 3.12, sous: 3.32 });
-      if (P) L.push(eclair.animate([{ opacity: 0 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { delay: 1210, duration: 520, easing: 'ease-out', fill: 'both' }));
+      const L = revelerMarque(el, { a: 2.3, trait: 2.85, sous: 3.0, dureeA: .4 });
+      L.push(el.nom.animate([{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)' }], { delay: T_NAPPE * 1000, duration: 450, easing: 'linear', fill: 'both' }));
       return L;
     },
   });

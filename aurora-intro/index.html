@@ -111,7 +111,7 @@ kbd {
   color: var(--encre);
 }
 .corps { display: grid; align-content: start; gap: 8px; padding: 18px 20px 20px; min-width: 0; }
-.carte h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.carte h3 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
 .carte p { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--encre-2); }
 .inspi { font-size: 12.5px !important; color: var(--gris) !important; letter-spacing: .01em; }
 .outils { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
@@ -125,6 +125,10 @@ kbd {
 .outils li.son { border-color: rgb(255 108 171 / .35); color: #ffb3d4; }
 
 .principale { border-color: rgb(157 92 255 / .3); }
+.famille { display: grid; gap: 16px; margin-top: 44px; }
+.famille > h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gris); }
+.son { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px !important; color: #ffc4dd !important; }
+.son::before { content: '♪'; color: var(--rose); font-weight: 700; }
 .badge {
   position: absolute;
   left: 12px;
@@ -140,7 +144,7 @@ kbd {
   .principale { grid-column: span 2; grid-template-columns: 1.35fr 1fr; grid-template-rows: none; }
   .principale .vignette { aspect-ratio: auto; min-height: 100%; }
   .principale .corps { align-content: center; padding: 28px; }
-  .principale h2 { font-size: 26px; }
+  .principale h3 { font-size: 26px; }
 }
 
 .pied { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--ligne); display: grid; gap: 8px; font-size: 13.5px; line-height: 1.6; color: var(--gris); max-width: 80ch; }
@@ -168,129 +172,219 @@ kbd {
   <header class="entete">
     <span class="marque"><svg viewBox="14 13 36 39" aria-hidden="true"><path d="M18 48L32 17l14 31"/></svg></span>
     <h1>Intros Aurora</h1>
-    <p class="chapo">Onze façons d’ouvrir l’app, de la version principale aux variantes inspirées des grandes plateformes. Chaque intro dure environ quatre secondes et s’ouvre en plein écran.</p>
+    <p class="chapo">Vingt façons d’ouvrir l’app, toutes avec du son. Chacune dure environ quatre secondes et finit sur la même signature sonore : trois notes qui montent, mi, la, do dièse, puis l’accord d’Aurora, joué avec le timbre de l’intro.</p>
     <ul class="touches">
       <li><kbd>clic</kbd> ou une touche : passer</li>
       <li><kbd>R</kbd> rejouer</li>
+      <li><kbd>M</kbd> couper ou remettre le son</li>
       <li><kbd>?t=1.5</kbd> dans l’adresse : figer un instant</li>
     </ul>
   </header>
 
-  <section class="grille" aria-label="Les intros">
+  <section class="famille" aria-labelledby="f-poussiere">
+    <h2 id="f-poussiere">Tes préférées</h2>
+    <div class="grille">
     <a class="carte principale" href="poussiere.html">
-      <div class="vignette"><img src="apercus/poussiere.webp" alt="Le Λ formé de particules, le nom qui s’assemble" width="800" height="500"><span class="badge">Version principale</span><span class="duree">4,4 s</span></div>
+      <div class="vignette"><img src="apercus/poussiere.webp" alt="Le Λ formé de particules, le nom qui s’assemble" width="800" height="500"><span class="badge">Tes préférées</span><span class="duree">4,4 s</span></div>
       <div class="corps">
-        <h2>Poussière d’étoiles</h2>
-        <p>Dix mille particules dessinent le Λ d’un seul geste, puis montent former le nom. À la sortie, la poussière s’envole et le logo va se ranger dans l’en-tête de l’app.</p>
-        <p class="inspi">Reprise de l’intro à particules de Gemini</p>
-        <ul class="outils"><li>WebGL2</li><li>Web Animations</li><li>View Transitions</li><li class="son">Son</li></ul>
+        <h3>Poussière d’étoiles</h3>
+        <p>Dix mille particules dessinent le Λ d’un seul geste, puis le nom. À la sortie, la poussière s’envole et le logo se range dans l’en-tête de l’app.</p>
+        <p class="son">un accord qui s’ouvre au choc, une note par lettre</p>
+        <ul class="outils"><li>WebGL2</li><li>View Transitions</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="aurore.html">
-      <div class="vignette"><img src="apercus/aurore.webp" alt="Des rideaux d’aurore boréale bleus et violets" width="800" height="500" loading="lazy"><span class="duree">4,2 s</span></div>
+    <a class="carte" href="neon.html">
+      <div class="vignette"><img src="apercus/neon.webp" alt="L’enseigne Aurora en néon et son reflet" width="800" height="500" loading="lazy"><span class="duree">3,6 s</span></div>
       <div class="corps">
-        <h2>Aurore boréale</h2>
-        <p>Des rideaux d’aurore ondulent, puis leur bord se couche sur le Λ. Les rayons se rétractent, il ne reste que le trait.</p>
-        <p class="inspi">Le nom de l’app, pris au mot</p>
+        <h3>Néon</h3>
+        <p>L’enseigne s’allume en grésillant, lettre par lettre ; l’une d’elles fait des siennes. Le sol mouillé la reflète.</p>
+        <p class="son">claquements, ronron du transformateur</p>
+        <ul class="outils"><li>anime.js 4.5</li><li>@property</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="verre.html">
+      <div class="vignette"><img src="apercus/verre.webp" alt="Le Λ en métal irisé au-dessus du nom" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
+      <div class="corps">
+        <h3>Verre</h3>
+        <p>Le Λ en métal irisé arrive presque de profil, pivote calmement face à nous et se pose sous un reflet blanc.</p>
+        <p class="son">des tintements de verre qui suivent le reflet</p>
+        <ul class="outils"><li>Three.js r186</li><li>WebGPU</li></ul>
+      </div>
+    </a>
+    </div>
+  </section>
+  <section class="famille" aria-labelledby="f-supernova">
+    <h2 id="f-supernova">Espace & particules</h2>
+    <div class="grille">
+    <a class="carte" href="supernova.html">
+      <div class="vignette"><img src="apercus/supernova.webp" alt="Un disque de particules lumineuses autour d’une étoile" width="800" height="500" loading="lazy"><span class="duree">4,0 s</span></div>
+      <div class="corps">
+        <h3>Supernova</h3>
+        <p>Un disque de matière s’effondre sur son étoile et explose. Une partie des débris revient former le Λ.</p>
+        <p class="son">montée, impact grave, crépitements des débris</p>
+        <ul class="outils"><li>Particules WebGL2</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="galaxie.html">
+      <div class="vignette"><img src="apercus/galaxie.webp" alt="Une galaxie spirale" width="800" height="500" loading="lazy"><span class="duree">4,0 s</span></div>
+      <div class="corps">
+        <h3>Galaxie</h3>
+        <p>Une spirale de 20 000 étoiles se couche face à nous en tournant ; des étoiles quittent les bras pour dessiner le Λ.</p>
+        <p class="son">nappe spatiale, scintillements</p>
+        <ul class="outils"><li>Particules 3D</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="hyperespace.html">
+      <div class="vignette"><img src="apercus/hyperespace.webp" alt="Des étoiles étirées en traits de lumière" width="800" height="500" loading="lazy"><span class="duree">3,6 s</span></div>
+      <div class="corps">
+        <h3>Hyperespace</h3>
+        <p>Les étoiles s’étirent en traits de lumière : le saut. Puis la sortie, d’un coup sec, devant le logo.</p>
+        <p class="son">le moteur qui charge, la détonation, le souffle du tunnel</p>
+        <ul class="outils"><li>Particules WebGL2</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="comete.html">
+      <div class="vignette"><img src="apercus/comete.webp" alt="Une comète et sa traînée" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
+      <div class="corps">
+        <h3>Comète</h3>
+        <p>Une comète traverse l’écran en boucle et trace le Λ ; sa poussière reste sur le trait.</p>
+        <p class="son">en stéréo, elle passe de gauche à droite</p>
+        <ul class="outils"><li>Particules WebGL2</li><li>Son stéréo</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="constellation.html">
+      <div class="vignette"><img src="apercus/constellation.webp" alt="Une constellation en forme de Λ" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
+      <div class="corps">
+        <h3>Constellation</h3>
+        <p>Les étoiles s’allument une à une et se relient en Λ, comme sur une carte du ciel.</p>
+        <p class="son">un carillon, une note par étoile</p>
+        <ul class="outils"><li>Canvas 2D</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="eclipse.html">
+      <div class="vignette"><img src="apercus/eclipse.webp" alt="Une éclipse totale et sa couronne" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
+      <div class="corps">
+        <h3>Éclipse</h3>
+        <p>La lune couvre le soleil, l’anneau de diamant brille, la couronne se déploie aux couleurs d’Aurora.</p>
+        <p class="son">un bourdon, le tintement du diamant</p>
         <ul class="outils"><li>Shader WebGL2</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="ruban.html">
-      <div class="vignette"><img src="apercus/ruban.webp" alt="Des lames de lumière verticales aux couleurs de la marque" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
+    <a class="carte" href="morphose.html">
+      <div class="vignette"><img src="apercus/morphose.webp" alt="Une sphère de particules" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
       <div class="corps">
-        <h2>Ruban</h2>
-        <p>On démarre dans la lettre, au milieu de lames de lumière. La caméra recule en pivotant et révèle le Λ.</p>
-        <p class="inspi">D’après le « ta-dum » de Netflix, à l’envers</p>
-        <ul class="outils"><li>WebGL2 instancié</li></ul>
+        <h3>Morphose</h3>
+        <p>Un nuage de 14 000 points en 3D passe de la sphère à l’anneau, puis au Λ, qui s’aplatit en logo.</p>
+        <p class="son">des souffles à chaque métamorphose</p>
+        <ul class="outils"><li>Particules 3D</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="zapping.html">
-      <div class="vignette"><img src="apercus/zapping.webp" alt="Une mire de télévision sur un écran cathodique bombé" width="800" height="500" loading="lazy"><span class="duree">4,3 s</span></div>
+    <a class="carte" href="lucioles.html">
+      <div class="vignette"><img src="apercus/lucioles.webp" alt="Le nom Aurora formé de lucioles" width="800" height="500" loading="lazy"><span class="duree">4,0 s</span></div>
       <div class="corps">
-        <h2>Zapping</h2>
-        <p>Une télé cathodique s’allume. On zappe de la mire à un film, puis à une série, et le signal se cale sur Aurora.</p>
-        <p class="inspi">D’après les habillages télé, de Canal+ à HBO</p>
-        <ul class="outils"><li>Canvas 2D</li><li>Shader CRT</li><li class="son">Son</li></ul>
+        <h3>Lucioles</h3>
+        <p>Des lucioles errent, se posent sur le nom et finissent par clignoter ensemble.</p>
+        <p class="son">grillons, clochettes, boîte à musique</p>
+        <ul class="outils"><li>Particules WebGL2</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="verre.html">
-      <div class="vignette"><img src="apercus/verre.webp" alt="Le Λ en métal irisé, posé au-dessus du nom" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
+    </div>
+  </section>
+  <section class="famille" aria-labelledby="f-foudre">
+    <h2 id="f-foudre">Lumière & électricité</h2>
+    <div class="grille">
+    <a class="carte" href="foudre.html">
+      <div class="vignette"><img src="apercus/foudre.webp" alt="Un éclair sous des nuages d’orage" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
       <div class="corps">
-        <h2>Verre</h2>
-        <p>Le Λ devient un objet en métal irisé. Il arrive du fond en pivotant et se pose sous un reflet blanc.</p>
-        <p class="inspi">D’après Apple TV+</p>
-        <ul class="outils"><li>Three.js r186</li><li>WebGPU</li><li>Bloom TSL</li></ul>
+        <h3>Foudre</h3>
+        <p>Les éclairs frappent le sommet puis les pieds du Λ, qui se couvre d’arcs électriques.</p>
+        <p class="son">tonnerre, claquements, bourdonnement électrique</p>
+        <ul class="outils"><li>Canvas 2D</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="mosaique.html">
-      <div class="vignette"><img src="apercus/mosaique.webp" alt="Un mur d’affiches dont les tuiles colorées écrivent AURORA" width="800" height="500" loading="lazy"><span class="duree">4,0 s</span></div>
+    <a class="carte" href="laser.html">
+      <div class="vignette"><img src="apercus/laser.webp" alt="Des faisceaux laser qui convergent" width="800" height="500" loading="lazy"><span class="duree">3,7 s</span></div>
       <div class="corps">
-        <h2>Mosaïque</h2>
-        <p>Un mur d’affiches défile en gros plan. En reculant, elles écrivent AURORA, se retournent, puis le mot se replie dans le titre.</p>
-        <p class="inspi">D’après les catalogues de Prime Video</p>
-        <ul class="outils"><li>Canvas 2D</li><li>3 000 affiches générées</li></ul>
+        <h3>Laser</h3>
+        <p>Un spectacle laser à 128 BPM : les faisceaux balaient la brume, puis tracent le Λ.</p>
+        <p class="son">arpège synthé, kick, zaps</p>
+        <ul class="outils"><li>Canvas 2D</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="bande-annonce.html">
-      <div class="vignette"><img src="apercus/bande-annonce.webp" alt="Le mot SÉRIES répété en lignes, entre deux bandes noires" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
+    <a class="carte" href="prisme.html">
+      <div class="vignette"><img src="apercus/prisme.webp" alt="Un rayon blanc décomposé par le Λ" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
       <div class="corps">
-        <h2>Bande-annonce</h2>
-        <p>Trois plans de typographie plein écran, montés comme un trailer, avant le grand titre.</p>
-        <p class="inspi">D’après les bandes-annonces de Disney+ et Max</p>
-        <ul class="outils"><li>GSAP 3.15</li><li>SplitText</li><li>ScrambleText</li><li>text-box</li></ul>
+        <h3>Prisme</h3>
+        <p>Le Λ est un prisme : un rayon blanc le traverse et ressort en éventail de couleurs.</p>
+        <p class="son">une note pure qui se divise en accord</p>
+        <ul class="outils"><li>Canvas 2D</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="liquide.html">
-      <div class="vignette"><img src="apercus/liquide.webp" alt="Des gouttes irisées qui fusionnent" width="800" height="500" loading="lazy"><span class="duree">4,3 s</span></div>
+    <a class="carte" href="hologramme.html">
+      <div class="vignette"><img src="apercus/hologramme.webp" alt="La marque en hologramme cyan" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
       <div class="corps">
-        <h2>Liquide</h2>
-        <p>Des gouttes fusionnent comme du mercure et se figent en Λ. Le nom coule à son tour.</p>
-        <p class="inspi">Un logo qui se forme, sans rien d’imité</p>
-        <ul class="outils"><li>Shader SDF</li><li>CSS linear()</li></ul>
+        <h3>Hologramme</h3>
+        <p>Un projecteur fait apparaître la marque en hologramme cyan, qui finit par se verrouiller en couleurs.</p>
+        <p class="son">mise sous tension, bips numériques</p>
+        <ul class="outils"><li>CSS 3D</li><li>Canvas 2D</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="neon.html">
-      <div class="vignette"><img src="apercus/neon.webp" alt="L’enseigne Aurora en néon et son reflet sur le sol" width="800" height="500" loading="lazy"><span class="duree">3,6 s</span></div>
+    </div>
+  </section>
+  <section class="famille" aria-labelledby="f-feu-artifice">
+    <h2 id="f-feu-artifice">Fête, matière & rythme</h2>
+    <div class="grille">
+    <a class="carte" href="feu-artifice.html">
+      <div class="vignette"><img src="apercus/feu-artifice.webp" alt="Une gerbe de feu d’artifice" width="800" height="500" loading="lazy"><span class="duree">4,0 s</span></div>
       <div class="corps">
-        <h2>Néon</h2>
-        <p>L’enseigne s’allume en grésillant, lettre par lettre, et se reflète sur le sol mouillé.</p>
-        <p class="inspi">Une enseigne de cinéma de quartier</p>
-        <ul class="outils"><li>anime.js 4.5</li><li>@property</li><li class="son">Son</li></ul>
+        <h3>Feu d’artifice</h3>
+        <p>Trois pivoines, puis le bouquet final : une dernière fusée éclate en Λ.</p>
+        <p class="son">sifflets, détonations avec écho, crépitements</p>
+        <ul class="outils"><li>Particules WebGL2</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="pellicule.html">
-      <div class="vignette"><img src="apercus/pellicule.webp" alt="Le chiffre 2 d’un compte à rebours d’amorce de film" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
+    <a class="carte" href="cristal.html">
+      <div class="vignette"><img src="apercus/cristal.webp" alt="Le Λ en cristal transparent" width="800" height="500" loading="lazy"><span class="duree">3,9 s</span></div>
       <div class="corps">
-        <h2>Pellicule</h2>
-        <p>L’amorce d’une bobine : 3, 2, 1, un éclair, puis le carton-titre vieilli se restaure jusqu’au logo net.</p>
-        <p class="inspi">D’après le cinéma en salle, avec le « 2-pop »</p>
-        <ul class="outils"><li>Canvas 2D à 24 i/s</li><li class="son">Son</li></ul>
+        <h3>Cristal</h3>
+        <p>Le Λ se cristallise éclat par éclat, dans un verre qui réfracte et disperse la lumière.</p>
+        <p class="son">mille petits tintements de verre</p>
+        <ul class="outils"><li>Three.js r186</li><li>Verre physique</li></ul>
       </div>
     </a>
-
-    <a class="carte" href="decodage.html">
-      <div class="vignette"><img src="apercus/decodage.webp" alt="AURORA écrit en caractères, au milieu d’une pluie de signes" width="800" height="500" loading="lazy"><span class="duree">3,8 s</span></div>
+    <a class="carte" href="pulsation.html">
+      <div class="vignette"><img src="apercus/pulsation.webp" alt="Un spectre audio circulaire" width="800" height="500" loading="lazy"><span class="duree">3,6 s</span></div>
       <div class="corps">
-        <h2>Décodage</h2>
-        <p>Une pluie de caractères dessine AURORA en géant, puis le titre se déchiffre lettre à lettre.</p>
-        <p class="inspi">Un générique de série d’espionnage</p>
-        <ul class="outils"><li>Canvas 2D</li><li>GSAP ScrambleText</li></ul>
+        <h3>Pulsation</h3>
+        <p>L’image écoute la musique : un spectre qui bat au kick, la montée, puis le drop.</p>
+        <p class="son">un vrai petit morceau à 120 BPM</p>
+        <ul class="outils"><li>Canvas 2D</li><li>AnalyserNode</li></ul>
       </div>
     </a>
+    <a class="carte" href="synthwave.html">
+      <div class="vignette"><img src="apercus/synthwave.webp" alt="Un coucher de soleil rétro et une grille néon" width="800" height="500" loading="lazy"><span class="duree">3,7 s</span></div>
+      <div class="corps">
+        <h3>Synthwave</h3>
+        <p>Soleil rayé, montagnes en fil de fer, grille néon et titre en chrome : 1986.</p>
+        <p class="son">basse, batterie à réverbération, nappes</p>
+        <ul class="outils"><li>Shader WebGL2</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="vortex.html">
+      <div class="vignette"><img src="apercus/vortex.webp" alt="Un tourbillon aux couleurs de la marque" width="800" height="500" loading="lazy"><span class="duree">3,5 s</span></div>
+      <div class="corps">
+        <h3>Vortex</h3>
+        <p>Un tourbillon nous aspire, puis se referme d’un coup sur le Λ, qui en jaillit.</p>
+        <p class="son">un souffle qui tourne, l’implosion</p>
+        <ul class="outils"><li>Shader WebGL2</li></ul>
+      </div>
+    </a>
+    </div>
   </section>
 
   <footer class="pied">
-    <p>Chaque page est autonome, police comprise. Verre charge Three.js, Bande-annonce et Décodage chargent GSAP, Néon charge anime.js, tous depuis jsDelivr. Sans réseau, ces quatre-là passent à une version simplifiée et finissent quand même sur la marque.</p>
-    <p>Toutes respectent « réduire les animations » : la marque s’affiche posée, sans mouvement. Le son, quand il existe, se lance avec le bouton Son.</p>
+    <p>Le son est activé par défaut. Si le navigateur l’empêche avant un clic, le bouton « Activer le son » s’allume en bas à droite ; dans l’app, rien ne le bloque.</p>
+    <p>Chaque page est autonome, police comprise. Verre et Cristal chargent Three.js, Néon charge anime.js, depuis jsDelivr ; sans réseau, ils affichent le logo à plat. Toutes respectent « réduire les animations ».</p>
   </footer>
 </main>
 </body>
