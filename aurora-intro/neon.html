@@ -157,6 +157,17 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+#son .ondes { display: none; }
+#son[aria-pressed="true"] .ondes { display: inline; }
+#son[aria-pressed="true"] .muet { display: none; }
+#son.appel {
+  border-color: rgb(255 108 171 / .55);
+  background: rgb(255 108 171 / .16);
+  animation: appel 1.6s ease-in-out infinite;
+}
+.commandes:has(.appel) { opacity: 1; }
+@keyframes appel { 50% { box-shadow: 0 0 0 6px rgb(255 108 171 / .12); } }
+@media (prefers-reduced-motion: reduce) { #son.appel { animation: none; } }
 .etiquette {
   position: fixed;
   left: 22px;
@@ -238,9 +249,6 @@ body {
   background: linear-gradient(180deg, transparent, rgb(6 6 10 / .6) 40%, #050508);
   pointer-events: none;
 }
-#son .ondes { display: none; }
-#son[aria-pressed="true"] .ondes { display: inline; }
-#son[aria-pressed="true"] .muet { display: none; }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -303,17 +311,25 @@ body {
   const mix = (a, b, k) => a + (b - a) * k;
   const lisse = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const enDouceur = (k) => (k < .5 ? 4 * k * k * k : 1 - Math.pow(2 - 2 * k, 3) / 2);
+  const sortie4 = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 4);
   const attendre = (ms) => new Promise((r) => setTimeout(r, ms));
+  function hasard(graine) { // mulberry32 : le même tirage à chaque lecture
+    let s = graine >>> 0;
+    return () => { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
 
   // Le Λ sans barre de la maquette, dans son cadre serré (14 13 36 39).
   const A = { L: [18, 48], S: [32, 17], R: [46, 48], vb: [14, 13, 36, 39], epaisseur: 5, d: 'M18 48L32 17l14 31' };
   const rvb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+  const MARQUE = [rvb('#4ea8f5'), rvb('#9d5cff'), rvb('#ff6cab')];
+  const teinteMarque = (g) => { g = clamp(g, 0, 1); const [a, b] = g < .5 ? [MARQUE[0], MARQUE[1]] : [MARQUE[1], MARQUE[2]]; const k = g < .5 ? g * 2 : g * 2 - 1; return [mix(a[0], b[0], k), mix(a[1], b[1], k), mix(a[2], b[2], k)]; };
 
   function majEchelle() {
     const k = clamp(Math.min(innerWidth / 720, innerHeight / 800), .5, 1.3);
     racine.style.setProperty('--k', k.toFixed(4));
     return k;
   }
+  const echelle = () => parseFloat(racine.style.getPropertyValue('--k')) || 1;
 
   function eclater(noeud, insecable) {
     const texte = noeud.textContent.trim();
@@ -334,8 +350,111 @@ body {
     const r = boite.getBoundingClientRect();
     const u = r.width / A.vb[2];
     const P = (vx, vy) => [r.left + (vx - A.vb[0]) * u, r.top + (vy - A.vb[1]) * u];
-    return { r, u, L: P(...A.L), S: P(...A.S), R: P(...A.R), w: A.epaisseur * u / 2, centre: P(32, 32.5) };
+    const g = { r, u, L: P(...A.L), S: P(...A.S), R: P(...A.R), w: A.epaisseur * u / 2, centre: P(32, 32.5) };
+    // Couleur du dégradé SVG (objectBoundingBox, de bas-gauche vers haut-droite) en un point de l'écran.
+    g.couleur = (x, y) => teinteMarque(((x - g.L[0]) / (g.R[0] - g.L[0]) - (y - g.S[1]) / (g.L[1] - g.S[1]) + 1) / 2);
+    // Un point du trait central, s de 0 (pied gauche) à 1 (pied droit), et sa direction.
+    g.trace = (s) => { const [p, q, k] = s < .5 ? [g.L, g.S, s * 2] : [g.S, g.R, s * 2 - 1]; const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy); return { x: p[0] + dx * k, y: p[1] + dy * k, ux: dx / l, uy: dy / l }; };
+    return g;
   }
+
+  /* ───────────── Échantillonnage : des points tirés dans l'encre d'une forme ───────────── */
+
+  function encre(largeur, hauteur, dessiner) {
+    const S = 2, c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(largeur * S)); c.height = Math.max(1, Math.ceil(hauteur * S));
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.scale(S, S); dessiner(x);
+    const d = x.getImageData(0, 0, c.width, c.height).data, idx = [];
+    for (let i = 3, p = 0; i < d.length; i += 4, p++) if (d[i] > 140) idx.push(p);
+    return { idx, cw: c.width, S, aire: idx.length / (S * S) };
+  }
+  const tirer = (e, alea) => { const p = e.idx[(alea() * e.idx.length) | 0] || 0; return [((p % e.cw) + alea()) / e.S, (((p / e.cw) | 0) + alea()) / e.S]; };
+
+  // n points dans le trait du Λ, avec leur abscisse curviligne s (0 → 1) et la couleur du dégradé.
+  function pointsDuA(g, n, alea) {
+    const e = encre(g.r.width, g.r.height, (x) => {
+      x.scale(g.u, g.u); x.translate(-A.vb[0], -A.vb[1]);
+      x.lineWidth = A.epaisseur; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#fff'; x.stroke(new Path2D(A.d));
+    });
+    const proj = (p, q, x, y) => { const dx = q[0] - p[0], dy = q[1] - p[1]; const t = clamp(((x - p[0]) * dx + (y - p[1]) * dy) / (dx * dx + dy * dy), 0, 1); return [t, Math.hypot(x - p[0] - dx * t, y - p[1] - dy * t)]; };
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const [lx, ly] = tirer(e, alea), x = g.r.left + lx, y = g.r.top + ly;
+      const [t1, d1] = proj(g.L, g.S, x, y), [t2, d2] = proj(g.S, g.R, x, y);
+      pts.push({ x, y, s: d1 <= d2 ? t1 / 2 : .5 + t2 / 2, c: g.couleur(x, y) });
+    }
+    return { pts, aire: e.aire };
+  }
+
+  // n points dans les lettres d'un texte du DOM (découpé en spans), avec leur position relative xf (0 → 1).
+  function pointsDuTexte(spans, n, alea, majuscules = false) {
+    const boite = spans[0].parentElement.getBoundingClientRect(), cs = getComputedStyle(spans[0]), m = 6;
+    const e = encre(boite.width + m * 2, boite.height + m * 2, (x) => {
+      x.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+      for (const s of spans) {
+        const ch = majuscules ? s.textContent.toUpperCase() : s.textContent;
+        if (!ch.trim()) continue;
+        const r = s.getBoundingClientRect(), mt = x.measureText(ch);
+        x.fillText(ch, r.left - boite.left + m, r.top - boite.top + m + (mt.fontBoundingBoxAscent ?? r.height * .8));
+      }
+    });
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const [lx, ly] = tirer(e, alea), x = boite.left - m + lx, y = boite.top - m + ly;
+      pts.push({ x, y, xf: clamp((x - boite.left) / Math.max(1, boite.width), 0, 1) });
+    }
+    return { pts, aire: e.aire, boite };
+  }
+
+  // Dessine la marque du DOM sur un canvas 2D, au pixel près (pour les textures et les relais).
+  function dessinerMarque(c, { boiteA, nom, trait, sous }) {
+    if (boiteA && boiteA.offsetParent !== null && getComputedStyle(boiteA).display !== 'none') {
+      const g = geometrieA(boiteA), gr = c.createLinearGradient(g.L[0], g.L[1], g.R[0], g.S[1]);
+      gr.addColorStop(0, '#4ea8f5'); gr.addColorStop(.5, '#9d5cff'); gr.addColorStop(1, '#ff6cab');
+      c.strokeStyle = gr; c.lineWidth = g.w * 2; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(...g.L); c.lineTo(...g.S); c.lineTo(...g.R); c.stroke();
+    }
+    const ecrire = (spans) => {
+      if (!spans || !spans.length) return;
+      const cs = getComputedStyle(spans[0].parentElement), maj = cs.textTransform === 'uppercase';
+      c.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; c.fillStyle = cs.color; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      for (const s of spans) { const ch = maj ? s.textContent.toUpperCase() : s.textContent, r = s.getBoundingClientRect(), mt = c.measureText(ch); c.fillText(ch, r.left, r.top + (mt.fontBoundingBoxAscent ?? r.height * .8)); }
+    };
+    ecrire(nom); ecrire(sous);
+    if (trait) {
+      const rt = trait.getBoundingClientRect(), gt = c.createLinearGradient(rt.left, 0, rt.right, 0);
+      gt.addColorStop(0, '#6a5cff'); gt.addColorStop(1, '#ff6cab');
+      c.fillStyle = gt; c.fillRect(rt.left, rt.top, rt.width, rt.height);
+    }
+  }
+
+  /*
+   * L'apparition de la marque dans le DOM, partagée par les intros : le Λ net, le nom (plusieurs
+   * styles), le trait qui s'étire, le sous-titre lettre à lettre. Chaque date est en secondes ; une
+   * date absente laisse l'élément tel quel.
+   */
+  function revelerMarque({ trace, nom, lettresNom, trait, lettresSous }, { a, nom: tNom, trait: tTrait, sous: tSous, style = 'flou', dureeA = .45 } = {}) {
+    const L = [];
+    const anim = (cible, kf, delai, duree, easing = 'cubic-bezier(.2,.7,.2,1)') => L.push(cible.animate(kf, { delay: delai * 1000, duration: duree * 1000, easing, fill: 'both' }));
+    if (trace && a != null) anim(trace, [{ opacity: 0 }, { opacity: 1 }], a, dureeA, 'ease-out');
+    if (nom && tNom != null) {
+      if (style === 'espace') anim(nom, [{ letterSpacing: '.3em', opacity: 0, filter: 'blur(10px)' }, { letterSpacing: '-.03em', opacity: 1, filter: 'blur(0px)' }], tNom, 1.05, 'cubic-bezier(.16,1,.3,1)');
+      else if (style === 'monte' && lettresNom) lettresNom.forEach((l, i) => anim(l, [{ opacity: 0, transform: 'translateY(.45em)' }, { opacity: 1, transform: 'translateY(0)' }], tNom + i * .05, .6, 'cubic-bezier(.16,1,.3,1)'));
+      else if (style === 'lettres' && lettresNom) lettresNom.forEach((l, i) => anim(l, [{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], tNom + i * .06, .45));
+      else anim(nom, [{ opacity: 0, filter: 'blur(8px)', transform: 'scale(.97)' }, { opacity: 1, filter: 'blur(0px)', transform: 'scale(1)' }], tNom, .7);
+    }
+    if (trait && tTrait != null) anim(trait, [{ transform: 'scaleX(0)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: 'scaleX(1)', opacity: 1 }], tTrait, .55, 'cubic-bezier(.2,.8,.2,1)');
+    if (lettresSous && tSous != null) lettresSous.forEach((l, i) => anim(l, [{ opacity: 0, transform: 'translateY(.5em)', filter: 'blur(4px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0px)' }], tSous + i * .014, .5));
+    return L;
+  }
+  // Les éléments de la marque standard, découpés en lettres.
+  function elementsMarque() {
+    const nom = $('nom'), sous = $('sous');
+    return { boiteA: $('boiteA'), trace: $('trace'), nom, trait: $('trait'), boiteTrait: $('boiteTrait'), sous, lettresNom: nom ? eclater(nom, false) : [], lettresSous: sous ? eclater(sous, true) : [] };
+  }
+
+  /* ───────────── WebGL ───────────── */
 
   function compilerGL(gl, vs, fs) {
     const sh = (type, src) => {
@@ -354,11 +473,325 @@ body {
   }
   const VS_ECRAN = `#version 300 es
 void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. : -1.); gl_Position = vec4(p, 0., 1.); }`;
+  const GLSL_OUTILS = `
+const float PI = 3.14159265, TAU = 6.2831853;
+float hash11(float n) { return fract(sin(n * 127.1) * 43758.5453); }
+float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float bruit(vec2 p) { vec2 i = floor(p), f = fract(p), u = f * f * (3. - 2. * f); return mix(mix(hash21(i), hash21(i + vec2(1, 0)), u.x), mix(hash21(i + vec2(0, 1)), hash21(i + vec2(1, 1)), u.x), u.y); }
+float fbm(vec2 p) { float s = 0., a = .5; for (int i = 0; i < 5; i++) { s += a * bruit(p); p = p * 2.03 + 17.1; a *= .5; } return s; }
+float easeInOut(float k) { k = clamp(k, 0., 1.); return k < .5 ? 4. * k * k * k : 1. - pow(2. - 2. * k, 3.) * .5; }
+float sortie4(float k) { k = clamp(k, 0., 1.); return 1. - pow(1. - k, 4.); }
+float lisse(float a, float b, float x) { return smoothstep(a, b, x); }
+vec3 marque(float g) { g = clamp(g, 0., 1.); vec3 c0 = vec3(.306, .659, .961), c1 = vec3(.616, .361, 1.), c2 = vec3(1., .424, .671); return g < .5 ? mix(c0, c1, g * 2.) : mix(c1, c2, g * 2. - 1.); }
+vec2 bezier(vec2 a, vec2 b, vec2 c, vec2 d, float t) { float u = 1. - t; return u * u * u * a + 3. * u * u * t * b + 3. * u * t * t * c + t * t * t * d; }
+`;
 
   /*
-   * Le moteur commun : une horloge (celle de document.timeline, partagée par le canvas et les
-   * animations du DOM), « passer » d'un clic ou d'une touche, R pour rejouer, ?t=1.2 pour figer un
-   * instant, et l'état final direct pour qui demande moins d'animations.
+   * Des particules instanciées, entièrement calculées dans le shader : la variante écrit en GLSL une
+   * fonction « Etat etat(float t) » (position en px CSS, alpha, rayon, couleur) à partir de quatre vec4
+   * par particule (a0 à a3). Le moteur la calcule deux fois — maintenant et un instant plus tôt — et
+   * étire la particule entre les deux : un vrai flou de mouvement, sans état sur le CPU.
+   */
+  function creerParticules(toile, { glsl, uniformes = [], additif = true, trainee = .022 }) {
+    const gl = toile.getContext('webgl2', { premultipliedAlpha: true, antialias: false, alpha: true });
+    if (!gl) throw new Error('WebGL2 indisponible');
+    const VS = `#version 300 es
+precision highp float;
+layout(location=0) in vec2 a_coin;
+layout(location=1) in vec4 a0;
+layout(location=2) in vec4 a1;
+layout(location=3) in vec4 a2;
+layout(location=4) in vec4 a3;
+uniform vec2 u_res;
+uniform float u_t, u_dpr, u_trainee;
+out vec2 v_uv; out vec2 v_dim; out vec4 v_c; out float v_doux;
+struct Etat { vec2 p; float a; float r; vec3 c; float doux; };
+${GLSL_OUTILS}
+${glsl}
+void main() {
+  Etat e1 = etat(u_t);
+  vec2 p0 = etat(u_t - u_trainee).p;
+  vec2 dir = e1.p - p0; float L = min(length(dir), 400.);
+  vec2 ax = L > .001 ? normalize(dir) : vec2(1., 0.), ay = vec2(-ax.y, ax.x);
+  float rMin = 1.1 / u_dpr, r = max(e1.r, rMin), demi = L * .5;
+  vec2 pos = (e1.p + p0) * .5 + ax * a_coin.x * (demi + r) + ay * a_coin.y * r;
+  v_uv = vec2(a_coin.x * (demi + r), a_coin.y * r); v_dim = vec2(demi, r);
+  float a = e1.a * mix(1., 2. * r / (L + 2. * r), .65) * min(1., e1.r * e1.r / (rMin * rMin));
+  v_c = vec4(e1.c, clamp(a, 0., 1.)); v_doux = e1.doux;
+  vec2 clip = pos / u_res * 2. - 1.;
+  gl_Position = vec4(clip.x, -clip.y, 0., 1.);
+}`;
+    const FS = `#version 300 es
+precision mediump float;
+in vec2 v_uv; in vec2 v_dim; in vec4 v_c; in float v_doux;
+out vec4 sortie;
+void main() {
+  float d = length(vec2(max(abs(v_uv.x) - v_dim.x, 0.), v_uv.y)) / v_dim.y;
+  if (d >= 1.) discard;
+  float f = mix(1. - smoothstep(.45, 1., d), exp(-d * d * 4.) * (1. - d), v_doux);
+  float a = v_c.a * f;
+  sortie = vec4(v_c.rgb * a, a);
+}`;
+    const prog = compilerGL(gl, VS, FS);
+    const u = {};
+    for (const n of ['res', 't', 'dpr', 'trainee', ...uniformes]) u[n] = gl.getUniformLocation(prog, 'u_' + n);
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    const tampon = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tampon);
+    for (let i = 0; i < 4; i++) {
+      gl.enableVertexAttribArray(1 + i);
+      gl.vertexAttribPointer(1 + i, 4, gl.FLOAT, false, 64, i * 16);
+      gl.vertexAttribDivisor(1 + i, 1);
+    }
+    gl.bindVertexArray(null);
+    let n = 0;
+    return {
+      gl, u,
+      charger(f32) { gl.bindBuffer(gl.ARRAY_BUFFER, tampon); gl.bufferData(gl.ARRAY_BUFFER, f32, gl.STATIC_DRAW); n = f32.length / 16; },
+      dessiner(t, fixer, { effacer = true } = {}) {
+        const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+        const lw = Math.round(W * dpr), lh = Math.round(H * dpr);
+        if (toile.width !== lw || toile.height !== lh) { toile.width = lw; toile.height = lh; }
+        gl.viewport(0, 0, lw, lh);
+        if (effacer) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); }
+        if (!n) return;
+        gl.useProgram(prog);
+        gl.uniform2f(u.res, W, H); gl.uniform1f(u.t, t); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.trainee, trainee);
+        if (fixer) fixer(gl, u);
+        gl.enable(gl.BLEND);
+        if (additif) gl.blendFunc(gl.ONE, gl.ONE); else gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        gl.bindVertexArray(vao);
+        gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
+        gl.bindVertexArray(null);
+      },
+    };
+  }
+  // Remplit un Float32Array de particules : chaque appel à mettre() ajoute 16 flottants (a0..a3).
+  function lot(nombre) {
+    const f = new Float32Array(nombre * 16);
+    let o = 0;
+    return { f, mettre(...v) { f.set(v, o); o += 16; }, plein: () => o / 16 };
+  }
+
+  /*
+   * Le son, tout en Web Audio : rien à télécharger. Une chaîne commune (compresseur, réverbération)
+   * et une boîte à outils de sons de synthèse. Chaque intro écrit sa partition avec ces outils et
+   * finit sur la même signature sonore Aurora — mi, la, do dièse, puis l'accord de la majeur (neuvième
+   * ajoutée) —, jouée avec le timbre de l'intro.
+   *
+   * Le son est activé par défaut. Si le navigateur l'interdit avant un geste, le bouton « Activer le
+   * son » apparaît ; dans l'app (Electron), rien ne le bloque.
+   */
+  const Sono = (() => {
+    const api = { actif: true, bloque: false };
+    let ac = null, chaine = null, voix = [], bouton = null, rejouer = null;
+    try { if (localStorage.getItem('aurora-son') === '0') api.actif = false; } catch { /* stockage indisponible */ }
+
+    function reponse(c, duree, decr) {
+      const n = Math.floor(c.sampleRate * duree), b = c.createBuffer(2, n, c.sampleRate);
+      for (let k = 0; k < 2; k++) { const d = b.getChannelData(k); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decr); }
+      return b;
+    }
+    function brancher(c) {
+      const comp = c.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .22;
+      const m = c.createGain(); m.gain.value = .8;
+      const vol = c.createGain(); vol.gain.value = api.actif ? 1 : 0;
+      m.connect(comp); comp.connect(vol); vol.connect(c.destination);
+      const r = c.createConvolver(); r.buffer = reponse(c, 3.4, 2.3);
+      const ret = c.createGain(); ret.gain.value = .5; r.connect(ret); ret.connect(m);
+      const b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      return { m, r, b, vol };
+    }
+
+    // La boîte à outils, liée à un contexte (réel, ou hors ligne pour les tests).
+    function outils(c, g, liste) {
+      const o = { c, maintenant: () => c.currentTime };
+      const garder = (n) => { liste.push(n); return n; };
+      o.voie = (humide = .3, pan = 0, panneau = false) => {
+        const v = c.createGain(); v.gain.value = 0;
+        let s = v;
+        if ((pan || panneau) && c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = pan; v.connect(p); s = p; o.dernierPan = p; }
+        s.connect(g.m);
+        if (humide > 0) { const w = c.createGain(); w.gain.value = humide; s.connect(w); w.connect(g.r); }
+        return v;
+      };
+      const enveloppe = (gain, t, attaque, duree, crete, courbe = 'exp') => {
+        gain.setValueAtTime(0.0001, t);
+        gain.linearRampToValueAtTime(crete, t + attaque);
+        if (courbe === 'exp') gain.exponentialRampToValueAtTime(0.0001, t + attaque + duree);
+        else { gain.setValueAtTime(crete, t + attaque + duree * .7); gain.linearRampToValueAtTime(0.0001, t + attaque + duree); }
+      };
+      o.ton = (t, f, { duree = 1, crete = .08, attaque = .005, type = 'sine', humide = .3, vers = 0, detune = 0, pan = 0, filtre = 0, q = 1, courbe = 'exp' } = {}) => {
+        const os = garder(c.createOscillator()); os.type = type; os.frequency.setValueAtTime(f, t); os.detune.value = detune;
+        if (vers) os.frequency.exponentialRampToValueAtTime(vers, t + attaque + duree * .8);
+        const v = o.voie(humide, pan);
+        enveloppe(v.gain, t, attaque, duree, crete, courbe);
+        if (filtre) { const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filtre; fl.Q.value = q; os.connect(fl); fl.connect(v); } else os.connect(v);
+        os.start(t); os.stop(t + attaque + duree + .05);
+        return os;
+      };
+      o.souffle = (t, { duree = 1, f0 = 400, f1 = 2000, q = .8, crete = .12, humide = .3, type = 'bandpass', attaque = 0, pan0 = 0, pan1 = 0 } = {}) => {
+        const s = garder(c.createBufferSource()); s.buffer = g.b; s.loop = true;
+        const fl = c.createBiquadFilter(); fl.type = type; fl.Q.value = q;
+        fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + duree);
+        const v = o.voie(humide, pan0, !!(pan0 || pan1));
+        if ((pan0 || pan1) && o.dernierPan) { o.dernierPan.pan.setValueAtTime(pan0, t); o.dernierPan.pan.linearRampToValueAtTime(pan1, t + duree); }
+        const a = attaque || duree * .7;
+        v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(crete, t + a); v.gain.exponentialRampToValueAtTime(0.0001, t + duree + .2);
+        s.connect(fl); fl.connect(v); s.start(t, Math.random()); s.stop(t + duree + .3);
+        return s;
+      };
+      o.impact = (t, { crete = .55, grave = 58, duree = 1.4, humide = .35, bruit = .5 } = {}) => {
+        o.ton(t, grave * 1.8, { duree, crete, attaque: .004, vers: grave * .55, humide: humide * .4 });
+        o.souffle(t, { duree: .5, f0: 3000, f1: 200, type: 'lowpass', q: .5, crete: crete * bruit, attaque: .005, humide });
+      };
+      o.cloche = (t, f, { duree = 2.6, crete = .05, humide = .5, pan = 0 } = {}) => {
+        [[1, 1], [2.76, .5], [5.4, .25], [8.93, .12]].forEach(([r, a], i) => o.ton(t, f * r, { duree: duree / (1 + i * .8), crete: crete * a, attaque: .002, humide, pan }));
+      };
+      o.nappe = (t, freqs, { duree = 3, attaque = .4, crete = .04, filtre = 1600, humide = .55, type = 'sawtooth' } = {}) => {
+        freqs.forEach((f) => [-7, 7].forEach((dt) => o.ton(t, f, { duree, attaque, crete: crete / 2, type, detune: dt, filtre, humide })));
+      };
+      o.crepite = (t, { duree = 1, densite = 40, crete = .12, f = 2600, humide = .25, pan = 0 } = {}) => {
+        const n = Math.round(duree * densite);
+        for (let i = 0; i < n; i++) {
+          const ti = t + Math.random() * duree, s = garder(c.createBufferSource()); s.buffer = g.b;
+          const fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f * (.6 + Math.random() * .8); fl.Q.value = 1.5;
+          const v = o.voie(humide, pan ? pan * (Math.random() * 2 - 1) : 0), a = crete * (.3 + Math.random() * .7);
+          v.gain.setValueAtTime(a, ti); v.gain.exponentialRampToValueAtTime(0.0001, ti + .012 + Math.random() * .03);
+          s.connect(fl); fl.connect(v); s.start(ti, Math.random() * 1.5); s.stop(ti + .06);
+        }
+      };
+      o.montee = (t, { duree = 1.5, crete = .12, f0 = 180, f1 = 4200, ton = true } = {}) => {
+        o.souffle(t, { duree, f0, f1, q: 2, crete, attaque: duree * .95, humide: .3 });
+        if (ton) o.ton(t, 110, { duree, crete: crete * .35, attaque: duree * .9, type: 'sawtooth', vers: 440, filtre: 1200, humide: .2, courbe: 'lin' });
+      };
+      o.arpege = (t, notes, { pas = .1, ...opts } = {}) => notes.forEach((f, i) => o.ton(t + i * pas, f, { duree: .5, crete: .05, type: 'triangle', ...opts }));
+      o.kick = (t, crete = .7) => o.ton(t, 150, { duree: .35, crete, attaque: .002, vers: 42, humide: .05 });
+      o.caisse = (t, crete = .2) => { o.souffle(t, { duree: .16, f0: 1800, f1: 1200, q: .7, crete, attaque: .002, humide: .25 }); o.ton(t, 210, { duree: .12, crete: crete * .6, vers: 160, humide: .1 }); };
+      o.charley = (t, crete = .05) => o.souffle(t, { duree: .05, f0: 9000, f1: 8000, type: 'highpass', q: .5, crete, attaque: .001, humide: .05 });
+      o.basse = (t, f, { duree = .25, crete = .14 } = {}) => o.ton(t, f, { duree, crete, attaque: .005, type: 'sawtooth', filtre: 520, q: 4, humide: .05 });
+
+      // La signature : trois notes qui montent, puis l'accord. Le timbre change d'une intro à l'autre.
+      const NOTES = [659.25, 880, 1108.73], ACCORD = [110, 164.81, 220, 277.18, 329.63, 493.88];
+      o.signature = (t, timbre = 'cloche', force = 1) => {
+        const p = .13;
+        if (timbre === 'cloche' || timbre === 'verre') {
+          NOTES.forEach((f, i) => o.cloche(t + i * p, timbre === 'verre' ? f * 2 : f, { crete: .045 * force, duree: 3 }));
+          o.nappe(t + p * 2, ACCORD, { duree: 3.4, attaque: .25, crete: .05 * force, filtre: 1400, type: 'sine' });
+        } else if (timbre === 'synthe') {
+          NOTES.forEach((f, i) => o.ton(t + i * p, f, { duree: .9, crete: .07 * force, type: 'sawtooth', filtre: 2600, q: 3, humide: .45 }));
+          o.nappe(t + p * 2, ACCORD, { duree: 3, attaque: .08, crete: .06 * force, filtre: 2200 });
+          o.basse(t + p * 2, 55, { duree: 1.2, crete: .18 * force });
+        } else if (timbre === 'electrique') {
+          NOTES.forEach((f, i) => o.ton(t + i * p, f, { duree: .8, crete: .05 * force, type: 'square', filtre: 3000, humide: .5 }));
+          o.nappe(t + p * 2, ACCORD, { duree: 3, attaque: .05, crete: .045 * force, filtre: 1800, type: 'square' });
+        } else {
+          NOTES.forEach((f, i) => o.ton(t + i * p, f, { duree: 1.6, crete: .06 * force, humide: .6 }));
+          o.nappe(t + p * 2, ACCORD, { duree: 3.6, attaque: .5, crete: .06 * force, filtre: 1200 });
+        }
+        o.ton(t + p * 2, 55, { duree: 2.4, crete: .16 * force, attaque: .02, humide: .2 });
+      };
+      return o;
+    }
+
+    function initialiser() {
+      if (ac) return ac;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ac = new AC({ latencyHint: 'interactive' });
+      chaine = brancher(ac);
+      return ac;
+    }
+    function maj() {
+      if (!bouton) return;
+      bouton.setAttribute('aria-pressed', String(api.actif && !api.bloque));
+      bouton.classList.toggle('appel', api.actif && api.bloque);
+      bouton.querySelector('span').textContent = api.actif && api.bloque ? 'Activer le son' : 'Son';
+      bouton.title = api.actif && api.bloque ? 'Le navigateur attend un geste pour jouer le son' : api.actif ? 'Couper le son (M)' : 'Activer le son (M)';
+    }
+    api.installer = (relancer) => {
+      rejouer = relancer;
+      const zone = $('commandes');
+      if (!zone || bouton) return;
+      bouton = document.createElement('button');
+      bouton.className = 'bouton'; bouton.id = 'son'; bouton.type = 'button';
+      bouton.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 7.6h2.8l3.9-3.3v11.4l-3.9-3.3H3.5z"/><path class="ondes" d="M13.2 7.4a3.7 3.7 0 0 1 0 5.2M15.5 5.2a6.8 6.8 0 0 1 0 9.6"/><path class="muet" d="M13 8l4 4m0-4l-4 4"/></svg><span>Son</span>';
+      zone.append(bouton);
+      bouton.addEventListener('click', api.basculer);
+      maj();
+    };
+    api.basculer = () => {
+      const c = initialiser();
+      if (api.bloque || !api.actif) {
+        api.actif = true;
+        if (c) c.resume().then(() => { api.bloque = false; maj(); if (rejouer) rejouer(); });
+      } else {
+        api.actif = false;
+        api.couper(.15);
+      }
+      if (chaine && c) chaine.vol.gain.setTargetAtTime(api.actif ? 1 : 0, c.currentTime, .03);
+      try { localStorage.setItem('aurora-son', api.actif ? '1' : '0'); } catch { /* stockage indisponible */ }
+      maj();
+    };
+    // Chaque lecture a sa session (un gain sec, un gain vers la réverbération) : la couper ne touche
+    // pas la suivante, qui peut démarrer dans la foulée.
+    let session = null;
+    function ouvrirSession(c, b) {
+      const sec = c.createGain(), mouille = c.createGain();
+      sec.connect(chaine.m); mouille.connect(chaine.r);
+      session = { sec, mouille, sources: [] };
+      voix = session.sources;
+      return outils(c, { m: sec, r: mouille, b: chaine.b }, session.sources);
+    }
+    // Joue une partition. Si le navigateur retient le son, on attend son feu vert un court instant et
+    // on reprend la partition là où l'image en est ; sinon, le bouton « Activer le son » s'allume.
+    api.jouer = (partition) => {
+      if (!partition || !api.actif) return;
+      const c = initialiser();
+      if (!c) return;
+      if (c.state === 'running') { api.bloque = false; maj(); partition(ouvrirSession(c), c.currentTime + .04); return; }
+      const debut = performance.now();
+      c.resume().then(() => {
+        const ecoule = (performance.now() - debut) / 1000;
+        if (c.state !== 'running' || ecoule > 1.2) return;
+        api.bloque = false; maj();
+        partition(ouvrirSession(c), c.currentTime + .04 - ecoule);
+      }).catch(() => {});
+      setTimeout(() => { if (c.state !== 'running') { api.bloque = true; maj(); } }, 300);
+    };
+    api.couper = (fondu = .2) => {
+      if (!ac || !session) return;
+      const t = ac.currentTime, s = session;
+      for (const g of [s.sec, s.mouille]) { g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + fondu); }
+      for (const n of s.sources) { try { n.stop(t + fondu + .02); } catch { /* déjà arrêté */ } }
+      session = null;
+      voix = [];
+    };
+    // Pour les tests : rend une partition hors ligne et mesure crête et niveau moyen.
+    api.mesurer = async (partition, duree = 6) => {
+      const c = new OfflineAudioContext(2, Math.round(44100 * duree), 44100);
+      const g = brancher(c);
+      g.vol.gain.value = 1;
+      partition(outils(c, g, []), .05);
+      const buf = await c.startRendering();
+      let crete = 0, somme = 0;
+      for (let k = 0; k < 2; k++) { const d = buf.getChannelData(k); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > crete) crete = v; somme += v * v; } }
+      return { crete: +crete.toFixed(3), rms: +Math.sqrt(somme / (buf.length * 2)).toFixed(4) };
+    };
+    return api;
+  })();
+
+  /*
+   * Le moteur commun : une horloge (celle de document.timeline, partagée par le canvas, les
+   * animations du DOM et le son), « passer » d'un clic ou d'une touche, R pour rejouer, M pour le son,
+   * ?t=1.2 pour figer un instant, et l'état final direct pour qui demande moins d'animations.
    */
   // Une piste est soit une animation Web Animations, soit un pilote de bibliothèque (GSAP, anime.js)
   // qui sait démarrer à une heure donnée, sauter à un instant et s'annuler.
@@ -367,7 +800,7 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
   const figerPiste = (a, t) => (estWaapi(a) ? (a.pause(), (a.currentTime = t * 1000)) : a.aller(t));
   const annulerPiste = (a) => (estWaapi(a) ? a.cancel() : a.annuler());
 
-  function lancer({ FIN, preparer, dessiner, animer, ambiant = false }) {
+  function lancer({ FIN, preparer, dessiner, animer, sons, sonFin, ambiant = false }) {
     let anims = [], t0 = 0, raf = 0, reduit = false;
     let fige = params.has('t') ? Math.max(0, parseFloat(params.get('t')) || 0) : null;
     const maintenant = () => (document.timeline && document.timeline.currentTime) ?? performance.now();
@@ -381,10 +814,11 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
     }
     function jouer() {
       for (const a of anims) annulerPiste(a);
+      Sono.couper(.05);
       reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
       majEchelle();
       if (preparer) preparer(reduit);
-      anims = animer();
+      anims = animer ? animer() : [];
       t0 = maintenant() - (reduit ? FIN * 1000 : 0);
       const now = maintenant();
       // Moins d'animations : chaque piste est posée directement sur sa dernière image.
@@ -392,6 +826,7 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
         if (reduit) figerPiste(a, Math.max(FIN, fige ?? 0));
         else if (fige != null) figerPiste(a, fige); else demarrerPiste(a, t0, now);
       }
+      if (fige == null && !reduit) Sono.jouer(sons);
       racine.classList.add('pret');
       if (!raf) raf = requestAnimationFrame(boucle);
     }
@@ -406,12 +841,15 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
         if (a.effect.getComputedTiming().endTime <= FIN * 1000) a.finish();
         else { a.currentTime = FIN * 1000; a.play(); }
       }
+      Sono.couper(.25);
+      if (sonFin) Sono.jouer(sonFin);
       // Après un saut, Chrome peut garder à l'écran l'image d'avant : on force un repeint, invisible à l'œil.
       document.body.style.opacity = '.999';
       requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.opacity = ''; }));
       if (!raf) raf = requestAnimationFrame(boucle);
     }
 
+    if (sons) Sono.installer(jouer);
     addEventListener('pointerdown', (e) => {
       if (e.target.closest && e.target.closest('.commandes')) return;
       passer();
@@ -421,6 +859,7 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
       if (e.target.closest && e.target.closest('.commandes')) return;
       const k = e.key.toLowerCase();
       if (k === 'r') jouer();
+      else if (k === 'm' && sons) Sono.basculer();
       else if (k !== 'tab' && k !== 'shift') passer();
     });
     $('rejouer').addEventListener('click', jouer);
@@ -438,6 +877,7 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
       jouer,
       passer,
       aller(t) { fige = t; for (const a of anims) figerPiste(a, t); if (!raf) raf = requestAnimationFrame(boucle); },
+      mesurerSon: () => Sono.mesurer(sons, FIN + 4),
     };
 
     (async () => {
@@ -464,45 +904,7 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
   const deux = (sel) => [marque.querySelector(sel), reflet.querySelector(sel)];
   const lettres = (sel) => { const a = marque.querySelectorAll(sel), b = reflet.querySelectorAll(sel); return [...a].map((n, i) => [n, b[i]]); };
 
-  /* ───────────── Le son : bourdonnement du transfo, claquements à l'allumage ───────────── */
-
-  const btnSon = document.createElement('button');
-  btnSon.className = 'bouton'; btnSon.id = 'son'; btnSon.type = 'button';
-  btnSon.setAttribute('aria-pressed', 'false'); btnSon.title = 'Activer le son';
-  btnSon.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 7.6h2.8l3.9-3.3v11.4l-3.9-3.3H3.5z"/><path class="ondes" d="M13.2 7.4a3.7 3.7 0 0 1 0 5.2M15.5 5.2a6.8 6.8 0 0 1 0 9.6"/><path class="muet" d="M13 8l4 4m0-4l-4 4"/></svg><span>Son</span>';
-  $('commandes').append(btnSon);
   const claquements = [];
-  const Son = (() => {
-    let ac = null, voix = [];
-    const api = { actif: false };
-    api.preparer = () => { if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); } if (ac && ac.state === 'suspended') ac.resume(); };
-    api.couper = () => { for (const v of voix) { try { v.stop(); } catch { /* déjà arrêtée */ } } voix = []; };
-    api.jouer = () => {
-      if (!api.actif || !ac) return;
-      api.couper();
-      const b = ac.currentTime + .03;
-      const hum = ac.createOscillator(), filtre = ac.createBiquadFilter(), g = ac.createGain();
-      hum.type = 'sawtooth'; hum.frequency.value = 100;
-      filtre.type = 'lowpass'; filtre.frequency.value = 420;
-      g.gain.setValueAtTime(0, b); g.gain.setValueAtTime(0, b + .75); g.gain.linearRampToValueAtTime(.05, b + .8); g.gain.setValueAtTime(.05, b + 4); g.gain.linearRampToValueAtTime(.025, b + 6);
-      hum.connect(filtre); filtre.connect(g); g.connect(ac.destination); hum.start(b); hum.stop(b + 30); voix.push(hum);
-      const bruit = ac.createBuffer(1, ac.sampleRate * .05, ac.sampleRate), d = bruit.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
-      for (const t of claquements) {
-        const s = ac.createBufferSource(), gg = ac.createGain(), hp = ac.createBiquadFilter();
-        s.buffer = bruit; hp.type = 'highpass'; hp.frequency.value = 1800; gg.gain.value = .22;
-        s.connect(hp); hp.connect(gg); gg.connect(ac.destination); s.start(b + t); voix.push(s);
-      }
-    };
-    return api;
-  })();
-  let rejouer = null;
-  btnSon.addEventListener('click', () => {
-    Son.actif = !Son.actif;
-    btnSon.setAttribute('aria-pressed', String(Son.actif));
-    btnSon.title = Son.actif ? 'Couper le son' : 'Activer le son';
-    if (Son.actif) { Son.preparer(); if (rejouer) rejouer(); } else Son.couper();
-  });
 
   /* ───────────── L'allumage (anime.js) ───────────── */
 
@@ -550,15 +952,29 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
       .add(deux('.trait'), { '--on': gresille([[1, 40], [.3, 50], [1, 300]], 2550) }, 2550)
       .add(sous, { '--on': [0, 1], duration: 260, delay: (_, i) => (i % (sous.length / 2)) * 14, ease: 'outQuad' }, 2800);
     return {
-      demarrer(t) { tl.seek(t * 1000); tl.play(); if (t < .1) Son.jouer(); },
+      demarrer(t) { tl.seek(t * 1000); tl.play(); },
       aller(t) { tl.pause(); tl.seek(t * 1000); },
-      annuler() { tl.pause(); tl.seek(0); Son.couper(); },
+      annuler() { tl.pause(); tl.seek(0); },
     };
+  }
+
+  // Le son : un claquement et un grésillement à chaque allumage, le ronron du transformateur qui
+  // s'installe, puis la signature au timbre électrique.
+  function sons(o, b) {
+    o.ton(b + .78, 100, { duree: 5, crete: .028, attaque: .05, type: 'sawtooth', filtre: 380, humide: .1, courbe: 'lin' });
+    o.ton(b + .78, 50, { duree: 5, crete: .03, attaque: .05, humide: .05, courbe: 'lin' });
+    for (const t of claquements) {
+      o.crepite(b + t, { duree: .06, densite: 160, crete: .16, f: 3200, humide: .15 });
+      o.souffle(b + t, { duree: .07, f0: 1200, f1: 900, q: 3, crete: .08, attaque: .002, humide: .1 });
+    }
+    o.signature(b + 2.85, 'electrique');
   }
 
   let pilote = null;
   lancer({
     FIN: 3.6,
+    sons,
+    sonFin: (o, b) => o.signature(b + .05, 'electrique', .8),
     preparer() {
       if (!pilote && window.anime) {
         try { pilote = construire(); } catch (err) { console.warn('Aurora : anime.js indisponible —', err.message); }
@@ -566,7 +982,6 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
     },
     animer() { return pilote ? [pilote] : []; },
   });
-  rejouer = () => window.aurora.jouer();
 })();
 </script>
 </body>

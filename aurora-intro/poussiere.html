@@ -340,6 +340,9 @@ a.bouton { text-decoration: none; }
 #son .ondes { display: none; }
 #son[aria-pressed="true"] .ondes { display: inline; }
 #son[aria-pressed="true"] .muet { display: none; }
+#son.appel { border-color: rgb(255 108 171 / .55); background: rgb(255 108 171 / .16); animation: appel 1.6s ease-in-out infinite; }
+.commandes:has(.appel) { opacity: 1 !important; }
+@keyframes appel { 50% { box-shadow: 0 0 0 6px rgb(255 108 171 / .12); } }
 
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 
@@ -977,7 +980,9 @@ void main() {
 
   const Son = (() => {
     let ac = null, bus = null, reverb = null, bruit = null, voix = [];
-    const api = { actif: false };
+    // Le son est activé par défaut ; si le navigateur le retient, le bouton propose de l'activer.
+    const api = { actif: true, bloque: false };
+    try { if (localStorage.getItem('aurora-son') === '0') api.actif = false; } catch { /* stockage indisponible */ }
 
     api.preparer = () => {
       if (!ac) {
@@ -1052,10 +1057,16 @@ void main() {
       garder(o, g);
     }
 
-    api.jouer = (g) => {
+    api.jouer = (g, decalage = 0) => {
       if (!api.actif || !ac) return;
+      if (ac.state !== 'running') {
+        const debut = performance.now();
+        ac.resume().then(() => { const e = (performance.now() - debut) / 1000; if (ac.state === 'running' && e < 1.2) { api.bloque = false; majBoutonSon(); api.jouer(g, e); } }).catch(() => {});
+        setTimeout(() => { if (ac.state !== 'running') { api.bloque = true; majBoutonSon(); } }, 300);
+        return;
+      }
       api.couper(.02);
-      const b = ac.currentTime + .03;
+      const b = ac.currentTime + .03 - decalage;
       souffle(b + .08, 1.2, 160, 2400, .16);                                         // la poussière converge
       note(b + CUE.CHOC, 92, .65, .45, { attaque: .012, humide: .15, vers: 38 });     // l'onde de choc
       [110, 164.81, 220, 277.18, 329.63, 493.88].forEach((f, i) =>                   // l'accord de la marque (la majeur, avec la neuvième)
@@ -1064,8 +1075,8 @@ void main() {
       g.lettres.forEach((l, i) => note(b + l.ta, notes[i % notes.length], 1.4, .03, { attaque: .004, humide: .8 }));
       note(b + CUE.TRAIT_DEBUT, 880, .9, .018, { attaque: .05, humide: .7, vers: 1760 }); // le trait qui s'étire
       souffle(b + CUE.TRAIT_DEBUT, .6, 3000, 7000, .025);
-      note(b + CUE.POSE - .25, 880, 2.6, .018, { attaque: .25, humide: .8 });
-      note(b + CUE.POSE - .25, 1318.51, 2.6, .01, { attaque: .25, humide: .8 });
+      // La signature Aurora : mi, la, do dièse, comme dans toutes les intros.
+      [659.25, 880, 1108.73].forEach((f, i) => note(b + CUE.POSE - .3 + i * .13, f, 2.6, .035, { attaque: .004, humide: .7 }));
     };
     api.couper = (fondu = .25) => {
       if (!ac) return;
@@ -1183,7 +1194,7 @@ void main() {
       if (fige != null) { a.pause(); a.currentTime = fige * 1000; } else a.startTime = t0;
     }
     racine.classList.add('pret');
-    if (!reduit) Son.jouer(geo);
+    if (!reduit && Son.actif) { Son.preparer(); Son.jouer(geo); }
     if (!raf) { derniere = 0; raf = requestAnimationFrame(boucle); }
   }
 
@@ -1240,10 +1251,18 @@ void main() {
     }
   }
 
+  function majBoutonSon() {
+    const appel = Son.actif && Son.bloque;
+    el.son.setAttribute('aria-pressed', String(Son.actif && !Son.bloque));
+    el.son.classList.toggle('appel', appel);
+    el.son.querySelector('span').textContent = appel ? 'Activer le son' : 'Son';
+    el.son.title = appel ? 'Le navigateur attend un geste pour jouer le son' : Son.actif ? 'Couper le son (M)' : 'Activer le son (M)';
+  }
   function basculerSon() {
-    Son.actif = !Son.actif;
-    el.son.setAttribute('aria-pressed', String(Son.actif));
-    el.son.title = Son.actif ? 'Couper le son (M)' : 'Activer le son (M)';
+    Son.actif = Son.bloque ? true : !Son.actif;
+    Son.bloque = false;
+    try { localStorage.setItem('aurora-son', Son.actif ? '1' : '0'); } catch { /* stockage indisponible */ }
+    majBoutonSon();
     if (Son.actif) { Son.preparer(); jouer(); } else Son.couper();
   }
 
@@ -1289,6 +1308,7 @@ void main() {
   async function demarrer() {
     eclater(el.nom, false);
     eclater(el.sous, true);
+    majBoutonSon();
     majEchelle();
     if (!OPT.sansGL) {
       try { rendu = new Rendu(el.toile); } catch (err) { console.warn('Aurora : particules désactivées —', err.message); rendu = null; }
