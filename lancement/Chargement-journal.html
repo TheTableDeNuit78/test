@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le lancement — Le journal</title>
+<!--
+  Le lancement, pendant que tout arrive — « Le journal », retenu le 4 octobre 2026.
+
+  À gauche, l'essentiel : le pourcentage, les cinq étapes, le bouton. À droite, ce qui arrive
+  vraiment, catégorie par catégorie (« FR | Action — 3 184 films »), avec les premières affiches,
+  les logos des chaînes, puis le guide chaîne par chaîne. La ligne en cours est bleue, les
+  terminées vertes : une couleur = un état.
+
+  Fichier autonome : rien d'autre à charger que la police. Où changer quoi :
+    · les couleurs, rayons, police ........ :root (les tokens de l'app, à la lettre)
+    · la colonne de gauche ................ « La colonne de gauche » (CSS) et <section class="gauche">
+    · le journal de droite ................ « Le journal » (CSS) et la fonction journal() (script)
+    · les textes fixes .................... dans le HTML ; ceux qui changent à la fin, dans rendu()
+    · les étapes et leurs chiffres ........ ETAPES (script, section 2)
+    · les affiches, chaînes, catégories ... section 1 du script (données de démonstration)
+  Le chargement est simulé (12 s, puis il recommence). Dans l'app, la vraie progression remplace
+  la section 2 et appelle rendu() avec le même objet `etat`.
+  Pour une capture : ?p=0.42 fige l'écran à 42 %, ?p=1 le montre terminé.
+-->
+<style>
+/* La police vient du projet (comme les autres écrans validés) ; sinon du dossier polices/ à côté. */
+@font-face {
+  font-family: 'Familjen Grotesk'; font-weight: 400 700; font-display: block;
+  src: url('../../src/renderer/src/assets/familjen-grotesk-latin.woff2') format('woff2'), url('polices/familjen-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Familjen Grotesk'; font-weight: 400 700; font-display: block;
+  src: url('../../src/renderer/src/assets/familjen-grotesk-latin-ext.woff2') format('woff2'), url('polices/familjen-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ───────── Les tokens de l'app (assets/index-*.css, :root[data-theme='dark']) ───────── */
+:root {
+  color-scheme: dark;
+  --bg: #0e0e12;
+  --bg-elev2: #1a1a22;
+  --bg-hover: #24242e;
+  --border: #24242e;
+  --border-strong: #3a3a47;
+  --text: #eeeef2;
+  --text-dim: #9494a4;
+  --text-faint: #75757f;
+  --accent: #7c5cff;
+  /* le dégradé du Λ : bleu → violet → rose */
+  --prisme: linear-gradient(45deg, #4ea8f5, #9d5cff 50%, #ff6cab);
+  /* une couleur = un état : bleu en cours, vert terminé */
+  --etat-cours: #4ea8f5;
+  --etat-cours-soft: rgba(78, 168, 245, 0.14);
+  --ok: #38d18a;
+  --ok-soft: rgba(56, 209, 138, 0.14);
+  /* les rangées de l'accueil, reprises pour les étiquettes du journal */
+  --sec-direct: #4ea8f5;
+  --sec-vod: #f57ab8;
+  --r-pill: 999px;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --font: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'Consolas', 'SFMono-Regular', monospace;
+  --gouttiere: clamp(24px, 4.2vw, 100px);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); overflow: hidden; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--mono); font-size: 0.92em; }
+.ico { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* Le Λ : un trait d'un seul geste, en masque sur le dégradé. */
+.lambda {
+  display: inline-block; flex: none; width: 28px; height: 28px; background: var(--prisme);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='14 14.5 36 36'%3E%3Cpath d='M18 48L32 17l14 31' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='14 14.5 36 36'%3E%3Cpath d='M18 48L32 17l14 31' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.marque { display: inline-flex; align-items: center; gap: 12px; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* Le bouton : contour tant que ça charge, plein une fois prêt. */
+.go { display: inline-flex; align-items: center; gap: 8px; padding: 15px 28px; border: 1px solid var(--border-strong); border-radius: var(--r-pill); background: transparent; color: var(--text); font-size: 15px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 130ms var(--ease), border-color 130ms var(--ease), transform 130ms var(--ease); }
+.go:hover { background: rgba(238, 238, 242, 0.06); }
+.go:active { transform: scale(0.98); }
+.pret .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+
+/* ───────── La page : deux colonnes ───────── */
+.ecran {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(40px, 6vw, 110px);
+  padding: 38px var(--gouttiere) 40px;
+}
+
+/* ───────── La colonne de gauche ───────── */
+.gauche { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; }
+.qui { display: grid; gap: 6px; }
+.qui .compte { font-size: 13px; color: var(--text-faint); }
+.qui .compte b { color: var(--text-dim); font-weight: 600; }
+.centre { align-self: center; }
+.pct { font-size: clamp(64px, 7.5vw, 140px); font-weight: 700; line-height: 0.9; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+.pct small { font-size: 0.4em; color: var(--text-dim); margin-left: 6px; letter-spacing: 0; }
+.phrase { margin: 18px 0 0; max-width: 40ch; font-size: 15px; line-height: 1.5; color: var(--text-dim); }
+.barre { position: relative; height: 4px; margin: 26px 0 8px; border-radius: 2px; background: rgba(238, 238, 242, 0.09); overflow: hidden; }
+.barre i { position: absolute; inset: 0; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.pret .barre i { background: var(--ok); }
+.ou { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.etapes { display: grid; gap: 2px; margin: 22px 0 0; padding: 0; list-style: none; }
+.etapes li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+.etapes .ico { width: 16px; height: 16px; }
+.etapes .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-faint); }
+.etapes .fait { color: var(--text); }
+.etapes .fait .ico, .etapes .fait .n { color: var(--ok); }
+.etapes .encours { color: var(--text); font-weight: 600; }
+.etapes .encours .ico, .etapes .encours .n { color: var(--etat-cours); }
+.etapes .encours .ico { animation: tourne 0.9s linear infinite; }
+.etapes .attente { color: var(--text-faint); }
+.pied { display: grid; gap: 12px; justify-items: start; }
+.avis { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--text-faint); max-width: 50ch; }
+.avis strong { color: var(--text-dim); }
+
+/* ───────── Le journal ───────── */
+.droite { position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
+.entete { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-dim); }
+.entete i { width: 7px; height: 7px; border-radius: 50%; background: var(--etat-cours); box-shadow: 0 0 0 4px var(--etat-cours-soft); animation: bat 1.2s ease-in-out infinite; }
+.pret .entete i { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); animation: none; }
+.entete code { margin-left: auto; color: var(--text-faint); font-size: 12px; }
+.flux { position: relative; min-height: 0; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%); mask-image: linear-gradient(180deg, #000 70%, transparent 100%); }
+.liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.ligne { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; height: 62px; padding: 0 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+.ligne:first-child { animation: arrive 420ms var(--ease-out); }
+.ligne .etat { width: 16px; height: 16px; color: var(--ok); }
+.ligne .nom { display: grid; gap: 2px; min-width: 0; }
+.ligne .nom b { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ligne .nom span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-faint); }
+.tag { padding: 1px 7px; border-radius: var(--r-pill); font-size: 11px; font-weight: 600; background: color-mix(in srgb, var(--t) 16%, transparent); color: var(--t); }
+.mini { display: flex; gap: 5px; }
+.ligne .n { min-width: 9ch; text-align: right; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* La ligne en cours : bleue, avec sa jauge dessous. */
+.ligne.cours { grid-template-rows: 1fr auto; height: 68px; padding: 0 12px; border-radius: 10px; border-bottom-color: transparent; background: linear-gradient(90deg, var(--etat-cours-soft), transparent 80%); }
+.ligne.cours > .etat, .ligne.cours > .nom, .ligne.cours > .mini, .ligne.cours > .n { grid-row: 1; }
+.ligne.cours .etat { color: var(--etat-cours); animation: tourne 0.9s linear infinite; }
+.ligne.cours .n { color: var(--etat-cours); }
+.ligne .jauge { grid-column: 2 / -1; height: 2px; margin-top: -10px; border-radius: 1px; background: rgba(238, 238, 242, 0.08); overflow: hidden; }
+.ligne .jauge i { display: block; height: 100%; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--k, 0)); }
+
+/* Les vignettes du journal : affiches de démonstration (titre masqué) et logos de chaînes. */
+.affiche { position: relative; overflow: hidden; width: 22px; aspect-ratio: 2 / 3; border-radius: 4px; background: radial-gradient(60% 45% at 72% 26%, color-mix(in srgb, var(--c) 55%, transparent), transparent 70%), linear-gradient(162deg, var(--a), var(--b)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05); }
+.logoChaine { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 6.6px; background: var(--c); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: -0.03em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.logoChaine.long { font-size: 6.6px; }
+
+@keyframes tourne { to { transform: rotate(1turn); } }
+@keyframes bat { 50% { opacity: 0.4; } }
+@keyframes arrive { from { opacity: 0; transform: translateY(-14px); } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; } }
+</style>
+</head>
+<body>
+<div class="ecran">
+  <section class="gauche">
+    <div class="qui">
+      <span class="marque"><span class="lambda"></span>Aurora</span>
+      <span class="compte"><b>Mon abonnement</b> · fournisseur.example</span>
+    </div>
+    <div class="centre">
+      <div class="pct" id="pct" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100">0<small>%</small></div>
+      <p class="phrase" id="phrase">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+      <div class="barre"><i id="barre"></i></div>
+      <div class="ou"><span id="ou1"></span><span id="ou2"></span></div>
+      <ul class="etapes" id="etapes"></ul>
+    </div>
+    <div class="pied">
+      <button class="go" type="button" id="continuer">Continuer sans attendre</button>
+      <p class="avis" id="avis">L’app s’ouvrira tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+    </div>
+  </section>
+
+  <section class="droite" aria-label="Ce qui arrive du serveur">
+    <div class="entete"><i></i><span id="titreFlux">Ce qui arrive de ton serveur</span><code>fournisseur.example:8080</code></div>
+    <div class="flux"><ul class="liste" id="liste"></ul></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString('fr-FR');
+  const pluriel = (n, [un, plusieurs]) => (Math.round(n) <= 1 ? un : plusieurs);
+
+  // Les icônes (tracés Lucide, comme dans l'app).
+  const ICONES = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+    layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    film: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18M17 7.5h4M17 16.5h4"/>',
+    clapper: '<path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9M12.4 3.4l3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+    tv: '<rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/>',
+    calendar: '<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>',
+  };
+  const icone = (nom, classe = 'ico') => `<svg class="${classe}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nom]}</svg>`;
+
+  /* ═════════ 1. Données de démonstration (dans l'app : le vrai catalogue du fournisseur) ═════════ */
+  const CHAINES = [
+    ['TF1', '#1f4fa8'], ['F2', '#c8102e'], ['F3', '#1d6fd1'], ['C+', '#202024'], ['F5', '#27a35a'], ['M6', '#5b2c83'],
+    ['Arte', '#ff4f00'], ['W9', '#3f3f9f'], ['TMC', '#0a6aa1'], ['TFX', '#e0007a'], ['6ter', '#8a2be2'], ['BFM', '#0c3a73'],
+    ['fi', '#e1000f'], ['LCI', '#0057a3'], ['C+C', '#2a2a30'], ['Ciné+', '#6b1d1d'], ['beIN1', '#5b2a86'], ['beIN2', '#4a2373'],
+    ['DAZN', '#1b1b1b'], ['Éq', '#d40000'], ['RMC1', '#0f2b4f'], ['C+S', '#16161a'], ['SKY', '#c10b2f'], ['ES1', '#141b4d'],
+    ['Gulli', '#f28c00'], ['DC', '#1b4fa0'], ['NG', '#c9a400'], ['RMC D', '#0d6e6e'], ['RTL', '#e2001a'], ['La Une', '#c4122f'], ['PAR', '#0064d2'],
+  ].map(([sigle, couleur]) => ({ sigle, couleur }));
+  // Les noms affichés dans le guide, chaîne par chaîne (les 14 premières chaînes).
+  const NOMS_GUIDE = ['FR - TF1 FHD', 'FR - FRANCE 2 FHD', 'FR - FRANCE 3 FHD', 'FR - CANAL+ FHD', 'FR - FRANCE 5 FHD', 'FR - M6 FHD', 'FR - ARTE FHD', 'FR - W9 HD', 'FR - TMC HD', 'FR - TFX HD', 'FR - 6TER HD', 'FR - BFM TV', 'FR - FRANCEINFO', 'FR - LCI'];
+
+  // Les palettes des affiches de démonstration : un fond sombre teinté, une lueur en haut à droite.
+  const PALETTES = {
+    rose: ['#5a2440', '#170f18', '#ff6cab'], violet: ['#3b2a63', '#120f1f', '#9d5cff'], bleu: ['#1d3a5f', '#0d1420', '#4ea8f5'],
+    ambre: ['#5a4216', '#17120a', '#f5a524'], vert: ['#1f4a3a', '#0c1712', '#38d18a'], rouge: ['#5c1d22', '#170b0c', '#ff5d67'],
+    sarcelle: ['#134a4a', '#0a1616', '#2fd0c8'], orange: ['#5a2e14', '#170e08', '#ff8a3d'],
+  };
+  const FILMS = ['rose', 'violet', 'ambre', 'sarcelle', 'orange', 'bleu', 'vert', 'orange', 'rose', 'bleu', 'sarcelle', 'violet', 'ambre', 'vert'];
+  const SERIES = ['vert', 'ambre', 'rouge', 'bleu', 'bleu', 'ambre', 'vert', 'rouge', 'violet', 'sarcelle', 'rose', 'rouge', 'violet', 'ambre', 'orange', 'bleu'];
+
+  const CATEGORIES = [
+    ['FR | Nouveautés', 'films', 412], ['FR | Action', 'films', 3184], ['FR | Policier & Thriller', 'films', 2210],
+    ['FR | Science-fiction', 'films', 1406], ['FR | Comédie', 'films', 4102], ['FR | Drame', 'films', 5318],
+    ['FR | Animation', 'films', 1977], ['FR | Documentaires', 'films', 2649], ['FR | Sagas', 'films', 688],
+    ['EN | Movies 4K', 'films', 1290], ['FR | Séries Netflix', 'séries', 2384], ['FR | Séries Disney+', 'séries', 911],
+    ['FR | Séries Canal+', 'séries', 478], ['FR | Séries Prime Video', 'séries', 1032], ['FR | Animés', 'séries', 1655],
+    ['EN | TV Shows', 'séries', 3870], ['FR | Généralistes', 'chaînes', 64], ['FR | Sport', 'chaînes', 212],
+    ['UK | Sport', 'chaînes', 148], ['FR | Info', 'chaînes', 38], ['FR | Cinéma', 'chaînes', 96], ['FR | Jeunesse', 'chaînes', 57],
+    ['FR | Découverte', 'chaînes', 73], ['BE | Belgique', 'chaînes', 41],
+  ].map(([nom, type, n]) => ({ nom, type, n }));
+
+  const affiche = (palette) => { const [a, b, c] = PALETTES[palette]; return `<span class="affiche" style="--a:${a};--b:${b};--c:${c}"></span>`; };
+  const logo = (ch) => `<span class="logoChaine${ch.sigle.length > 3 ? ' long' : ''}" style="--c:${ch.couleur}">${ch.sigle}</span>`;
+
+  /* ═════════ 2. Le chargement simulé (dans l'app : la vraie progression) ═════════
+     Les cinq étapes, avec les chiffres de « Mon abonnement » (écran Comptes). Les durées imitent
+     un vrai fournisseur : la liste des films est la plus longue. */
+  const ETAPES = [
+    { nom: 'Catégories', cible: 312, duree: 0.8, icone: 'layers' },
+    { nom: 'Films', cible: 99123, duree: 3.8, icone: 'film' },
+    { nom: 'Séries', cible: 24936, duree: 2.6, icone: 'clapper' },
+    { nom: 'Chaînes en direct', cible: 21576, duree: 1.9, icone: 'tv' },
+    { nom: 'Guide des programmes', cible: 186402, duree: 2.5, icone: 'calendar' },
+  ];
+  const TOTAL = ETAPES.reduce((s, e) => s + e.duree, 0);
+  const ATTENTE = 0.5; // avant la première réponse du serveur
+
+  // L'état du chargement à l'instant t (en secondes) : c'est l'objet que reçoit rendu().
+  function etatA(t) {
+    let reste = t - ATTENTE, courante = -1, fait = 0;
+    const etapes = ETAPES.map((e, i) => {
+      let k = 0;
+      if (reste >= e.duree) { k = 1; reste -= e.duree; fait += e.duree; } else if (reste > 0) { k = reste / e.duree; fait += reste; reste = 0; courante = i; } else reste = 0;
+      // Les éléments arrivent par paquets, plus vite au début : c'est ce que fait la pagination.
+      const paquets = Math.max(1, Math.round(e.cible / 1200));
+      const n = k >= 1 ? e.cible : Math.floor((1 - Math.pow(1 - k, 1.6)) * paquets) / paquets * e.cible;
+      return { ...e, k, n, etat: k >= 1 ? 'fait' : k > 0 ? 'encours' : 'attente' };
+    });
+    if (courante === -1 && t >= ATTENTE) { const j = etapes.findIndex((e) => e.k < 1); if (j >= 0) { courante = j; etapes[j].etat = 'encours'; } }
+    if (t < ATTENTE) { courante = 0; etapes[0].etat = 'encours'; }
+    const p = Math.min(1, Math.max(0, fait / TOTAL));
+    return { p, etapes, courante, finies: etapes.filter((e) => e.etat === 'fait').length, fini: p >= 1, reste: Math.max(0, TOTAL + ATTENTE - t) };
+  }
+
+  /* ═════════ 3. L'affichage ═════════ */
+  const TEINTES = { films: 'var(--sec-vod)', séries: '#b18cff', chaînes: 'var(--sec-direct)' };
+
+  // Le journal complet : pour chaque étape, ses lignes dans l'ordre d'arrivée. Les tirages sont
+  // toujours les mêmes (graine fixe), pour que l'écran ne change pas d'une lecture à l'autre.
+  let graine = 5;
+  const alea = () => { graine = (graine + 0x6d2b79f5) >>> 0; let t = Math.imul(graine ^ (graine >>> 15), 1 | graine); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const tirer = (liste, n) => Array.from({ length: n }, () => liste[Math.floor(alea() * liste.length)]);
+  const ajuste = (cats, total) => { const s = cats.reduce((a, c) => a + c.n, 0); return cats.map((c) => ({ ...c, n: Math.round((c.n / s) * total) })); };
+  const JOURNAL = [
+    CATEGORIES.map((c) => ({ nom: c.nom, type: c.type, n: 0, unite: null })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'films'), ETAPES[1].cible).map((c) => ({ ...c, unite: ['film', 'films'], mini: tirer(FILMS, 4).map(affiche).join('') })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'séries'), ETAPES[2].cible).map((c) => ({ ...c, unite: ['série', 'séries'], mini: tirer(SERIES, 4).map(affiche).join('') })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'chaînes'), ETAPES[3].cible).map((c) => ({ ...c, unite: ['chaîne', 'chaînes'], mini: tirer(CHAINES, 4).map(logo).join('') })),
+    ajuste(NOMS_GUIDE.map((nom, i) => ({ nom, type: 'guide', n: 900 + Math.round(alea() * 900), ch: CHAINES[i] })), ETAPES[4].cible)
+      .map((c) => ({ ...c, unite: ['programme', 'programmes'], sous: '7 jours de programmes', mini: logo(c.ch) })),
+  ];
+
+  $('etapes').innerHTML = ETAPES.map((e, i) => `<li id="e${i}"><span></span><span>${e.nom}</span><span class="n"></span></li>`).join('');
+
+  let cle = '';
+  function journal(etat) {
+    // Toutes les lignes arrivées jusqu'ici, la plus récente en haut ; on en montre 12.
+    const lignes = [];
+    etat.etapes.forEach((e, i) => {
+      if (e.etat === 'attente') return;
+      const items = JOURNAL[i], pos = e.k * items.length, faites = Math.min(items.length, Math.floor(pos));
+      for (let j = 0; j < faites; j++) lignes.push({ ...items[j], etape: i, k: 1 });
+      if (e.etat === 'encours' && faites < items.length) lignes.push({ ...items[faites], etape: i, k: pos - faites, cours: true });
+    });
+    const vues = lignes.slice(-12).reverse();
+    const liste = $('liste');
+    const nouvelleCle = vues.map((l) => `${l.etape}:${l.nom}:${l.cours ? 1 : 0}`).join('|');
+    if (nouvelleCle !== cle) {
+      cle = nouvelleCle;
+      liste.innerHTML = vues.map((l) => {
+        const tag = l.type === 'guide' ? '' : `<span class="tag" style="--t:${TEINTES[l.type]}">${l.type}</span>`;
+        const sous = l.sous || (l.unite ? (l.type === 'chaînes' ? 'chaînes en direct' : 'catalogue') : 'catégorie');
+        return `<li class="ligne${l.cours ? ' cours' : ''}">${icone(l.cours ? 'loader' : 'check', 'ico etat')}
+          <span class="nom"><b>${l.nom}</b><span>${tag}${sous}</span></span>
+          <span class="mini">${l.mini || ''}</span>
+          <span class="n"></span>${l.cours ? '<span class="jauge"><i></i></span>' : ''}</li>`;
+      }).join('');
+    }
+    // Les nombres bougent à chaque image, sans reconstruire la liste.
+    [...liste.children].forEach((li, idx) => {
+      const l = vues[idx];
+      const n = l.unite ? Math.round(l.n * (l.cours ? l.k : 1)) : null;
+      li.querySelector('.n').textContent = n === null ? '' : `${fmt(n)} ${pluriel(n, l.unite)}`;
+      const j = li.querySelector('.jauge i');
+      if (j) j.style.setProperty('--k', l.k.toFixed(3));
+    });
+  }
+
+  function rendu(etat) {
+    const p = Math.round(etat.p * 100);
+    $('pct').innerHTML = `${p}<small>%</small>`;
+    $('pct').setAttribute('aria-valuenow', p);
+    $('barre').style.setProperty('--p', etat.p.toFixed(4));
+    $('ou1').textContent = `${etat.finies} ${etat.finies > 1 ? 'étapes' : 'étape'} sur 5`;
+    $('ou2').textContent = etat.fini ? `${Math.round(TOTAL + ATTENTE)} s` : `encore ${Math.max(1, Math.round(etat.reste))} s`;
+    etat.etapes.forEach((e, i) => {
+      const li = $(`e${i}`);
+      li.className = e.etat;
+      li.firstChild.innerHTML = icone(e.etat === 'fait' ? 'check' : e.etat === 'encours' ? 'loader' : e.icone);
+      li.lastChild.textContent = e.etat === 'attente' ? '' : `${fmt(e.n)}${e.etat === 'encours' ? '…' : ''}`;
+    });
+    document.body.classList.toggle('pret', etat.fini);
+    $('phrase').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite.';
+    $('titreFlux').textContent = etat.fini ? 'Tout est arrivé' : 'Ce qui arrive de ton serveur';
+    $('avis').hidden = etat.fini;
+    $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    journal(etat);
+  }
+
+  // La boucle de la maquette : 12 s de chargement, 3 s posé, puis on recommence.
+  // ?p=0.42 fige l'écran à 42 % (pour les captures).
+  const params = new URLSearchParams(location.search);
+  if (params.has('p')) {
+    const f = Math.min(1, Math.max(0, parseFloat(params.get('p')) || 0));
+    rendu(etatA(f >= 1 ? TOTAL + ATTENTE + 0.01 : ATTENTE + f * TOTAL));
+  } else {
+    let debut = performance.now();
+    const image = (now) => {
+      let t = (now - debut) / 1000;
+      if (t > TOTAL + ATTENTE + 3.2) { debut = now; t = 0; }
+      rendu(etatA(t));
+      requestAnimationFrame(image);
+    };
+    requestAnimationFrame(image);
+  }
+})();
+</script>
+</body>
+</html>
