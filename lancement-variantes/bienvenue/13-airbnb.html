@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Airbnb</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 13 — d'après Airbnb.
+ * Les trois onglets à grosse icône en haut (la façon de se connecter), la barre de recherche en
+ * pilule découpée en cases — Serveur | Identifiant | Mot de passe — avec le bouton rond dégradé
+ * au bout, la case « afficher le prix total » qui devient « n'afficher que le français », et la
+ * grille d'annonces carrées en dessous pour montrer à quoi ressemblera l'Accueil.
+ */
+:root { color-scheme: light; --a: 'Nunito Sans', 'Segoe UI', sans-serif; --t1: #222; --t2: #6a6a6a; --ligne: #ddd; --rose: #e61e4d; }
+body { background: #fff; color: var(--t1); font: 15px/1.4 var(--a); }
+.page { position: fixed; inset: 0; display: grid; grid-template-rows: auto auto 1fr; overflow: hidden; }
+.tete { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 18px 48px 0; background: linear-gradient(#fbfbfb, #fff); }
+.logoA { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 22px; color: var(--rose); letter-spacing: -0.02em; }
+.logoA .lambda { width: 30px; height: 30px; background: linear-gradient(135deg, #ff385c, #bd1e59); }
+.onglets3 { display: flex; gap: 34px; }
+.o3 { all: unset; display: flex; align-items: center; gap: 10px; padding: 12px 2px 16px; color: var(--t2); font-weight: 600; font-size: 15.5px; cursor: pointer; border-bottom: 3px solid transparent; }
+.o3 svg { width: 50px; height: 50px; transition: transform 220ms cubic-bezier(.3, 1.6, .5, 1); }
+.o3:hover svg { transform: scale(1.08) rotate(-3deg); }
+.o3[aria-selected="true"] { color: var(--t1); border-color: var(--t1); }
+.droiteT { justify-self: end; display: flex; align-items: center; gap: 14px; font-weight: 600; font-size: 14px; }
+.droiteT .menu { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--ligne); border-radius: 999px; }
+.droiteT .menu svg { width: 16px; height: 16px; fill: none; stroke: var(--t1); stroke-width: 2.4; }
+.droiteT .av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #717171; color: #fff; font-size: 13px; }
+.recherche { padding: 18px 48px 0; border-bottom: 1px solid #ebebeb; display: grid; justify-items: center; gap: 18px; }
+.recherche h1 { margin: 10px 0 4px; font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.pilule { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; align-items: center; width: min(920px, 100%); height: 68px; border: 1px solid var(--ligne); border-radius: 999px; box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1); background: #fff; }
+.pilule:has(.casep:focus-within) { background: #ebebeb; }
+.casep { position: relative; height: 100%; display: grid; align-content: center; padding: 0 28px; border-radius: 999px; cursor: text; }
+.casep + .casep::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 1px; background: var(--ligne); }
+.casep:focus-within { background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
+.casep:focus-within::before, .casep:focus-within + .casep::before { display: none; }
+.casep label { font-size: 12px; font-weight: 800; }
+.casep input { border: 0; padding: 0; background: transparent; font: 14.5px var(--a); color: var(--t1); outline: none; width: 100%; }
+.casep input::placeholder { color: var(--t2); }
+.go2 { all: unset; display: flex; align-items: center; gap: 8px; height: 50px; margin-right: 9px; padding: 0 20px 0 16px; border-radius: 999px; background: linear-gradient(90deg, #e61e4d 0%, #e31c5f 50%, #d70466 100%); color: #fff; font-weight: 700; cursor: pointer; }
+.go2 svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 3; }
+.bas { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; padding: 28px 48px 0; min-height: 0; }
+.bas h2 { margin: 0 0 14px; font-size: 21px; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: baseline; justify-content: space-between; }
+.bas h2 small { font-size: 13.5px; font-weight: 600; color: var(--t2); }
+.annonces { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+.annonce { position: relative; min-width: 0; }
+.annonce .affiche { aspect-ratio: 4 / 5; border-radius: 14px; }
+.annonce .affiche span { display: none; }
+.annonce .pastille { position: absolute; left: 10px; top: 10px; padding: 5px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); font-size: 12px; font-weight: 800; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15); }
+.annonce .coeur { position: absolute; right: 12px; top: 10px; width: 26px; height: 26px; fill: rgba(0, 0, 0, 0.5); stroke: #fff; stroke-width: 2; }
+.annonce .coeur.on { fill: #ff385c; }
+.annonce p { margin: 8px 0 0; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.annonce p b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.annonce p span { flex: none; display: flex; align-items: center; gap: 3px; }
+.annonce p span svg { width: 11px; height: 11px; fill: var(--t1); }
+.annonce small { display: block; color: var(--t2); font-size: 14px; }
+.cote { display: grid; align-content: start; gap: 14px; }
+.boite { padding: 18px 20px; border: 1px solid var(--ligne); border-radius: 14px; }
+.boite.fr { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; cursor: pointer; }
+.boite b { display: block; font-weight: 800; font-size: 15.5px; }
+.boite small { display: block; margin-top: 2px; color: var(--t2); font-size: 13.5px; }
+.inter2 { appearance: none; position: relative; width: 48px; height: 32px; margin: 0; border-radius: 16px; background: #b0b0b0; cursor: pointer; transition: background 200ms; }
+.inter2::after { content: ''; position: absolute; left: 2px; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: transform 200ms; }
+.inter2:checked { background: var(--t1); }
+.inter2:checked::after { transform: translateX(16px); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 13px no-repeat; }
+.boite.secu { display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: center; }
+.boite.secu svg { width: 40px; height: 40px; }
+.reprise2 { all: unset; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border: 1px solid var(--t1); border-radius: 10px; font-weight: 700; cursor: pointer; }
+.reprise2:hover { background: #f7f7f7; }
+.reprise2 small { display: block; font-weight: 500; color: var(--t2); font-size: 13px; }
+.reprise2 svg { width: 18px; height: 18px; fill: none; stroke: var(--t1); stroke-width: 2.4; }
+.cats { display: flex; gap: 38px; width: 100%; margin-top: 8px; padding: 0 0 2px; overflow: hidden; }
+.cat { all: unset; display: grid; justify-items: center; gap: 8px; padding: 10px 0 12px; color: var(--t2); font-size: 12.5px; font-weight: 600; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; opacity: 0.75; }
+.cat svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.cat:hover { opacity: 1; border-color: var(--ligne); }
+.cat[aria-selected="true"] { color: var(--t1); opacity: 1; border-color: var(--t1); }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: #8a8a8a; border-color: var(--ligne); }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="tete">
+    <span class="logoA"><span class="lambda"></span>aurora</span>
+    <nav class="onglets3" role="tablist" id="o3">
+      <button class="o3" type="button" role="tab" aria-selected="true" data-p="xtream">
+        <svg viewBox="0 0 50 50"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2f2f2"/><stop offset="1" stop-color="#cfcfd4"/></linearGradient><linearGradient id="g1b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6aa8ff"/><stop offset="1" stop-color="#3a62d8"/></linearGradient></defs><ellipse cx="25" cy="44" rx="16" ry="3" fill="#000" opacity=".12"/><rect x="9" y="8" width="32" height="14" rx="4" fill="url(#g1)" stroke="#b9b9c0"/><rect x="9" y="25" width="32" height="14" rx="4" fill="url(#g1)" stroke="#b9b9c0"/><circle cx="15" cy="15" r="2.4" fill="url(#g1b)"/><circle cx="15" cy="32" r="2.4" fill="#52c46b"/><rect x="21" y="13.5" width="14" height="3" rx="1.5" fill="#a9a9b2"/><rect x="21" y="30.5" width="10" height="3" rx="1.5" fill="#a9a9b2"/></svg>
+        Compte Xtream</button>
+      <button class="o3" type="button" role="tab" aria-selected="false" data-p="m3u">
+        <svg viewBox="0 0 50 50"><defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#f08a24"/></linearGradient></defs><ellipse cx="25" cy="44" rx="16" ry="3" fill="#000" opacity=".12"/><rect x="10" y="6" width="26" height="34" rx="4" fill="#fff" stroke="#c9c9cf"/><rect x="14" y="12" width="18" height="3" rx="1.5" fill="#c4c4cc"/><rect x="14" y="19" width="12" height="3" rx="1.5" fill="#c4c4cc"/><rect x="14" y="26" width="14" height="3" rx="1.5" fill="#c4c4cc"/><circle cx="35" cy="33" r="9" fill="url(#g2)"/><path d="M33 29.5v7l5.5-3.5z" fill="#fff"/></svg>
+        Playlist M3U</button>
+      <button class="o3" type="button" role="tab" aria-selected="false" data-p="fichier">
+        <svg viewBox="0 0 50 50"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ad1ff"/><stop offset="1" stop-color="#3a8fe0"/></linearGradient></defs><ellipse cx="25" cy="44" rx="16" ry="3" fill="#000" opacity=".12"/><path d="M6 14a4 4 0 0 1 4-4h9l4 4h17a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z" fill="url(#g3)"/><path d="M6 20h38v16a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4z" fill="#5fb0f2"/><rect x="16" y="26" width="18" height="3" rx="1.5" fill="#fff" opacity=".8"/></svg>
+        Fichier .m3u</button>
+    </nav>
+    <span class="droiteT">Aide<span class="menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="av">H</span></span></span>
+  </header>
+  <section class="recherche">
+    <h1>Ton abonnement, enfin rangé.</h1>
+    <div class="pilule" id="pilule">
+      <div class="casep"><label for="s">Serveur</label><input id="s" placeholder="http://ton-fournisseur:8080" spellcheck="false"></div>
+      <div class="casep"><label for="u">Identifiant</label><input id="u" placeholder="Ton identifiant"></div>
+      <div class="casep"><label for="mdp">Mot de passe</label><input id="mdp" type="password" placeholder="••••••••"></div>
+      <button class="go2" type="button"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Ranger</button>
+    </div>
+    <nav class="cats" id="cats"></nav>
+  </section>
+  <section class="bas">
+    <div>
+      <h2>À quoi ressemblera ton Accueil <small>Exemples · c’est ton catalogue qui décidera</small></h2>
+      <div class="annonces" id="annonces"></div>
+    </div>
+    <aside class="cote">
+      <label class="boite fr" for="fr"><span><b>N’afficher que le français</b><small>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Réglages ▸ Catalogue pour défaire.</small></span><input class="inter2" id="fr" type="checkbox" checked></label>
+      <button class="reprise2" type="button"><span>Reprendre une sauvegarde .aurora<small>Rend tes comptes, réglages, favoris et historique.</small></span><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+      <div class="boite secu"><svg viewBox="0 0 40 40"><defs><linearGradient id="gs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a7a"/><stop offset="1" stop-color="#d70466"/></linearGradient></defs><path d="M20 3 6 8v11c0 9 6 15 14 18 8-3 14-9 14-18V8z" fill="url(#gs)"/><path d="m13 20 5 5 9-10" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span><b>Chiffré sur ce PC</b><small>Tes identifiants restent ici, et rien ne part ailleurs.</small></span></div>
+    </aside>
+  </section>
+</main>
+<span class="etiquette">Variante 13 · d’après Airbnb</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { TITRES, affiche } = Aurora;
+  const T = (n) => TITRES.find((t) => t.titre === n);
+  const A = [
+    ['Dune : Deuxième partie', 'Film · 2024', '4,92', 'Coup de cœur'], ['Shōgun', 'Série · 10 épisodes', '4,97', ''], ['Anatomie d’une chute', 'Film · 2023', '4,88', 'Coup de cœur'],
+    ['Slow Horses', 'Série · 4 saisons', '4,95', ''],
+  ];
+  document.getElementById('annonces').innerHTML = A.map(([t, s, n, b], i) => `<div class="annonce">${affiche(T(t))}${b ? `<span class="pastille">${b}</span>` : ''}<svg class="coeur${i === 2 ? ' on' : ''}" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C1 8.5 3 5 6.4 5c2 0 3.3 1.1 4 2.2h3.2C14.3 6.1 15.6 5 17.6 5 21 5 23 8.5 21.6 11.7 19.5 16.4 12 21 12 21z"/></svg><p><b>${t}</b><span><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.6 4.4L18.5 21 12 16.8 5.5 21l2.1-7.6L2 9h7z"/></svg>${n}</span></p><small>${s}</small></div>`).join('');
+  const I = Aurora.icone;
+  const C = [['Tendances', 'zap'], ['Films', 'film'], ['Séries', 'clapper'], ['En direct', 'tv'], ['Guide TV', 'calendar'], ['Favoris', 'star'], ['Téléchargés', 'download'], ['Catégories', 'grid'], ['Playlists', 'listPlay'], ['Tout', 'layers']];
+  const cats = document.getElementById('cats');
+  cats.innerHTML = C.map(([n, ic], i) => `<button class="cat" type="button" aria-selected="${i === 0}">${I(ic, '')}${n}</button>`).join('');
+  cats.querySelectorAll('.cat').forEach((c) => c.addEventListener('click', () => cats.querySelectorAll('.cat').forEach((x) => x.setAttribute('aria-selected', String(x === c)))));
+  // Les onglets changent les cases de la pilule.
+  const CASES = {
+    xtream: [['Serveur', 'http://ton-fournisseur:8080', 'text'], ['Identifiant', 'Ton identifiant', 'text'], ['Mot de passe', '••••••••', 'password']],
+    m3u: [['Lien de la playlist', 'http://…/get.php?type=m3u_plus', 'text'], ['Guide TV (EPG)', 'Facultatif', 'text'], ['Nom', 'Mon abonnement', 'text']],
+    fichier: [['Fichier', 'Choisir un .m3u sur ce PC…', 'text'], ['Guide TV (EPG)', 'Facultatif', 'text'], ['Nom', 'Mon abonnement', 'text']],
+  };
+  const o = [...document.querySelectorAll('.o3')];
+  o.forEach((b) => b.addEventListener('click', () => {
+    o.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll('.casep').forEach((c, i) => { const [l, ph, ty] = CASES[b.dataset.p][i]; c.querySelector('label').textContent = l; const inp = c.querySelector('input'); inp.placeholder = ph; inp.type = ty; inp.value = ''; });
+  }));
+})();
+</script>
+</body>
+</html>

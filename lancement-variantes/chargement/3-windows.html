@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après Windows 11</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 3 — d'après la fenêtre de copie de Windows 11 (mode sombre).
+ * Le titre « 42 % terminé », la phrase « Copie de N éléments de … vers … », le graphique vert du
+ * débit avec sa ligne de vitesse, « Nom / Temps restant / Éléments restants », puis la liste des
+ * opérations, une par étape, avec leur fine barre verte. L'avertissement est un InfoBar.
+ */
+:root { --s: 'Segoe UI Variable', 'Segoe UI', 'Noto Sans', sans-serif; --fond: #202020; --carte: #2b2b2b; --carte2: #323232; --ligne: rgba(255, 255, 255, 0.08); --t1: #fff; --t2: #c5c5c5; --t3: #9d9d9d; --acc: #4cc2ff; --vert: #06b025; }
+body { background: var(--fond); color: var(--t1); font: 14px/1.45 var(--s); }
+.fen { position: fixed; inset: 0; display: grid; grid-template-rows: 40px 1fr; background: linear-gradient(160deg, #23262d 0%, #202020 40%, #1f1f22 100%); }
+.barreT { display: flex; align-items: center; gap: 10px; padding-left: 14px; font-size: 12px; color: var(--t2); }
+.barreT .lambda { width: 16px; height: 16px; }
+.barreT .ctrl { margin-left: auto; display: flex; }
+.barreT .ctrl span { display: grid; place-items: center; width: 46px; height: 40px; }
+.barreT .ctrl svg { width: 10px; height: 10px; fill: none; stroke: var(--t2); stroke-width: 1.2; }
+.zone { display: grid; place-items: center; padding: 10px 24px 30px; overflow: hidden; }
+.dialogue { width: min(820px, 100%); border-radius: 8px; background: var(--carte); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 32px 64px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06); overflow: hidden; }
+.dTitre { display: flex; align-items: center; justify-content: space-between; padding: 10px 6px 0 16px; font-size: 12px; color: var(--t2); }
+.dTitre .ctrl { display: flex; } .dTitre .ctrl span { display: grid; place-items: center; width: 40px; height: 28px; } .dTitre .ctrl svg { width: 10px; height: 10px; fill: none; stroke: var(--t2); stroke-width: 1.2; }
+.dCorps { padding: 10px 26px 22px; }
+.copie { margin: 0 0 14px; color: var(--t2); font-size: 14px; }
+.copie a { color: var(--acc); text-decoration: none; }
+.ligneP { display: flex; align-items: center; justify-content: space-between; }
+.ligneP h1 { margin: 0; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.btnsP { display: flex; gap: 6px; }
+.btnsP span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 4px; background: rgba(255, 255, 255, 0.06); }
+.btnsP svg { width: 14px; height: 14px; fill: none; stroke: var(--t1); stroke-width: 1.6; }
+.graphe { position: relative; height: 150px; margin: 14px 0 12px; border: 1px solid var(--ligne); background: #262626; }
+.graphe svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.graphe .vit { position: absolute; right: 8px; padding: 0 4px; font-size: 12px; color: var(--t1); background: rgba(38, 38, 38, 0.85); transform: translateY(-120%); font-variant-numeric: tabular-nums; }
+.details { display: grid; grid-template-columns: auto 1fr; gap: 3px 18px; margin: 0; font-size: 13.5px; }
+.details dt { color: var(--t3); }
+.details dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.moins { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: var(--t2); font-size: 13px; }
+.moins svg { width: 12px; height: 12px; fill: none; stroke: var(--t2); stroke-width: 1.6; }
+.ops { border-top: 1px solid var(--ligne); background: #272727; }
+.op { display: grid; grid-template-columns: 28px 170px 1fr 150px; align-items: center; gap: 14px; padding: 9px 26px; border-bottom: 1px solid var(--ligne); font-size: 13px; }
+.op:last-child { border-bottom: 0; }
+.op svg { width: 18px; height: 18px; fill: none; stroke: var(--t2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.op.fait svg { stroke: #6ccb5f; }
+.op.encours svg { stroke: var(--acc); }
+.op .pb { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.op .pb i { position: absolute; inset: 0 auto 0 0; width: calc(var(--k, 0) * 100%); background: var(--vert); border-radius: 2px; }
+.op.attente { color: var(--t3); }
+.op .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--t2); }
+.pied { display: flex; align-items: center; gap: 14px; padding: 14px 26px 18px; background: #202020; border-top: 1px solid var(--ligne); }
+.info { flex: 1; display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 4px; background: #433519; border: 1px solid rgba(0, 0, 0, 0.2); font-size: 13px; color: var(--t1); }
+.info svg { width: 18px; height: 18px; margin-top: 1px; }
+.info b { font-weight: 600; }
+.bW { all: unset; padding: 7px 18px; border-radius: 4px; background: var(--acc); color: #000; font-size: 14px; cursor: pointer; white-space: nowrap; box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25); }
+.bW:hover { background: #47b1e8; }
+.bW.sec { background: rgba(255, 255, 255, 0.06); color: var(--t1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(255, 255, 255, 0.04); }
+.pret .info { background: #393d1b; }
+.etiquette { background: rgba(32, 32, 32, 0.85); color: var(--t3); border-color: #3a3a3a; }
+</style>
+</head>
+<body>
+<div class="fen">
+  <div class="barreT"><span class="lambda"></span>Aurora<span class="ctrl"><span><svg viewBox="0 0 10 10"><path d="M0 5h10"/></svg></span><span><svg viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9"/></svg></span><span><svg viewBox="0 0 10 10"><path d="m0 0 10 10M10 0 0 10"/></svg></span></span></div>
+  <div class="zone">
+    <section class="dialogue">
+      <div class="dTitre"><span id="titreFen">0 % terminé</span><span class="ctrl"><span><svg viewBox="0 0 10 10"><path d="M0 5h10"/></svg></span><span><svg viewBox="0 0 10 10"><path d="m0 0 10 10M10 0 0 10"/></svg></span></span></div>
+      <div class="dCorps">
+        <p class="copie">Copie de <b id="tot">352 349</b> éléments de <a href="#">fournisseur.example</a> vers <a href="#">Aurora</a></p>
+        <div class="ligneP"><h1 id="pct">0 % terminé</h1><span class="btnsP"><span title="Pause"><svg viewBox="0 0 16 16"><path d="M5 3v10M11 3v10"/></svg></span><span title="Annuler"><svg viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></svg></span></span></div>
+        <div class="graphe"><svg id="graphe" viewBox="0 0 1000 150" preserveAspectRatio="none"></svg><span class="vit" id="vit"></span></div>
+        <dl class="details">
+          <dt>Nom :</dt><dd id="nom">—</dd>
+          <dt>Temps restant :</dt><dd id="reste">—</dd>
+          <dt>Éléments restants :</dt><dd id="restants">—</dd>
+        </dl>
+        <div class="moins"><svg viewBox="0 0 12 12"><path d="m2 8 4-4 4 4"/></svg>Moins de détails</div>
+      </div>
+      <div class="ops" id="ops"></div>
+      <div class="pied">
+        <div class="info" id="info"><svg viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="#fce100"/><path d="M9 5v5M9 12.5v.5" stroke="#000" stroke-width="1.8" stroke-linecap="round"/></svg><span><b>Le catalogue est chargé en entier, pour que rien ne rame ensuite.</b> L’app s’ouvrira tout de suite si tu continues, mais elle peut ramer le temps que le reste arrive.</span></div>
+        <button class="bW" type="button" id="continuer">Continuer sans attendre</button>
+      </div>
+    </section>
+  </div>
+</div>
+<span class="etiquette">Chargement · Variante 3 · d’après Windows 11</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, TOTAL, ATTENTE, etatA, chargement, fmt, pluriel, icone, CATALOGUE, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const TOUT = ETAPES.reduce((s, e) => s + e.cible, 0);
+  $('tot').textContent = fmt(TOUT);
+  // Le débit, échantillonné une fois pour toutes sur la durée du chargement (éléments par seconde).
+  const N = 200, dt = TOTAL / N, r = hasard(7);
+  const somme = (t) => etatA(t).etapes.reduce((s, e) => s + e.n, 0);
+  const debits = [];
+  for (let i = 0; i < N; i++) { const t = ATTENTE + i * dt; debits.push(Math.max(0, (somme(t + dt) - somme(t)) / dt) * (0.85 + r() * 0.3)); }
+  const lisse = debits.map((_, i) => { let s = 0, n = 0; for (let j = Math.max(0, i - 2); j <= Math.min(N - 1, i + 2); j++) { s += debits[j]; n++; } return s / n; });
+  const MAX = Math.max(...lisse) * 1.15;
+  const ops = $('ops');
+  ops.innerHTML = ETAPES.map((e, i) => `<div class="op attente" id="o${i}">${icone(e.icone, '')}<span>${e.nom}</span><span class="pb"><i></i></span><span class="n"></span></div>`).join('');
+  const noms = { categories: (k) => `Catégories · ${['Films', 'Séries', 'Direct'][Math.floor(k * 3) % 3]}`, films: null, series: null, chaines: (k) => `Chaînes en direct · ${Aurora.CHAINES[Math.floor(k * 60) % Aurora.CHAINES.length].nom}`, guide: (k) => `Guide · programmes du ${['samedi', 'dimanche', 'lundi', 'mardi'][Math.floor(k * 4) % 4]}` };
+  const films = CATALOGUE.filter((c) => c.type === 'films'), series = CATALOGUE.filter((c) => c.type !== 'films');
+  chargement({
+    rendu(etat) {
+      const p = Math.round(etat.p * 100);
+      $('pct').textContent = etat.fini ? 'Terminé' : `${p} % terminé`;
+      $('titreFen').textContent = etat.fini ? 'Copie terminée' : `${p} % terminé`;
+      // Graphique : l'aire verte jusqu'à la position actuelle.
+      const jusque = Math.min(N, Math.round(etat.p * N));
+      let d = 'M0 150';
+      for (let i = 0; i < jusque; i++) d += `L${((i + 0.5) / N * 1000).toFixed(1)} ${(150 - lisse[i] / MAX * 140).toFixed(1)}`;
+      const x = (jusque / N) * 1000;
+      const v = jusque ? lisse[jusque - 1] : 0, y = 150 - v / MAX * 140;
+      $('graphe').innerHTML = `<defs><pattern id="q" width="50" height="30" patternUnits="userSpaceOnUse"><path d="M50 0H0V30" fill="none" stroke="rgba(255,255,255,.05)"/></pattern></defs><rect width="1000" height="150" fill="url(#q)"/>
+        <rect width="${x.toFixed(1)}" height="150" fill="rgba(6,176,37,.12)"/>
+        <path d="${d}L${x.toFixed(1)} 150Z" fill="#06b025" opacity=".85"/>
+        ${etat.fini ? '' : `<path d="M0 ${y.toFixed(1)}H1000" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`}`;
+      $('vit').style.top = `${(y / 150) * 100}%`;
+      $('vit').textContent = etat.fini ? '' : `Vitesse : ${fmt(v)} éléments/s`;
+      $('vit').hidden = etat.fini;
+      const e = etat.etapes[etat.courante] || etat.etapes[4];
+      const liste = e.cle === 'series' ? series : films, titre = liste[Math.floor(e.k * liste.length * 7) % liste.length];
+      $('nom').textContent = etat.fini ? 'Tout est arrivé' : (noms[e.cle] ? noms[e.cle](e.k) : `${e.nom} · ${titre.titre}`);
+      $('reste').textContent = etat.fini ? 'aucun' : `environ ${Math.max(1, Math.round(etat.reste))} ${Math.round(etat.reste) > 1 ? 'secondes' : 'seconde'}`;
+      const restants = TOUT - etat.etapes.reduce((s, x) => s + x.n, 0);
+      $('restants').textContent = `${fmt(restants)} (${5 - etat.finies} ${5 - etat.finies > 1 ? 'étapes' : 'étape'})`;
+      etat.etapes.forEach((x, i) => {
+        const o = $(`o${i}`); o.className = `op ${x.etat}`;
+        o.firstChild.outerHTML = icone(x.etat === 'fait' ? 'check' : x.icone, '');
+        o.querySelector('.pb i').style.setProperty('--k', x.k.toFixed(3));
+        o.querySelector('.n').textContent = x.etat === 'attente' ? 'En attente' : `${fmt(x.n)} ${pluriel(x.n, x.unite)}`;
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('info').querySelector('span').innerHTML = etat.fini ? '<b>Tout est arrivé.</b> Les écrans s’ouvriront d’un coup.' : '<b>Le catalogue est chargé en entier, pour que rien ne rame ensuite.</b> L’app s’ouvrira tout de suite si tu continues, mais elle peut ramer le temps que le reste arrive.';
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Connexion</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 1 — « Tout de suite » (gardée).
+ * Le vide de droite est rempli par la chose qu'on est venu faire. Le formulaire s'y trouve déjà :
+ * on choisit Xtream ou M3U d'un onglet et on tape, sans écran intermédiaire. L'adresse du serveur
+ * est vérifiée pendant la frappe (le même « répond · 48 ms » que l'écran Comptes). À gauche, trois
+ * promesses tenues ailleurs dans l'app, au lieu d'une seule phrase.
+ */
+.page {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 620px) minmax(420px, 540px);
+  justify-content: center;
+  gap: clamp(48px, 8vw, 160px);
+  align-items: center;
+  padding: 24px var(--gouttiere) 48px;
+}
+.colonne { min-width: 0; }
+.colonne .marque { margin-bottom: clamp(28px, 4.5vh, 56px); }
+.promesses { display: grid; gap: 18px; margin: 34px 0 0; padding: 0; list-style: none; max-width: 470px; }
+.promesses li { display: grid; grid-template-columns: 38px 1fr; gap: 14px; align-items: start; }
+.promesses .pastille {
+  display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px;
+  background: var(--bg-elev2); color: var(--text-dim); box-shadow: inset 0 1px 0 var(--surface-line);
+}
+.promesses .pastille .ico { width: 18px; height: 18px; }
+.promesses b { display: block; font-size: 15px; font-weight: 600; }
+.promesses span { font-size: 13.5px; color: var(--text-dim); }
+.colonne .langue { margin-top: 30px; }
+
+/* ───────── La carte ───────── */
+.carte {
+  padding: 26px 28px 24px;
+  border-radius: var(--r-lg);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--surface-line), 0 30px 80px rgba(0, 0, 0, 0.45);
+  animation: entre 700ms var(--ease-back) 120ms backwards;
+}
+.carte h2 { margin: 0 0 18px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.onglets {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 22px;
+  border-radius: 12px; background: var(--bg); border: 1px solid var(--border);
+}
+.onglet {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 12px; border: 0; border-radius: 9px; background: none;
+  color: var(--text-dim); font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.onglet .ico { width: 16px; height: 16px; }
+.onglet[aria-selected="true"] { background: var(--bg-elev2); color: var(--text); font-weight: 600; box-shadow: inset 0 1px 0 var(--surface-line), 0 0 0 1px var(--border); }
+.panneau { display: grid; gap: 16px; }
+.panneau[hidden] { display: none; }
+.champ { display: grid; gap: 7px; min-width: 0; }
+.champ label { font-size: 13px; font-weight: 600; color: var(--text); }
+.champ label small { font-weight: 400; color: var(--text-faint); }
+.saisie { position: relative; }
+.saisie input {
+  width: 100%; padding: 12px 14px; border-radius: 11px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); font-size: 14px; outline: none;
+  transition: border-color 130ms var(--ease), box-shadow 130ms var(--ease);
+}
+.saisie input::placeholder { color: var(--text-faint); }
+.saisie input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.saisie input.mono { font-family: var(--mono); font-size: 13px; }
+.saisie .verdict {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ok);
+}
+.saisie .verdict i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.saisie .verdict.cours { color: var(--etat-cours); }
+.saisie .oeil {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px;
+  background: none; color: var(--text-faint); cursor: pointer;
+}
+.saisie .oeil .ico { width: 16px; height: 16px; }
+.aide { margin: 0; font-size: 12.5px; color: var(--text-faint); }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.envoyer { justify-content: center; width: 100%; margin-top: 6px; }
+.envoyer .ico { width: 16px; height: 16px; }
+.apres { margin: 2px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-dim); text-align: center; }
+.fichier {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  border: 1px dashed var(--border-strong); border-radius: 12px; color: var(--text-dim); font-size: 13.5px;
+}
+.fichier .ico { width: 20px; height: 20px; flex: none; color: var(--text-faint); }
+.fichier button { margin-left: auto; }
+.petit { padding: 8px 14px; font-size: 13px; }
+.sous-carte { margin: 18px 4px 0; font-size: 13.5px; line-height: 1.7; color: var(--text-dim); }
+
+@media (max-width: 1100px) {
+  .page { grid-template-columns: 1fr; overflow: auto; align-content: start; }
+}
+</style>
+</head>
+<body>
+
+<main class="page">
+  <section class="colonne entre">
+    <span class="marque"><span class="lambda"></span>Aurora</span>
+    <h1 class="titre">Ton abonnement,<br>enfin rangé.</h1>
+    <ul class="promesses" id="promesses"></ul>
+    <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte une autre langue (« EN&nbsp;- », « AR&nbsp;- »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages&nbsp;▸&nbsp;Catalogue.</span></span></label>
+  </section>
+
+  <section>
+    <form class="carte" id="carte" autocomplete="off">
+      <h2>Ajoute ton abonnement</h2>
+      <div class="onglets" role="tablist" aria-label="Type d’abonnement">
+        <button class="onglet" type="button" role="tab" id="tXtream" aria-controls="pXtream" aria-selected="true"></button>
+        <button class="onglet" type="button" role="tab" id="tM3u" aria-controls="pM3u" aria-selected="false" tabindex="-1"></button>
+      </div>
+
+      <div class="panneau" id="pXtream" role="tabpanel" aria-labelledby="tXtream">
+        <div class="champ">
+          <label for="serveur">Adresse du serveur</label>
+          <div class="saisie"><input class="mono" id="serveur" value="http://fournisseur.example:8080" spellcheck="false"><span class="verdict" id="verdict"><i></i>répond · 48 ms</span></div>
+          <p class="aide">Elle est dans le mail de ton fournisseur, avec l’identifiant.</p>
+        </div>
+        <div class="duo">
+          <div class="champ"><label for="id">Identifiant</label><div class="saisie"><input id="id" value="hugo" spellcheck="false"></div></div>
+          <div class="champ"><label for="mdp">Mot de passe</label><div class="saisie"><input id="mdp" type="password" placeholder="••••••••"><button class="oeil" type="button" aria-label="Afficher le mot de passe" id="voir"></button></div></div>
+        </div>
+        <div class="champ">
+          <label for="nom">Nom <small>— facultatif, pour t’y retrouver</small></label>
+          <div class="saisie"><input id="nom" placeholder="Mon abonnement"></div>
+        </div>
+        <button class="go primaire envoyer" type="submit" id="go1"></button>
+        <p class="apres">Aurora vérifie l’abonnement (date de fin, connexions), puis charge le catalogue une seule fois.</p>
+      </div>
+
+      <div class="panneau" id="pM3u" role="tabpanel" aria-labelledby="tM3u" hidden>
+        <div class="champ">
+          <label for="url">Adresse de la playlist</label>
+          <div class="saisie"><input class="mono" id="url" placeholder="http://…/get.php?…&type=m3u_plus" spellcheck="false"></div>
+        </div>
+        <div class="fichier" id="fichierM3u"></div>
+        <div class="champ">
+          <label for="epg">Guide des programmes <small>— adresse XMLTV, facultative</small></label>
+          <div class="saisie"><input class="mono" id="epg" placeholder="http://…/xmltv.php?…" spellcheck="false"></div>
+        </div>
+        <button class="go primaire envoyer" type="submit" id="go2"></button>
+        <p class="apres">Sans guide, les chaînes s’affichent quand même : il manquera juste les programmes.</p>
+      </div>
+    </form>
+    <p class="sous-carte">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button> <span class="muted small">— le fichier <code>.aurora</code> rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+  </section>
+</main>
+
+<span class="etiquette">Variante 1 · Tout de suite (gardée) — formulaire prérempli pour l’exemple</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { icone } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
+  $('tXtream').innerHTML = `${icone('server')}Compte Xtream`;
+  $('tM3u').innerHTML = `${icone('listPlay')}Playlist M3U`;
+  $('voir').innerHTML = icone('eye');
+  $('go1').innerHTML = `Se connecter ${icone('arrowRight')}`;
+  $('go2').innerHTML = `Importer la playlist ${icone('arrowRight')}`;
+  $('fichierM3u').innerHTML = `${icone('file')}<span>ou un fichier <code>.m3u</code> déjà sur ce PC</span><button class="go petit" type="button">Choisir…</button>`;
+
+  $('promesses').innerHTML = [
+    ['lock', 'Chiffré sur ce PC', 'Serveur, identifiant et mot de passe ne quittent pas cette machine.'],
+    ['server', 'Plusieurs serveurs', 'Si ton fournisseur en donne plusieurs, Aurora bascule sur le suivant quand l’un tombe.'],
+    ['zap', 'Chargé une fois', 'Le catalogue est gardé en cache : ensuite, chaque écran s’ouvre d’un coup.'],
+  ].map(([i, b, s]) => `<li><span class="pastille">${icone(i)}</span><div><b>${b}</b><span>${s}</span></div></li>`).join('');
+
+  // Les onglets.
+  const onglets = [$('tXtream'), $('tM3u')];
+  onglets.forEach((o) => o.addEventListener('click', () => choisir(o)));
+  function choisir(o) {
+    for (const x of onglets) {
+      const oui = x === o;
+      x.setAttribute('aria-selected', String(oui));
+      x.tabIndex = oui ? 0 : -1;
+      $(x.getAttribute('aria-controls')).hidden = !oui;
+    }
+  }
+  document.querySelector('.onglets').addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const i = onglets.indexOf(document.activeElement);
+    const o = onglets[(i + (e.key === 'ArrowRight' ? 1 : onglets.length - 1)) % onglets.length];
+    choisir(o); o.focus();
+  });
+
+  // La vérification de l'adresse pendant la frappe.
+  let minuterie = 0;
+  $('serveur').addEventListener('input', (e) => {
+    const v = $('verdict');
+    clearTimeout(minuterie);
+    if (!/^https?:\/\/[^\s/]+/.test(e.target.value)) { v.hidden = true; return; }
+    v.hidden = false; v.className = 'verdict cours'; v.innerHTML = '<i></i>on vérifie…';
+    minuterie = setTimeout(() => { v.className = 'verdict'; v.innerHTML = '<i></i>répond · 52 ms'; }, 700);
+  });
+  $('voir').addEventListener('click', () => { const m = $('mdp'); m.type = m.type === 'password' ? 'text' : 'password'; });
+  $('carte').addEventListener('submit', (e) => e.preventDefault());
+  if (!Aurora.FIGE) setTimeout(() => $('mdp').focus({ preventScroll: true }), 900);
+})();
+</script>
+</body>
+</html>

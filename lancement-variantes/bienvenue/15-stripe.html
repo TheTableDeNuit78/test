@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Stripe Checkout</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 15 — d'après la page de paiement de Stripe (Checkout).
+ * Deux moitiés : à gauche, le récapitulatif — ce que tu « achètes », ligne par ligne, et le total
+ * en gros (zéro : tu apportes ton abonnement) ; à droite, le formulaire net, le bouton express
+ * en haut (la sauvegarde), « ou », les onglets de moyen de connexion, les champs soudés entre eux
+ * comme numéro de carte / date / code, la case à cocher décrite, et le bouton pleine largeur.
+ */
+:root { color-scheme: light; --i: 'Inter', -apple-system, sans-serif; --t1: #1a1f36; --t2: #697386; --t3: #8792a2; --ligne: #e3e8ee; --violet: #7c5cff; --violetF: #6a4ce6; }
+body { background: #fff; color: var(--t1); font: 15px/1.45 var(--i); }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.recap { display: grid; justify-content: end; align-content: center; padding: 0 76px 0 40px; background: #f7f8fa; box-shadow: inset -1px 0 0 var(--ligne); }
+.recapIn { width: min(420px, 100%); }
+.retour { display: flex; align-items: center; gap: 12px; margin-bottom: 34px; font-weight: 600; font-size: 14.5px; }
+.retour svg { width: 16px; height: 16px; fill: none; stroke: var(--t3); stroke-width: 2.4; }
+.retour .lambda { width: 26px; height: 26px; }
+.retour .test { padding: 2px 6px; border-radius: 4px; background: #ffde92; color: #983705; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.quoi { margin: 0; color: var(--t2); font-size: 16px; font-weight: 500; }
+.montant { margin: 4px 0 30px; font-size: 38px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.montant small { font-size: 15px; font-weight: 500; color: var(--t2); letter-spacing: 0; }
+.ligneR { display: grid; grid-template-columns: 42px 1fr auto; gap: 14px; align-items: center; padding: 10px 0; }
+.ligneR .vig { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--ligne), 0 2px 5px rgba(60, 66, 87, 0.08); }
+.ligneR .vig svg { width: 22px; height: 22px; fill: none; stroke: var(--violet); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ligneR b { display: block; font-weight: 600; font-size: 14.5px; }
+.ligneR small { color: var(--t2); font-size: 13px; }
+.ligneR > span:last-child { font-weight: 600; font-size: 14.5px; }
+.total { display: flex; justify-content: space-between; margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--ligne); font-weight: 600; }
+.sousT { display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ligne); color: var(--t2); font-size: 14px; }
+.form { display: grid; align-content: center; padding: 0 40px 0 76px; }
+.formIn { width: min(400px, 100%); }
+.express { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 46px; border-radius: 6px; background: #1a1f36; color: #fff; font-weight: 600; cursor: pointer; }
+.express svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2.2; }
+.express:hover { background: #2a3150; }
+.express + small { display: block; margin-top: 6px; text-align: center; color: var(--t3); font-size: 12.5px; }
+.ou { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--t3); font-size: 14px; }
+.ou::before, .ou::after { content: ''; flex: 1; height: 1px; background: var(--ligne); }
+.lab { display: block; margin: 0 0 6px; color: var(--t2); font-size: 13.5px; font-weight: 500; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.tab { all: unset; box-sizing: border-box; display: grid; gap: 6px; padding: 10px 12px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--ligne), 0 2px 4px rgba(0, 0, 0, 0.04); font-size: 13.5px; font-weight: 600; color: var(--t2); cursor: pointer; }
+.tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
+.tab[aria-selected="true"] { color: var(--violet); box-shadow: 0 0 0 2px var(--violet), 0 2px 4px rgba(0, 0, 0, 0.04); }
+.groupe { margin-bottom: 18px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ligne), 0 2px 4px rgba(0, 0, 0, 0.04); }
+.groupe input { display: block; width: 100%; height: 44px; padding: 0 12px; border: 0; background: transparent; font: 15px var(--i); color: var(--t1); outline: none; }
+.groupe input::placeholder { color: #a3acb9; }
+.groupe .rang { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ligne); }
+.groupe .rang input + input { border-left: 1px solid var(--ligne); }
+.groupe input:focus { position: relative; box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.3); border-radius: 4px; }
+.coche { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 14px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ligne); cursor: pointer; margin-bottom: 20px; }
+.coche input { appearance: none; width: 16px; height: 16px; margin: 2px 0 0; border-radius: 4px; box-shadow: 0 0 0 1px #c1c9d2; cursor: pointer; }
+.coche input:checked { background: var(--violet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 11px no-repeat; box-shadow: none; }
+.coche b { display: block; font-weight: 600; font-size: 14px; }
+.coche small { color: var(--t2); font-size: 13px; }
+.payer { all: unset; box-sizing: border-box; position: relative; display: grid; place-items: center; width: 100%; height: 46px; border-radius: 6px; background: var(--violet); color: #fff; font-weight: 600; font-size: 16px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(50, 50, 93, 0.1), 0 2px 5px rgba(50, 50, 93, 0.1); transition: background 150ms; }
+.payer:hover { background: var(--violetF); }
+.payer .cad { position: absolute; right: 14px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); fill: none; stroke: rgba(255, 255, 255, 0.75); stroke-width: 2.2; }
+.payer.en .txt { opacity: 0; }
+.payer.en::after { content: ''; position: absolute; width: 20px; height: 20px; border: 2.5px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; border-radius: 50%; animation: tour 700ms linear infinite; }
+@keyframes tour { to { transform: rotate(360deg); } }
+.pied { display: flex; justify-content: center; gap: 14px; margin-top: 22px; color: var(--t3); font-size: 12.5px; }
+.pied b { color: var(--t2); font-weight: 600; }
+.pied i { width: 1px; background: var(--ligne); }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: var(--t3); border-color: var(--ligne); }
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="recap">
+    <div class="recapIn">
+      <div class="retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span class="lambda"></span>Aurora<span class="test">Premier lancement</span></div>
+      <p class="quoi">Ton abonnement, enfin rangé.</p>
+      <p class="montant">0,00 € <small>pour toujours</small></p>
+      <div class="ligneR"><span class="vig"><svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span><span><b>Guide TV</b><small>Tous les programmes de tes chaînes</small></span><span>Inclus</span></div>
+      <div class="ligneR"><span class="vig"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></span><span><b>Téléchargements</b><small>Films et épisodes, hors ligne</small></span><span>Inclus</span></div>
+      <div class="ligneR"><span class="vig"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="#7c5cff" stroke="none"/></svg></span><span><b>Enregistrements</b><small>Le direct, quand tu veux</small></span><span>Inclus</span></div>
+      <div class="ligneR"><span class="vig"><svg viewBox="0 0 24 24"><path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7 5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6.9 5.2a.5.5 0 0 1-.8.5L12 15.6 7.4 18a.5.5 0 0 1-.8-.5l.9-5.2-3.8-3.6a.5.5 0 0 1 .3-.9l5.2-.8z"/></svg></span><span><b>Favoris et historique</b><small>Repris là où tu t’es arrêté</small></span><span>Inclus</span></div>
+      <div class="sousT"><span>Ton abonnement IPTV</span><span>Chez ton fournisseur</span></div>
+      <div class="total"><span>À payer aujourd’hui</span><span>0,00 €</span></div>
+    </div>
+  </section>
+  <section class="form">
+    <div class="formIn">
+      <button class="express" type="button"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"/></svg>Reprendre une sauvegarde .aurora</button>
+      <small>Rend tes comptes, tes réglages, tes favoris et ton historique.</small>
+      <div class="ou">Ou ajoute un abonnement</div>
+      <span class="lab">Ce que ton fournisseur t’a donné</span>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" type="button" role="tab" aria-selected="true" data-p="x"><svg viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg>Compte Xtream</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-p="m"><svg viewBox="0 0 24 24"><path d="M21 5H3M11 12H3M11 19H3M15 12v7l6-3.5z"/></svg>Lien M3U</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-p="f"><svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>Fichier .m3u</button>
+      </div>
+      <span class="lab" id="labG">Identifiants du compte</span>
+      <div class="groupe" id="groupe">
+        <input id="s" placeholder="http://fournisseur.example:8080" spellcheck="false" aria-label="Adresse du serveur">
+        <div class="rang"><input placeholder="Identifiant" aria-label="Identifiant"><input type="password" placeholder="Mot de passe" aria-label="Mot de passe"></div>
+      </div>
+      <label class="coche" for="fr"><input id="fr" type="checkbox" checked><span><b>N’afficher que le français</b><small>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Réglages ▸ Catalogue pour défaire.</small></span></label>
+      <button class="payer" type="button" id="payer"><span class="txt">Ranger mon abonnement</span><svg class="cad" viewBox="0 0 24 24"><rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+      <div class="pied"><span>Chiffré sur <b>ce PC</b></span><i></i><span>Rien ne part ailleurs</span><i></i><span>Aide</span></div>
+    </div>
+  </section>
+</main>
+<span class="etiquette">Variante 15 · d’après Stripe Checkout</span>
+<script>
+'use strict';
+(() => {
+  const tabs = [...document.querySelectorAll('.tab')], g = document.getElementById('groupe'), lab = document.getElementById('labG');
+  const V = {
+    x: ['Identifiants du compte', '<input placeholder="http://fournisseur.example:8080" spellcheck="false" aria-label="Adresse du serveur"><div class="rang"><input placeholder="Identifiant" aria-label="Identifiant"><input type="password" placeholder="Mot de passe" aria-label="Mot de passe"></div>'],
+    m: ['Adresse de la playlist', '<input placeholder="http://…/get.php?type=m3u_plus" aria-label="Lien M3U"><div class="rang"><input placeholder="Guide TV (facultatif)" aria-label="Guide TV"><input placeholder="Nom" aria-label="Nom"></div>'],
+    f: ['Fichier sur ce PC', '<input placeholder="Choisir un fichier .m3u…" aria-label="Fichier"><div class="rang"><input placeholder="Guide TV (facultatif)" aria-label="Guide TV"><input placeholder="Nom" aria-label="Nom"></div>'],
+  };
+  tabs.forEach((t) => t.addEventListener('click', () => { tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t))); [lab.textContent, g.innerHTML] = V[t.dataset.p]; }));
+  const p = document.getElementById('payer');
+  p.addEventListener('click', () => { p.classList.add('en'); setTimeout(() => p.classList.remove('en'), 1800); });
+})();
+</script>
+</body>
+</html>

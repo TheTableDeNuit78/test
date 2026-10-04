@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après Spotify Wrapped</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 10 — d'après Spotify Wrapped.
+ * Une « story » verticale par étape, avec les segments de progression en haut (un par étape),
+ * un énorme chiffre qui compte, des couleurs franches et des formes qui bougent. Les cartes
+ * défilent en carrousel : celle d'avant, celle en cours, celle d'après. À la fin, la carte
+ * résumé, comme le récapitulatif qu'on partage.
+ */
+:root { --f: 'Figtree', 'Segoe UI', sans-serif; --vert: #1ed760; }
+body { background: #000; color: #fff; font: 15px/1.4 var(--f); overflow: hidden; }
+.page { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; }
+.haut { display: flex; align-items: center; justify-content: space-between; padding: 22px 40px 0; }
+.marqueS { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+.marqueS .lambda { width: 26px; height: 26px; background: #fff; }
+.haut .info { color: #b3b3b3; font-size: 14px; font-variant-numeric: tabular-nums; }
+.haut .info b { color: #fff; }
+.scene { position: relative; }
+.story { position: absolute; left: 50%; top: 50%; width: 400px; aspect-ratio: 9 / 16; max-height: calc(100% - 20px); margin: 0; border-radius: 16px; overflow: hidden; background: var(--c); color: var(--t); transform: translate(-50%, -50%) translateX(calc(var(--o, 0) * 330px)) scale(var(--s, 1)); opacity: var(--op, 1); transition: transform 700ms cubic-bezier(.3, 1.2, .4, 1), opacity 500ms; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); }
+.segments { position: absolute; left: 12px; right: 12px; top: 12px; z-index: 3; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.segments i { height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--t) 30%, transparent); overflow: hidden; }
+.segments i b { display: block; height: 100%; width: calc(var(--k, 0) * 100%); background: var(--t); }
+.story .tete { position: absolute; left: 14px; right: 14px; top: 24px; z-index: 3; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; }
+.story .tete .lambda { width: 16px; height: 16px; background: var(--t); }
+.formes { position: absolute; inset: 0; }
+.txt { position: absolute; left: 26px; right: 26px; bottom: 34px; z-index: 2; }
+.txt p { margin: 0 0 8px; font-size: 21px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.txt b { display: block; font-size: 84px; font-weight: 900; letter-spacing: -0.05em; line-height: 0.92; font-variant-numeric: tabular-nums; }
+.txt span { display: block; margin-top: 6px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
+.txt small { display: block; margin-top: 12px; font-size: 14px; font-weight: 600; opacity: 0.8; }
+/* La carte résumé. */
+.resume .txt { top: 64px; bottom: auto; }
+.resume h3 { margin: 0 0 20px; font-size: 30px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+.resume ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.resume li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; font-size: 15px; font-weight: 700; }
+.resume li em { font-style: normal; opacity: 0.6; font-weight: 800; }
+.resume li strong { display: block; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+.tourne { transform-box: fill-box; transform-origin: center; animation: tourne 9s linear infinite; }
+.pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2.4s ease-in-out infinite; }
+.glisse { animation: glisse 6s ease-in-out infinite alternate; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { transform: scale(1.15); } }
+@keyframes glisse { to { transform: translateX(-60px); } }
+.bas { display: flex; align-items: center; justify-content: center; gap: 22px; padding: 0 40px 28px; }
+.bas p { margin: 0; max-width: 52ch; color: #b3b3b3; font-size: 14px; }
+.bas p b { color: #fff; }
+.pillS { all: unset; padding: 14px 30px; border-radius: 999px; background: #fff; color: #000; font-weight: 800; font-size: 15px; cursor: pointer; white-space: nowrap; }
+.pillS:hover { transform: scale(1.04); }
+.pret .pillS { background: var(--vert); }
+.fleche { position: absolute; top: 50%; z-index: 5; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); transform: translateY(-50%); }
+.fleche svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.4; }
+.etiquette { background: #121212; color: #8a8a8a; border-color: #2a2a2a; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="haut"><span class="marqueS"><span class="lambda"></span>Ton catalogue 2026</span><span class="info" id="info"></span></header>
+  <section class="scene" id="scene">
+    <span class="fleche" style="left:calc(50% - 250px)"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></span>
+    <span class="fleche" style="left:calc(50% + 206px)"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+  </section>
+  <footer class="bas">
+    <p id="avis">Le catalogue est chargé en entier, pour que rien ne rame ensuite. <b>Sans attendre</b>, l’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive.</p>
+    <button class="pillS" type="button" id="continuer">Continuer sans attendre</button>
+  </footer>
+</main>
+<span class="etiquette">Chargement · Variante 10 · d’après Spotify Wrapped</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, pluriel } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const CARTES = [
+    { c: '#ff4632', t: '#1a1a1a', avant: 'Tout commence par le rangement.', apres: 'Le squelette de ton Accueil.', formes: '<g class="tourne"><rect x="230" y="60" width="150" height="150" rx="10" fill="#1a1a1a"/><rect x="262" y="92" width="86" height="86" rx="6" fill="#ff4632"/></g><rect x="-40" y="250" width="300" height="34" rx="17" fill="#ffb3a8" class="glisse"/><rect x="40" y="300" width="300" height="34" rx="17" fill="#1a1a1a" class="glisse" style="animation-delay:-2s"/>' },
+    { c: '#c6f432', t: '#121212', avant: 'Ton abonnement a de quoi tenir.', apres: 'Oui, tous. Même les vieux.', formes: '<circle cx="300" cy="150" r="110" fill="#121212" class="pulse"/><circle cx="300" cy="150" r="46" fill="#c6f432"/><circle cx="90" cy="300" r="60" fill="#1e3264" class="pulse" style="animation-delay:-1.2s"/>' },
+    { c: '#ff6ad5', t: '#1d1d1d', avant: 'Et pour les soirées à rallonge…', apres: 'Des saisons entières, rangées.', formes: '<path class="tourne" d="M290 40l24 58 62 4-48 40 16 60-54-34-54 34 16-60-48-40 62-4z" fill="#1d1d1d"/><path class="tourne" style="animation-duration:14s" d="M90 230l14 34 36 2-28 24 9 35-31-20-31 20 9-35-28-24 36-2z" fill="#fff"/>' },
+    { c: '#2d46b9', t: '#f6f6f6', avant: 'En direct, ça donne', apres: 'Du journal de 20 h au match de minuit.', formes: '<g class="glisse"><path d="M-60 120q50-50 100 0t100 0 100 0 100 0 100 0" fill="none" stroke="#f6f6f6" stroke-width="22" stroke-linecap="round"/><path d="M-60 190q50-50 100 0t100 0 100 0 100 0 100 0" fill="none" stroke="#509bf5" stroke-width="22" stroke-linecap="round"/><path d="M-60 260q50-50 100 0t100 0 100 0 100 0 100 0" fill="none" stroke="#f6f6f6" stroke-width="22" stroke-linecap="round"/></g>' },
+    { c: '#ffbd2e', t: '#1a1a1a', avant: 'Et pour savoir quoi regarder ce soir', apres: 'Le guide, jour par jour, chaîne par chaîne.', formes: '<g class="pulse">' + Array.from({ length: 16 }, (_, i) => `<rect x="${170 + (i % 4) * 54}" y="${50 + Math.floor(i / 4) * 54}" width="44" height="44" rx="${i % 3 ? 6 : 22}" fill="${i % 5 === 2 ? '#ff4632' : '#1a1a1a'}"/>`).join('') + '</g>' },
+  ];
+  const scene = $('scene');
+  const cartes = CARTES.map((d, i) => {
+    const e = ETAPES[i];
+    const a = document.createElement('figure'); a.className = 'story'; a.style.setProperty('--c', d.c); a.style.setProperty('--t', d.t);
+    a.innerHTML = `<div class="segments">${ETAPES.map(() => '<i><b></b></i>').join('')}</div><div class="tete"><span class="lambda"></span>Aurora · ${i + 1}/5</div>
+      <svg class="formes" viewBox="0 0 400 711" preserveAspectRatio="xMidYMin slice">${d.formes}</svg>
+      <div class="txt"><p>${d.avant}</p><b>0</b><span>${pluriel(e.cible, e.unite)}</span><small>${d.apres}</small></div>`;
+    scene.appendChild(a); return a;
+  });
+  const resume = document.createElement('figure'); resume.className = 'story resume'; resume.style.setProperty('--c', '#1ed760'); resume.style.setProperty('--t', '#000');
+  resume.innerHTML = `<div class="segments">${ETAPES.map(() => '<i><b style="--k:1"></b></i>').join('')}</div><div class="tete"><span class="lambda"></span>Aurora · ton catalogue</div>
+    <svg class="formes" viewBox="0 0 400 711" preserveAspectRatio="xMidYMin slice"><circle cx="380" cy="720" r="120" fill="#000" class="pulse"/></svg>
+    <div class="txt"><h3>Tout est arrivé.</h3><ol>${ETAPES.map((e, i) => `<li><em>${i + 1}</em><span><strong>${fmt(e.cible)}</strong>${pluriel(e.cible, e.unite)}</span></li>`).join('')}</ol></div>`;
+  scene.appendChild(resume);
+  const toutes = [...cartes, resume];
+  let focus = -1;
+  chargement({
+    rendu(etat) {
+      const f = etat.fini ? 5 : Math.max(0, etat.courante);
+      if (f !== focus) {
+        focus = f;
+        toutes.forEach((c, i) => { const o = i - f; c.style.setProperty('--o', o); c.style.setProperty('--s', o === 0 ? 1 : 0.8); c.style.setProperty('--op', o === 0 ? 1 : Math.abs(o) === 1 ? 0.45 : 0); c.style.zIndex = 10 - Math.abs(o); });
+      }
+      etat.etapes.forEach((e, i) => {
+        cartes[i].querySelector('.txt b').textContent = fmt(e.etat === 'attente' ? 0 : e.n);
+        cartes.forEach((c) => c.querySelectorAll('.segments b')[i].style.setProperty('--k', e.k.toFixed(3)));
+      });
+      $('info').innerHTML = etat.fini ? '<b>100 %</b> · tout est là' : `<b>${Math.round(etat.p * 100)} %</b> · encore ${Math.max(1, Math.round(etat.reste))} s · étape ${etat.courante + 1} sur 5`;
+      document.body.classList.toggle('pret', etat.fini);
+      $('avis').innerHTML = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite. <b>Sans attendre</b>, l’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive.';
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après les notices IKEA</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 12 — d'après les notices de montage IKEA.
+ * Papier blanc, trait noir. Une étagère à cinq tablettes — une par étape — se remplit de
+ * boîtiers au fil du chargement ; une flèche et la main du bonhomme montrent la tablette en
+ * cours. À droite, les cases numérotées de la notice, et le petit bonhomme à la bulle « ! »
+ * pour l'avertissement.
+ */
+:root { color-scheme: light; --n: 'Noto Sans', 'Verdana', sans-serif; --encre: #111; --gris: #8a8a8a; }
+body { background: #fff; color: var(--encre); font: 15px/1.4 var(--n); }
+.feuille { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.dessin { position: relative; display: grid; place-items: center; padding: 30px; border-right: 1px solid #ddd; }
+.dessin svg { width: 100%; height: 100%; max-height: 820px; }
+.trait { fill: none; stroke: var(--encre); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.fin { fill: none; stroke: var(--encre); stroke-width: 1.4; }
+.num { position: absolute; left: 40px; top: 26px; font-size: 64px; font-weight: 700; line-height: 1; }
+.page2 { position: absolute; left: 40px; bottom: 24px; font-size: 13px; color: var(--gris); }
+.cote { display: grid; align-content: center; gap: 0; padding: 30px 52px; }
+.cote .ref { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 13px; color: var(--gris); }
+.cote .ref .lambda { width: 26px; height: 26px; background: var(--encre); }
+.cote h1 { margin: 0 0 4px; font-size: 40px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1; }
+.cote .sous { margin: 0 0 22px; color: #555; font-size: 14px; }
+.pct { display: flex; align-items: baseline; gap: 14px; padding: 14px 0; border-top: 3px solid var(--encre); border-bottom: 1px solid #ddd; font-variant-numeric: tabular-nums; }
+.pct b { font-size: 56px; font-weight: 700; line-height: 1; }
+.pct span { color: #555; }
+.cases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 18px 0; }
+.case { position: relative; display: grid; justify-items: center; gap: 6px; padding: 12px 4px 10px; border: 1.5px solid var(--encre); text-align: center; font-size: 12px; }
+.case b { font-size: 22px; line-height: 1; }
+.case svg { width: 28px; height: 28px; }
+.case .n { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12.5px; }
+.case.attente { border-color: #ccc; color: #aaa; }
+.case.attente .trait { stroke: #bbb; }
+.case.encours { box-shadow: inset 0 0 0 2px var(--encre); }
+.case.fait::after { content: ''; position: absolute; right: -8px; top: -8px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--encre); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 13px no-repeat; }
+.avert { display: grid; grid-template-columns: 70px 1fr; gap: 16px; align-items: center; margin: 4px 0 22px; padding: 14px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; font-size: 13.5px; color: #333; }
+.avert svg { width: 70px; height: 70px; }
+.actions { display: flex; align-items: center; gap: 22px; }
+.bouton { all: unset; display: inline-flex; align-items: center; gap: 12px; padding: 15px 26px; border-radius: 999px; background: var(--encre); color: #fff; font-weight: 700; cursor: pointer; }
+.bouton svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.4; }
+.actions span { color: #555; font-size: 13.5px; }
+.etiquette { background: #fff; color: var(--gris); border-color: #ddd; }
+</style>
+</head>
+<body>
+<main class="feuille">
+  <section class="dessin">
+    <span class="num" id="num">1</span>
+    <svg viewBox="0 0 600 640" id="etagere" aria-hidden="true"></svg>
+    <span class="page2" id="page2">1/5</span>
+  </section>
+  <section class="cote">
+    <div class="ref"><span class="lambda"></span><span>AA-2026-10 · Montage du catalogue</span></div>
+    <h1>Aurora</h1>
+    <p class="sous" id="phrase">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+    <div class="pct"><b id="pct">0 %</b><span id="reste">encore 12 s</span></div>
+    <div class="cases" id="cases"></div>
+    <div class="avert" id="avert">
+      <svg viewBox="0 0 70 70"><circle class="trait" cx="22" cy="30" r="7"/><path class="trait" d="M22 37v18M22 42l-9 7M22 42l9 6M22 55l-6 12M22 55l6 12"/><path class="trait" d="M38 6h26a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H48l-8 7v-7h-2a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/><path d="M51 11v10M51 25v.5" stroke="#111" stroke-width="3.2" stroke-linecap="round"/></svg>
+      <span id="avis">Continuer sans attendre : l’app s’ouvrira tout de suite, mais elle peut ramer le temps que le reste arrive. Chaque écran chargera ce qui lui manque à son ouverture.</span>
+    </div>
+    <div class="actions"><button class="bouton" type="button" id="continuer">Continuer sans attendre<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><span id="total"></span></div>
+  </section>
+</main>
+<span class="etiquette">Chargement · Variante 12 · d’après les notices IKEA</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, pluriel, icone, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  // L'étagère : 5 tablettes, des boîtiers de largeur et de hauteur variables (toujours les mêmes).
+  const X0 = 150, X1 = 440, H = 100, Y0 = 70, r = hasard(42);
+  const boites = ETAPES.map((_, i) => { const l = []; let x = X0 + 8; while (x < X1 - 22) { const w = 9 + Math.floor(r() * 12), h = 46 + Math.floor(r() * 36); const pench = x > X1 - 70 && r() > 0.5; l.push({ x, w, h, pench }); x += w + 2; } return l; });
+  const svg = $('etagere');
+  function dessine(etat) {
+    let s = `<path class="trait" d="M${X0} ${Y0}V${Y0 + 5 * H + 20}M${X1} ${Y0}V${Y0 + 5 * H + 20}M${X0 - 6} ${Y0}H${X1 + 6}"/>`;
+    s += `<path class="fin" d="M${X0} ${Y0 + 5 * H + 20}l-10 14M${X1} ${Y0 + 5 * H + 20}l10 14"/>`;
+    ETAPES.forEach((e, i) => {
+      const yb = Y0 + (i + 1) * H, k = etat.etapes[i].k, n = Math.floor(k * boites[i].length);
+      s += `<path class="trait" d="M${X0} ${yb}H${X1}"/><path class="fin" d="M${X0} ${yb + 6}H${X1}"/>`;
+      boites[i].slice(0, n).forEach((b) => { s += b.pench ? `<rect class="fin" x="${b.x}" y="${yb - b.h + 4}" width="${b.w}" height="${b.h - 4}" transform="rotate(8 ${b.x} ${yb})"/>` : `<rect class="fin" x="${b.x}" y="${yb - b.h}" width="${b.w}" height="${b.h}"/>`; });
+      s += `<text x="${X1 + 18}" y="${yb - 36}" font-family="Noto Sans" font-size="15" font-weight="700">${i + 1}</text><text x="${X1 + 18}" y="${yb - 18}" font-family="Noto Sans" font-size="12" fill="#555">${e.nom}</text>`;
+    });
+    // Le bonhomme et la flèche vers la tablette en cours.
+    const c = etat.fini ? -1 : etat.courante;
+    if (c >= 0) {
+      const yb = Y0 + (c + 1) * H, xf = X0 + 8 + (boites[c].slice(0, Math.floor(etat.etapes[c].k * boites[c].length)).reduce((a, b) => a + b.w + 2, 0));
+      s += `<path class="trait" d="M60 ${yb - 40}C90 ${yb - 80} 130 ${yb - 70} ${Math.max(X0 + 10, xf)} ${yb - 50}" style="stroke-dasharray:6 7"/><path class="trait" d="m${Math.max(X0 + 10, xf) - 14} ${yb - 60} 14 10-14 8"/>`;
+    }
+    const yh = Y0 + 5 * H - 60;
+    s += `<circle class="trait" cx="80" cy="${yh}" r="16"/><path class="trait" d="M80 ${yh + 16}v70M80 ${yh + 34}l-26 26M80 ${yh + 34}l34 ${c >= 0 ? -10 : 18}M80 ${yh + 86}l-18 44M80 ${yh + 86}l18 44"/>`;
+    s += `<rect class="trait" x="${c >= 0 ? 108 : 100}" y="${yh + (c >= 0 ? 6 : 40)}" width="34" height="26"/>`;
+    if (etat.fini) s += `<circle class="trait" cx="${X1 + 60}" cy="${Y0 + 20}" r="22"/><path d="m${X1 + 49} ${Y0 + 20} 8 8 15-16" fill="none" stroke="#111" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svg.innerHTML = s;
+  }
+  $('cases').innerHTML = ETAPES.map((e, i) => `<div class="case attente" id="c${i}"><b>${i + 1}</b>${icone(e.icone, 'ico trait')}<span class="n"></span></div>`).join('');
+  const total = ETAPES.reduce((s, e) => s + e.cible, 0);
+  chargement({
+    rendu(etat) {
+      dessine(etat);
+      const c = etat.fini ? 4 : etat.courante;
+      $('num').textContent = c + 1; $('page2').textContent = `${c + 1}/5`;
+      $('pct').textContent = `${Math.round(etat.p * 100)} %`;
+      $('reste').textContent = etat.fini ? 'Montage terminé.' : `encore ${Math.max(1, Math.round(etat.reste))} s`;
+      etat.etapes.forEach((e, i) => { const d = $(`c${i}`); d.className = `case ${e.etat}`; d.querySelector('.n').textContent = e.etat === 'attente' ? e.nom.split(' ')[0] : fmt(e.n); });
+      $('total').textContent = `${fmt(etat.etapes.reduce((s, e) => s + e.n, 0))} / ${fmt(total)} pièces`;
+      $('phrase').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite.';
+      $('avert').hidden = etat.fini;
+      $('continuer').firstChild.textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

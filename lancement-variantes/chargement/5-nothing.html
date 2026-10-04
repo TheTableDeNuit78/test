@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après Nothing</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 5 — d'après Nothing.
+ * Noir, l'énorme pourcentage en points (Doto), et cinq rangées de diodes : une par étape, qui
+ * s'allument de gauche à droite comme la jauge Glyph ; la diode de tête de l'étape en cours est
+ * rouge et clignote. Le reste en mono, majuscules, crochets.
+ */
+:root { --m: 'IBM Plex Mono', 'JetBrains Mono', monospace; --d: 'Doto', monospace; --rouge: #d71921; --t2: #8c8c8c; --t3: #4d4d4d; }
+body { background: #000; color: #fff; font: 14px/1.5 var(--m); }
+.page { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; padding: 34px 56px 30px; background: radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 1.4px) 0 0 / 16px 16px; }
+.haut { display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; color: var(--t2); }
+.haut .rec { display: flex; align-items: center; gap: 10px; color: #fff; }
+.haut .rec i { width: 9px; height: 9px; border-radius: 50%; background: var(--rouge); animation: clig 1s steps(2) infinite; }
+@keyframes clig { 50% { opacity: 0.15; } }
+.haut .heure { font: 600 22px var(--d); color: #fff; letter-spacing: 0.04em; }
+.milieu { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: center; gap: 4vw; }
+.gauche { display: grid; gap: 12px; }
+.pct { font: 800 clamp(160px, 17vw, 280px)/0.82 var(--d); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.pct small { font: 500 0.2em var(--m); color: var(--t2); margin-left: 10px; vertical-align: top; }
+.sous { display: flex; gap: 22px; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12.5px; color: var(--t2); }
+.sous b { color: #fff; font-weight: 600; }
+.titre2 { margin: 18px 0 0; max-width: 34ch; font-size: 14px; color: var(--t2); }
+.rangs { display: grid; gap: 26px; }
+.rang { display: grid; gap: 8px; }
+.rang header { display: flex; justify-content: space-between; text-transform: uppercase; letter-spacing: 0.06em; font-size: 12.5px; }
+.rang header span:first-child { color: var(--t2); }
+.rang.encours header span:first-child, .rang.fait header span:first-child { color: #fff; }
+.rang header .n { font-variant-numeric: tabular-nums; }
+.rang.attente header .n { color: var(--t3); }
+.rang canvas { width: 100%; height: 18px; display: block; }
+.bas { display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+.avis { max-width: 64ch; font-size: 12.5px; color: var(--t2); text-transform: uppercase; letter-spacing: 0.04em; }
+.avis b { color: #fff; font-weight: 600; }
+.pill { all: unset; display: inline-flex; align-items: center; gap: 14px; padding: 14px 24px; border-radius: 999px; background: #fff; color: #000; font: 600 13px var(--m); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; white-space: nowrap; }
+.pill:hover { background: var(--rouge); color: #fff; }
+.etiquette { background: #000; color: var(--t2); border-color: #333; font-family: var(--m); }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="haut"><span class="rec"><i></i>Aurora — synchronisation</span><span>fournisseur.example</span><span class="heure" id="heure">21:34</span></header>
+  <section class="milieu">
+    <div class="gauche">
+      <div class="pct" id="pct">0<small>%</small></div>
+      <div class="sous"><span>[ <b id="etapes">0/5</b> étapes ]</span><span>[ T– <b id="reste">12</b> s ]</span><span>[ <b id="total">0</b> éléments ]</span></div>
+      <p class="titre2" id="phrase">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+    </div>
+    <div class="rangs" id="rangs"></div>
+  </section>
+  <footer class="bas">
+    <p class="avis" id="avis"><b>Sans attendre :</b> l’app s’ouvrira tout de suite, mais elle peut ramer le temps que le reste arrive.</p>
+    <button class="pill" type="button" id="continuer">Continuer sans attendre →</button>
+  </footer>
+</main>
+<span class="etiquette">Chargement · Variante 5 · d’après Nothing</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, FIGE } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const pad = (n, l) => String(Math.round(n)).padStart(l, '0');
+  $('rangs').innerHTML = ETAPES.map((e, i) => `<div class="rang attente" id="r${i}"><header><span>[0${i + 1}] ${e.nom}</span><span class="n"></span></header><canvas></canvas></div>`).join('');
+  const toiles = ETAPES.map((_, i) => $(`r${i}`).querySelector('canvas'));
+  const dpr = Math.max(1, devicePixelRatio || 1);
+  function dessine(cv, k, enCours, t) {
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    const pas = 17, n = Math.floor(w / pas), allumees = Math.floor(k * n);
+    for (let i = 0; i < n; i++) {
+      const x = i * pas + pas / 2, y = h / 2;
+      let coul = '#1f1f1f', r = 4;
+      if (i < allumees) coul = '#fff';
+      if (enCours && i === allumees) { coul = (FIGE || Math.floor(t * 4) % 2 === 0) ? '#d71921' : '#3a0a0c'; r = 5; }
+      c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fillStyle = coul; c.fill();
+    }
+  }
+  const heure = () => { const d = new Date(); $('heure').textContent = `${pad(d.getHours(), 2)}:${pad(d.getMinutes(), 2)}`; };
+  heure(); setInterval(heure, 10000);
+  chargement({
+    rendu(etat) {
+      $('pct').innerHTML = `${Math.round(etat.p * 100)}<small>%</small>`;
+      $('etapes').textContent = `${etat.finies}/5`;
+      $('reste').textContent = etat.fini ? '00' : pad(Math.max(1, etat.reste), 2);
+      $('total').textContent = fmt(etat.etapes.reduce((s, e) => s + e.n, 0));
+      etat.etapes.forEach((e, i) => {
+        const r = $(`r${i}`); r.className = `rang ${e.etat}`;
+        r.querySelector('.n').textContent = `${pad(e.n, String(e.cible).length)} / ${pad(e.cible, String(e.cible).length)}`;
+        dessine(toiles[i], e.k, e.etat === 'encours', etat.t);
+      });
+      $('phrase').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite.';
+      $('avis').hidden = etat.fini;
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora →' : 'Continuer sans attendre →';
+    },
+  });
+})();
+</script>
+</body>
+</html>

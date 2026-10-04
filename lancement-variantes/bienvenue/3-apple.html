@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Apple</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 3 — d'après l'Assistant réglages d'Apple.
+ * Un « bonjour » écrit à la main qui se trace tout seul, puis l'écran blanc, centré, aéré, avec
+ * les listes groupées des Réglages : une rangée par choix, son icône dans un carré de couleur,
+ * le chevron à droite, l'interrupteur pour le français et sa note de bas de groupe, le texte
+ * de confidentialité avec son pictogramme, et un grand bouton bleu en bas.
+ */
+:root { color-scheme: light; --sf: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; --bleu: #0071e3; --gris: #f5f5f7; --t2: #6e6e73; --sep: #d2d2d7; }
+body { background: #fff; color: #1d1d1f; font: 15px/1.47 var(--sf); letter-spacing: -0.01em; }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.gauche { display: grid; place-items: center; background: var(--gris); }
+.bonjour { width: min(82%, 620px); }
+.bonjour text { font: 700 150px 'Caveat', cursive; }
+.trace { fill: none; stroke: url(#arc); stroke-width: 2.2; stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: ecrit 3.2s cubic-bezier(.6, 0, .4, 1) forwards; }
+.plein { fill: url(#arc); opacity: 0; animation: remplit 0.9s 2.6s ease forwards; }
+@keyframes ecrit { to { stroke-dashoffset: 0; } }
+@keyframes remplit { to { opacity: 1; } }
+.gauche p { margin: 8px 0 0; text-align: center; font-size: 13px; color: var(--t2); }
+.droite { display: grid; align-content: center; justify-items: center; padding: 40px 6vw; overflow: auto; }
+.col { width: min(480px, 100%); }
+.icone { display: block; width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 15px; background: #111; display: grid; place-items: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18); }
+.icone .lambda { width: 34px; height: 34px; }
+h1 { margin: 0; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.12; }
+.chap { margin: 10px auto 26px; text-align: center; color: var(--t2); font-size: 15px; max-width: 38ch; }
+.groupe { margin: 0; padding: 0; list-style: none; border-radius: 12px; background: var(--gris); overflow: hidden; }
+.groupe li + li .rang::before { content: ''; position: absolute; left: 58px; right: 0; top: 0; height: 1px; background: var(--sep); }
+.rang { all: unset; box-sizing: border-box; position: relative; display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: center; width: 100%; padding: 11px 14px; cursor: pointer; }
+.rang:hover { background: #ececf0; }
+.rang:focus-visible { outline: 3px solid rgba(0, 113, 227, 0.5); outline-offset: -3px; }
+.carre { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; color: #fff; }
+.carre svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.rang b { font-weight: 500; font-size: 15px; }
+.rang small { display: block; font-size: 12.5px; color: var(--t2); }
+.chev { width: 9px; height: 14px; fill: none; stroke: #b0b0b5; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.note { margin: 7px 14px 22px; font-size: 12.5px; color: var(--t2); line-height: 1.4; }
+.inter { appearance: none; position: relative; width: 51px; height: 31px; margin: 0; border-radius: 16px; background: #e9e9ea; cursor: pointer; transition: background 200ms; }
+.inter::after { content: ''; position: absolute; left: 2px; top: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 220ms cubic-bezier(.3, 1.3, .6, 1); }
+.inter:checked { background: #34c759; }
+.inter:checked::after { transform: translateX(20px); }
+.inter:focus-visible { outline: 3px solid rgba(0, 113, 227, 0.5); outline-offset: 2px; }
+.prive { display: grid; justify-items: center; gap: 6px; margin: 4px 0 22px; text-align: center; font-size: 12.5px; color: var(--t2); }
+.prive svg { width: 26px; height: 26px; fill: none; stroke: var(--bleu); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.prive a { color: var(--bleu); text-decoration: none; }
+.bleu { display: block; width: 100%; padding: 14px; border: 0; border-radius: 12px; background: var(--bleu); color: #fff; font: 500 17px var(--sf); cursor: pointer; }
+.bleu:hover { background: #0077ed; }
+.bleu:focus-visible { outline: 3px solid rgba(0, 113, 227, 0.5); outline-offset: 2px; }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: #6e6e73; border-color: #e0e0e5; }
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="gauche" aria-hidden="true">
+    <div class="bonjour">
+      <svg viewBox="0 0 640 260">
+        <defs><linearGradient id="arc" x1="0" x2="1"><stop offset="0" stop-color="#4ea8f5"/><stop offset=".5" stop-color="#9d5cff"/><stop offset="1" stop-color="#ff6cab"/></linearGradient></defs>
+        <text class="trace" x="320" y="170" text-anchor="middle">bonjour</text>
+        <text class="plein" x="320" y="170" text-anchor="middle">bonjour</text>
+      </svg>
+      <p>Aurora · chaînes, films, séries</p>
+    </div>
+  </section>
+  <section class="droite">
+    <div class="col">
+      <span class="icone"><span class="lambda"></span></span>
+      <h1>Ton abonnement, enfin rangé.</h1>
+      <p class="chap">Guide TV, téléchargements, enregistrements et favoris, sur ce PC.</p>
+      <ul class="groupe">
+        <li><button class="rang" type="button"><span class="carre" style="background:#0a84ff"><svg viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01M6 18h.01"/></svg></span><span><b>Compte Xtream</b><small>serveur, identifiant, mot de passe</small></span><svg class="chev" viewBox="0 0 9 14"><path d="m1.5 1.5 6 5.5-6 5.5"/></svg></button></li>
+        <li><button class="rang" type="button"><span class="carre" style="background:#ff2d55"><svg viewBox="0 0 24 24"><path d="M21 5H3M11 12H3M11 19H3M15 12v7l6-3.5z"/></svg></span><span><b>Playlist M3U</b><small>une adresse, ou un fichier sur ce PC</small></span><svg class="chev" viewBox="0 0 9 14"><path d="m1.5 1.5 6 5.5-6 5.5"/></svg></button></li>
+        <li><button class="rang" type="button"><span class="carre" style="background:#30b0c7"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span><span><b>Restaurer depuis une sauvegarde</b><small>fichier .aurora</small></span><svg class="chev" viewBox="0 0 9 14"><path d="m1.5 1.5 6 5.5-6 5.5"/></svg></button></li>
+      </ul>
+      <p class="note">La sauvegarde rend tes comptes, tes réglages, tes favoris et ton historique.</p>
+      <ul class="groupe">
+        <li><label class="rang" for="fr" style="cursor:pointer"><span class="carre" style="background:#5856d6"><svg viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg></span><span><b>N’afficher que le français</b></span><input class="inter" id="fr" type="checkbox"></label></li>
+      </ul>
+      <p class="note">Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Tu peux le modifier dans Réglages ▸ Catalogue.</p>
+      <div class="prive"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs. <a>En savoir plus…</a></div>
+      <button class="bleu" type="button">Continuer</button>
+    </div>
+  </section>
+</main>
+<span class="etiquette">Variante 3 · d’après Apple</span>
+</body>
+</html>

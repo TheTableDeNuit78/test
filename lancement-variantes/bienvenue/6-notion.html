@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Notion</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 6 — d'après Notion.
+ * Le premier lancement est une page : une bande de couverture, l'icône posée dessus, le titre, des
+ * propriétés, un encadré, des blocs dépliables (« J'ai un compte Xtream » s'ouvre sur ses champs),
+ * une case à cocher pour le français, et un bouton. À gauche la barre des pages de l'espace
+ * Aurora, à droite un dessin au trait dans la marge, comme les illustrations maison de Notion.
+ */
+:root { color-scheme: light; --n: 'Inter', -apple-system, 'Segoe UI', sans-serif; --t1: #37352f; --t2: rgba(55, 53, 47, 0.65); --t3: rgba(55, 53, 47, 0.45); --gris: #f7f7f5; --sel: rgba(55, 53, 47, 0.08); --ligne: rgba(55, 53, 47, 0.09); --bleu: #2383e2; }
+body { background: #fff; color: var(--t1); font: 16px/1.5 var(--n); }
+.app { position: fixed; inset: 0; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+.barre { display: grid; grid-template-rows: auto 1fr auto; background: var(--gris); border-right: 1px solid var(--ligne); font-size: 14px; color: var(--t2); }
+.espace { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; font-weight: 600; color: var(--t1); }
+.espace .ic { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: #111; }
+.espace .ic .lambda { width: 13px; height: 13px; }
+.pages { margin: 0; padding: 6px 8px; list-style: none; }
+.pages li { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; }
+.pages li.ici { background: var(--sel); color: var(--t1); font-weight: 500; }
+.pages li svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; opacity: 0.7; }
+.pages li small { margin-left: auto; font-size: 11px; color: var(--t3); }
+.pages h3 { margin: 16px 8px 4px; font-size: 12px; font-weight: 600; color: var(--t3); }
+.barre .bas { padding: 10px 14px 14px; font-size: 12.5px; color: var(--t3); }
+.zone { position: relative; overflow: hidden; }
+.chemin { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; justify-content: space-between; padding: 10px 14px; font-size: 14px; color: var(--t2); }
+.couv { height: 20vh; max-height: 170px; background: linear-gradient(100deg, #4ea8f5 0%, #9d5cff 50%, #ff6cab 100%); }
+.doc { position: relative; width: min(680px, 100% - 460px); margin-left: 80px; }
+.icone { display: grid; place-items: center; width: 78px; height: 78px; margin-top: -40px; border-radius: 10px; background: #111; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18); }
+.icone .lambda { width: 44px; height: 44px; }
+h1 { margin: 16px 0 10px; font-size: 40px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.props { display: grid; grid-template-columns: 160px 1fr; row-gap: 2px; margin-bottom: 18px; font-size: 14px; }
+.props > span:nth-child(odd) { display: flex; align-items: center; gap: 8px; color: var(--t2); padding: 4px 0; }
+.props > span:nth-child(odd) svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.props > span:nth-child(even) { padding: 4px 6px; }
+.tag { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 13px; line-height: 20px; }
+.callout { display: grid; grid-template-columns: 24px 1fr; gap: 10px; margin: 4px 0 8px; padding: 14px 16px; border-radius: 6px; background: rgba(241, 241, 239, 1); font-size: 15px; }
+.callout svg { width: 20px; height: 20px; fill: none; stroke: var(--t1); stroke-width: 1.6; margin-top: 2px; }
+h2 { margin: 14px 0 4px; font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+.bloc { position: relative; padding: 3px 2px; }
+.bloc .poignee { position: absolute; left: -46px; top: 5px; display: flex; gap: 2px; opacity: 0; color: var(--t3); transition: opacity 120ms; }
+.bloc:hover .poignee { opacity: 1; }
+.poignee svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.bascule { all: unset; display: flex; align-items: center; gap: 6px; cursor: pointer; width: 100%; border-radius: 4px; }
+.bascule:hover { background: rgba(55, 53, 47, 0.04); }
+.bascule .tri { width: 20px; height: 20px; display: grid; place-items: center; transition: transform 150ms; }
+.bascule .tri svg { width: 12px; height: 12px; fill: var(--t1); }
+.bascule[aria-expanded="true"] .tri { transform: rotate(90deg); }
+.bascule small { color: var(--t3); font-size: 14px; }
+.dedans { margin: 2px 0 6px 26px; display: grid; grid-template-columns: 150px 1fr; font-size: 14px; }
+.dedans label { display: flex; align-items: center; gap: 8px; color: var(--t2); padding: 5px 0; }
+.dedans label svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.dedans input { border: 0; border-radius: 4px; padding: 5px 6px; background: transparent; font: 14px var(--n); color: var(--t1); outline: none; }
+.dedans input:hover { background: rgba(55, 53, 47, 0.06); }
+.dedans input:focus { background: rgba(35, 131, 226, 0.08); box-shadow: inset 0 0 0 1px rgba(35, 131, 226, 0.5); }
+.dedans input::placeholder { color: var(--t3); }
+.dedans[hidden] { display: none; }
+.todo { display: grid; grid-template-columns: 26px 1fr; align-items: start; cursor: pointer; }
+.todo input { appearance: none; width: 16px; height: 16px; margin: 4px 0 0 2px; border: 1.5px solid var(--t1); border-radius: 2px; cursor: pointer; display: grid; place-content: center; }
+.todo input:checked { background: var(--bleu); border-color: var(--bleu); }
+.todo input:checked::after { content: ''; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.todo input:checked + span b { text-decoration: line-through; color: var(--t3); }
+.todo b { font-weight: 400; }
+.todo small { display: block; color: var(--t2); font-size: 14px; }
+.bouton { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 8px 14px; border: 0; border-radius: 6px; background: var(--bleu); color: #fff; font: 500 14px var(--n); cursor: pointer; box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.12); }
+.bouton:hover { background: #0077d4; }
+.dessin { position: absolute; right: 3vw; top: calc(min(20vh, 170px) + 60px); width: 330px; }
+.dessin svg { width: 100%; height: auto; overflow: visible; }
+.dessin p { margin: 4px 0 0; font: 600 22px 'Caveat', cursive; color: var(--t2); text-align: center; transform: rotate(-3deg); }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: #8a8984; border-color: #e5e5e3; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="barre">
+    <div class="espace"><span class="ic"><span class="lambda"></span></span>Aurora</div>
+    <div>
+      <ul class="pages">
+        <li class="ici"><svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>Premier lancement</li>
+        <h3>Après l’ajout du compte</h3>
+        <li><svg viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>Direct<small>bientôt</small></li>
+        <li><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18M17 3v18M3 12h18"/></svg>Films<small>bientôt</small></li>
+        <li><svg viewBox="0 0 24 24"><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/></svg>Séries<small>bientôt</small></li>
+        <li><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Guide TV<small>bientôt</small></li>
+        <li><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Réglages</li>
+      </ul>
+    </div>
+    <div class="bas">Chiffré sur ce PC</div>
+  </aside>
+
+  <main class="zone">
+    <div class="chemin"><span>Aurora / Premier lancement</span><span>Modifié à l’instant</span></div>
+    <div class="couv"></div>
+    <article class="doc">
+      <div class="icone"><span class="lambda"></span></div>
+      <h1>Ton abonnement, enfin rangé.</h1>
+      <div class="props">
+        <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>Statut</span><span><span class="tag" style="background:#f9e4bf;color:#8a5a11">À configurer</span></span>
+        <span><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Contient</span><span><span class="tag" style="background:#e3eefa;color:#1f5f99">Guide TV</span> <span class="tag" style="background:#eee7f8;color:#6b3fa0">Téléchargements</span> <span class="tag" style="background:#f8e4ec;color:#99365f">Enregistrements</span> <span class="tag" style="background:#e6f2ea;color:#2d6b45">Favoris</span></span>
+      </div>
+      <div class="callout"><svg viewBox="0 0 24 24"><rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</span></div>
+      <h2>Ajoute ton abonnement</h2>
+      <div class="bloc"><span class="poignee"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><svg viewBox="0 0 24 24"><circle cx="9" cy="6" r=".6"/><circle cx="9" cy="12" r=".6"/><circle cx="9" cy="18" r=".6"/><circle cx="15" cy="6" r=".6"/><circle cx="15" cy="12" r=".6"/><circle cx="15" cy="18" r=".6"/></svg></span>
+        <button class="bascule" type="button" aria-expanded="true" data-d="d1"><span class="tri"><svg viewBox="0 0 12 12"><path d="M3 1.5 9 6l-6 4.5z"/></svg></span>J’ai un compte Xtream <small>— serveur, identifiant, mot de passe</small></button>
+        <div class="dedans" id="d1">
+          <label for="s"><svg viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/></svg>Serveur</label><input id="s" placeholder="Vide — http://…:8080">
+          <label for="u"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Identifiant</label><input id="u" placeholder="Vide">
+          <label for="p"><svg viewBox="0 0 24 24"><rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Mot de passe</label><input id="p" type="password" placeholder="Vide">
+        </div>
+      </div>
+      <div class="bloc"><button class="bascule" type="button" aria-expanded="false" data-d="d2"><span class="tri"><svg viewBox="0 0 12 12"><path d="M3 1.5 9 6l-6 4.5z"/></svg></span>J’ai une playlist M3U <small>— une adresse, ou un fichier</small></button>
+        <div class="dedans" id="d2" hidden><label for="m"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Adresse</label><input id="m" placeholder="Vide — http://…/get.php?…"></div></div>
+      <div class="bloc"><button class="bascule" type="button" aria-expanded="false" data-d="d3"><span class="tri"><svg viewBox="0 0 12 12"><path d="M3 1.5 9 6l-6 4.5z"/></svg></span>Je réinstalle Aurora <small>— le fichier .aurora rend comptes, réglages, favoris, historique</small></button>
+        <div class="dedans" id="d3" hidden><label>Fichier</label><span style="padding:5px 6px;color:var(--bleu);cursor:pointer">Choisir un fichier .aurora…</span></div></div>
+      <div class="bloc" style="margin-top:6px"><label class="todo" for="fr"><input id="fr" type="checkbox"><span><b>N’afficher que le français</b><small>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages ▸ Catalogue.</small></span></label></div>
+      <button class="bouton" type="button">Ajouter et charger le catalogue</button>
+    </article>
+    <figure class="dessin" aria-hidden="true">
+      <svg viewBox="0 0 320 260" fill="none" stroke="#2b2a26" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="150" y="18" width="150" height="96" rx="8" fill="#fff"/>
+        <path d="M200 98l25-56 25 56" stroke-width="7" stroke="url(#pd)"/>
+        <defs><linearGradient id="pd" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4ea8f5"/><stop offset=".5" stop-color="#9d5cff"/><stop offset="1" stop-color="#ff6cab"/></linearGradient></defs>
+        <path d="M225 114v14M200 130h50"/>
+        <path d="M20 150c0-14 10-22 26-22h100c16 0 26 8 26 22v44H20z" fill="#efefed"/>
+        <path d="M12 168c0-8 6-12 14-12s12 5 12 12v40H12zM154 168c0-8 6-12 14-12s12 5 12 12v40h-26z" fill="#fff"/>
+        <path d="M24 208h150M34 208v14M162 208v14"/>
+        <circle cx="86" cy="104" r="17" fill="#fff"/>
+        <path d="M79 103c2 2 5 2 7 0M92 101h.01"/>
+        <path d="M86 121c-18 4-24 22-22 46h44c2-10 0-22-6-30"/>
+        <path d="M100 140c14 2 26-6 34-14" />
+        <rect x="132" y="118" width="16" height="10" rx="3" transform="rotate(-30 140 123)" fill="#fff"/>
+        <path d="M64 167h-8c-6 0-10 6-8 14l6 14M108 167l10 28"/>
+        <path d="M262 150c10-8 24-6 28 6M268 166c8-6 18-4 20 4" stroke-width="2"/>
+      </svg>
+      <p>ce soir, tout est rangé</p>
+    </figure>
+  </main>
+</div>
+<span class="etiquette">Variante 6 · d’après Notion</span>
+<script>
+document.querySelectorAll('.bascule').forEach((b) => b.addEventListener('click', () => {
+  const ouvert = b.getAttribute('aria-expanded') === 'true';
+  b.setAttribute('aria-expanded', String(!ouvert));
+  document.getElementById(b.dataset.d).hidden = ouvert;
+}));
+</script>
+</body>
+</html>

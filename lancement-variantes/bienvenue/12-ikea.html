@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après les notices IKEA</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 12 — d'après les notices de montage IKEA.
+ * Papier blanc, trait noir, presque pas de mots : la liste des pièces en haut (×1, ×3…), puis des
+ * cases numérotées avec un petit bonhomme qui fait les choses. Le dessin dit « choisis ta pièce »,
+ * le tableau du bas sert de formulaire. Les cases se dessinent l'une après l'autre au chargement.
+ */
+:root { color-scheme: light; --n: 'Noto Sans', 'Verdana', sans-serif; --encre: #111; --gris: #8a8a8a; --clair: #f2f2f2; }
+body { background: #fff; color: var(--encre); font: 15px/1.4 var(--n); }
+.feuille { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0; }
+.planches { display: grid; grid-template-rows: auto 1fr; padding: 34px 36px 30px 44px; border-right: 1px solid #ddd; min-height: 0; }
+.entete { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 14px; border-bottom: 3px solid var(--encre); }
+.entete h1 { margin: 0; font-size: 44px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1; }
+.entete span { font-size: 13px; color: var(--gris); text-align: right; }
+.cases { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto 1fr 1fr; gap: 14px; margin-top: 16px; min-height: 0; }
+.pieces { grid-column: 1 / -1; display: flex; gap: 26px; align-items: flex-end; padding: 14px 18px; border: 1.5px solid var(--encre); }
+.piece { display: grid; justify-items: center; gap: 4px; font-size: 13px; }
+.piece svg { height: 54px; width: auto; }
+.piece b { font-weight: 700; }
+.case { position: relative; border: 1.5px solid var(--encre); min-height: 0; display: grid; place-items: center; padding: 8px; }
+.case > b { position: absolute; left: 10px; top: 6px; font-size: 30px; font-weight: 700; }
+.case svg { width: 100%; height: 100%; max-height: 230px; }
+.case.non::after { content: ''; position: absolute; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid var(--encre); background: linear-gradient(45deg, transparent 46%, var(--encre) 46% 54%, transparent 54%); }
+.case.oui::after { content: ''; position: absolute; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid var(--encre); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 18px no-repeat; }
+.trait { fill: none; stroke: var(--encre); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.plein { fill: var(--encre); }
+.gris { fill: #ddd; stroke: var(--encre); stroke-width: 2.2; stroke-linejoin: round; }
+.case { animation: apparait 400ms ease-out backwards; }
+.case:nth-child(2) { animation-delay: 150ms; } .case:nth-child(3) { animation-delay: 300ms; } .case:nth-child(4) { animation-delay: 450ms; } .case:nth-child(5) { animation-delay: 600ms; } .case:nth-child(6) { animation-delay: 750ms; } .case:nth-child(7) { animation-delay: 900ms; }
+@keyframes apparait { from { opacity: 0; transform: translateY(8px); } }
+.formulaire { display: grid; align-content: center; gap: 0; padding: 34px 48px; background: #fff; }
+.ref { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; color: var(--gris); }
+.ref .lambda { width: 26px; height: 26px; background: var(--encre); }
+.question { margin: 0 0 12px; font-size: 22px; font-weight: 700; }
+.choix { display: grid; grid-template-columns: repeat(4, 1fr); border: 1.5px solid var(--encre); margin-bottom: 22px; }
+.choix button { all: unset; display: grid; justify-items: center; gap: 6px; padding: 12px 6px; text-align: center; font-size: 12.5px; cursor: pointer; }
+.choix button + button { border-left: 1.5px solid var(--encre); }
+.choix button svg { width: 38px; height: 38px; }
+.choix button[aria-checked="true"] { background: var(--encre); color: #fff; }
+.choix button[aria-checked="true"] .trait { stroke: #fff; }
+.ligne { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid #ddd; }
+.ligne:first-of-type { border-top: 1px solid #ddd; }
+.ligne b { display: grid; place-items: center; width: 30px; height: 30px; border: 1.5px solid var(--encre); border-radius: 50%; font-size: 14px; }
+.ligne label { display: block; font-size: 12px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.08em; }
+.ligne input[type=text], .ligne input[type=password] { width: 100%; border: 0; padding: 2px 0 0; font: 16px var(--n); color: var(--encre); background: transparent; outline: none; }
+.coche { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; margin: 18px 0 22px; cursor: pointer; }
+.coche input { appearance: none; width: 26px; height: 26px; margin: 2px 0 0 2px; border: 2px solid var(--encre); cursor: pointer; }
+.coche input:checked { background: var(--encre) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='square'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 17px no-repeat; }
+.coche b { display: block; font-size: 15px; }
+.coche small { font-size: 13px; color: #555; }
+.actions { display: flex; align-items: center; gap: 22px; }
+.bouton { all: unset; display: inline-flex; align-items: center; gap: 12px; padding: 15px 26px; border-radius: 999px; background: var(--encre); color: #fff; font-weight: 700; cursor: pointer; }
+.bouton svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.4; }
+.bouton:hover { background: #333; }
+.lienN { all: unset; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.note { margin: 22px 0 0; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; font-size: 13px; color: #555; }
+.note svg { width: 30px; height: 30px; }
+.etiquette { background: #fff; color: var(--gris); border-color: #ddd; }
+</style>
+</head>
+<body>
+<main class="feuille">
+  <section class="planches">
+    <header class="entete"><h1>Aurora</h1><span>Ton abonnement, enfin rangé.<br>1 personne · 2 minutes</span></header>
+    <div class="cases">
+      <div class="pieces">
+        <span class="piece"><svg viewBox="0 0 60 50"><rect class="trait" x="6" y="8" width="48" height="32" rx="3"/><path class="trait" d="M22 46h16M30 40v6"/></svg><b>1×</b></span>
+        <span class="piece"><svg viewBox="0 0 40 50"><rect class="trait" x="8" y="4" width="24" height="42" rx="3"/><path class="trait" d="M14 12h12M14 18h12M14 24h8"/></svg><b>1×</b></span>
+        <span class="piece"><svg viewBox="0 0 30 50"><path class="trait" d="M8 14h14M8 14a7 7 0 0 1 14 0M15 14v32M11 22h8M11 30h8M11 38h8"/></svg><b>3×</b></span>
+        <span class="piece"><svg viewBox="0 0 50 50"><rect class="gris" x="6" y="18" width="38" height="26" rx="3"/><path class="trait" d="M15 18v-6a10 10 0 0 1 20 0v6"/></svg><b>1×</b></span>
+        <span class="piece" style="margin-left:auto;color:#8a8a8a">Pièces fournies par ton fournisseur.<br>Rien d’autre à acheter.</span>
+      </div>
+      <div class="case"><b>1</b>
+        <svg viewBox="0 0 200 180"><rect class="trait" x="70" y="30" width="110" height="74" rx="4"/><path class="trait" d="M110 104v18M95 122h30"/><path class="trait" d="M108 88 125 48 142 88" style="stroke-width:5"/>
+          <circle class="trait" cx="34" cy="70" r="12"/><path class="trait" d="M34 82v46M34 96l26-14M34 128l-12 30M34 128l12 30M34 98l-16 18"/></svg></div>
+      <div class="case"><b>2</b>
+        <svg viewBox="0 0 200 180"><rect class="trait" x="40" y="22" width="56" height="96" rx="6"/><path class="trait" d="M50 40h36M50 52h36M50 64h24"/><path class="trait" d="M106 70h40" style="stroke-dasharray:6 6"/><path class="trait" d="m138 62 10 8-10 8"/><rect class="trait" x="154" y="46" width="36" height="48" rx="3"/><path class="trait" d="M162 58h20M162 68h20M162 78h12"/>
+          <circle class="trait" cx="60" cy="146" r="9"/><path class="trait" d="M60 155v20M66 160l18-10"/></svg></div>
+      <div class="case"><b>3</b>
+        <svg viewBox="0 0 200 180"><rect class="trait" x="30" y="40" width="140" height="22" rx="4"/><rect class="trait" x="30" y="76" width="140" height="22" rx="4"/><rect class="trait" x="30" y="112" width="140" height="22" rx="4"/><path class="trait" d="M42 51h50M42 87h70M42 123h40"/><rect class="plein" x="146" y="44" width="16" height="14" rx="2"/><path d="m149 51 4 4 6-8" fill="none" stroke="#fff" stroke-width="2.4"/><rect class="plein" x="146" y="80" width="16" height="14" rx="2"/><path d="m149 87 4 4 6-8" fill="none" stroke="#fff" stroke-width="2.4"/><rect class="trait" x="146" y="116" width="16" height="14" rx="2"/></svg></div>
+      <div class="case non"><b>4</b>
+        <svg viewBox="0 0 200 180"><rect class="trait" x="40" y="40" width="80" height="54" rx="3"/><text x="52" y="62" font-size="13" font-family="Noto Sans" font-weight="700">EN - </text><text x="52" y="82" font-size="13" font-family="Noto Sans" font-weight="700">AR - </text><path class="trait" d="M130 67h30"/><path class="trait" d="m152 59 10 8-10 8"/><circle class="trait" cx="176" cy="67" r="14"/><path class="trait" d="m166 77 20-20"/>
+          <circle class="trait" cx="70" cy="128" r="9"/><path class="trait" d="M70 137v24M70 144l-14 8M70 144l14 8"/></svg></div>
+      <div class="case oui"><b>5</b>
+        <svg viewBox="0 0 200 180"><rect class="trait" x="20" y="34" width="150" height="100" rx="4"/><path d="M76 116 95 56l19 60" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="trait" d="M150 34l18-18M162 16h6v6" style="stroke-width:1.8"/><path class="trait" d="M30 128l14 0M30 128l0-14" style="stroke-width:1.8"/></svg></div>
+      <div class="case"><b>6</b>
+        <svg viewBox="0 0 200 180"><path class="trait" d="M30 120h140v18H30z"/><path class="trait" d="M40 138v20M160 138v20"/><path class="trait" d="M48 120v-30a10 10 0 0 1 10-10h84a10 10 0 0 1 10 10v30"/><circle class="trait" cx="100" cy="60" r="12"/><path class="trait" d="M100 72v30M86 90l14-6 14 6"/><rect class="trait" x="60" y="10" width="80" height="36" rx="3" style="stroke-dasharray:4 5"/><path class="trait" d="M62 30c10-12 20 10 30 0s20 10 30 0" style="stroke-width:1.6"/></svg></div>
+    </div>
+  </section>
+  <section class="formulaire">
+    <div class="ref"><span class="lambda"></span><span>AA-2026-10 · Fiche 1/1</span></div>
+    <p class="question">Quelle pièce as-tu ?</p>
+    <div class="choix" role="radiogroup" id="choix">
+      <button type="button" role="radio" aria-checked="true"><svg viewBox="0 0 40 40"><rect class="trait" x="6" y="7" width="28" height="11" rx="2"/><rect class="trait" x="6" y="22" width="28" height="11" rx="2"/><path class="trait" d="M11 12.5h.01M11 27.5h.01"/></svg>Compte Xtream</button>
+      <button type="button" role="radio" aria-checked="false"><svg viewBox="0 0 40 40"><path class="trait" d="M6 10h28M6 20h14M6 30h14M25 20v12l9-6z"/></svg>Lien M3U</button>
+      <button type="button" role="radio" aria-checked="false"><svg viewBox="0 0 40 40"><path class="trait" d="M24 5H11a3 3 0 0 0-3 3v24a3 3 0 0 0 3 3h18a3 3 0 0 0 3-3V13zM23 5v8h9"/></svg>Fichier .m3u</button>
+      <button type="button" role="radio" aria-checked="false"><svg viewBox="0 0 40 40"><path class="trait" d="M6 20a14 14 0 1 0 14-14 15 15 0 0 0-10.5 4.3L6 14M6 6v8h8"/></svg>Sauvegarde .aurora</button>
+    </div>
+    <div class="ligne"><b>A</b><span><label for="s">Serveur</label><input id="s" type="text" value="http://fournisseur.example:8080" spellcheck="false"></span></div>
+    <div class="ligne"><b>B</b><span><label for="u">Identifiant</label><input id="u" type="text" value="hugo"></span></div>
+    <div class="ligne"><b>C</b><span><label for="p">Mot de passe</label><input id="p" type="password" value="k8Tz29qa"></span></div>
+    <label class="coche" for="fr"><input id="fr" type="checkbox" checked><span><b>N’afficher que le français</b><small>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Réglages ▸ Catalogue pour défaire.</small></span></label>
+    <div class="actions"><button class="bouton" type="button">Assembler<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="lienN" type="button">J’ai une sauvegarde .aurora</button></div>
+    <p class="note"><svg viewBox="0 0 30 30"><rect class="gris" x="5" y="13" width="20" height="14" rx="2"/><path class="trait" d="M10 13V9a5 5 0 0 1 10 0v4"/></svg><span>Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs. Le fichier .aurora rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+  </section>
+</main>
+<span class="etiquette">Variante 12 · d’après les notices IKEA</span>
+<script>
+'use strict';
+(() => {
+  const b = [...document.querySelectorAll('#choix button')];
+  b.forEach((x) => x.addEventListener('click', () => b.forEach((y) => y.setAttribute('aria-checked', String(y === x)))));
+})();
+</script>
+</body>
+</html>

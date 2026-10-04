@@ -109,6 +109,145 @@
     ['FR | Découverte', 'chaînes', 73], ['BE | Belgique', 'chaînes', 41],
   ].map(([nom, type, n]) => ({ nom, type, n }));
 
+
+  // Un catalogue de démonstration plus large : de vrais titres, avec leur année et leur catégorie
+  // (celles du fournisseur de démonstration). Il sert aux écrans qui montrent le contenu arriver.
+  const CATALOGUE = `
+Heat|1995|FR | Action
+Mission : Impossible — Fallout|2018|FR | Action
+Mad Max : Fury Road|2015|FR | Action
+John Wick|2014|FR | Action
+Top Gun : Maverick|2022|FR | Action
+Gladiator|2000|FR | Action
+Piège de cristal|1988|FR | Action
+Terminator 2|1991|FR | Action
+The Dark Knight|2008|FR | Action
+Kill Bill : Volume 1|2003|FR | Action
+Léon|1994|FR | Action
+Seven|1995|FR | Policier & Thriller
+Le Silence des agneaux|1991|FR | Policier & Thriller
+Zodiac|2007|FR | Policier & Thriller
+Prisoners|2013|FR | Policier & Thriller
+Gone Girl|2014|FR | Policier & Thriller
+Les Infiltrés|2006|FR | Policier & Thriller
+Memento|2000|FR | Policier & Thriller
+Fargo|1996|FR | Policier & Thriller
+No Country for Old Men|2007|FR | Policier & Thriller
+Parasite|2019|FR | Policier & Thriller
+Le Cercle rouge|1970|FR | Policier & Thriller
+Les Tontons flingueurs|1963|FR | Policier & Thriller
+Dune : Deuxième partie|2024|FR | Science-fiction
+Dune|2021|FR | Science-fiction
+Interstellar|2014|FR | Science-fiction
+Blade Runner 2049|2017|FR | Science-fiction
+Matrix|1999|FR | Science-fiction
+Alien|1979|FR | Science-fiction
+Premier Contact|2016|FR | Science-fiction
+Inception|2010|FR | Science-fiction
+2001 : l’Odyssée de l’espace|1968|FR | Science-fiction
+Retour vers le futur|1985|FR | Science-fiction
+E.T. l’extra-terrestre|1982|FR | Science-fiction
+Gravity|2013|FR | Science-fiction
+Le Dîner de cons|1998|FR | Comédie
+Intouchables|2011|FR | Comédie
+OSS 117 : Le Caire, nid d’espions|2006|FR | Comédie
+La Cité de la peur|1994|FR | Comédie
+Bienvenue chez les Ch’tis|2008|FR | Comédie
+Les Visiteurs|1993|FR | Comédie
+Astérix & Obélix : Mission Cléopâtre|2002|FR | Comédie
+Le Grand Bain|2018|FR | Comédie
+Le Père Noël est une ordure|1982|FR | Comédie
+The Grand Budapest Hotel|2014|FR | Comédie
+Oppenheimer|2023|FR | Drame
+Anatomie d’une chute|2023|FR | Drame
+La Zone d’intérêt|2023|FR | Drame
+Killers of the Flower Moon|2023|FR | Drame
+Le Cercle des neiges|2023|FR | Drame
+Les Misérables|2019|FR | Drame
+La Haine|1995|FR | Drame
+Le Fabuleux Destin d’Amélie Poulain|2001|FR | Drame
+Whiplash|2014|FR | Drame
+Forrest Gump|1994|FR | Drame
+Le Parrain|1972|FR | Drame
+La La Land|2016|FR | Drame
+Le Comte de Monte-Cristo|2024|FR | Drame
+Le Fil|2024|FR | Drame
+Vice-versa 2|2024|FR | Animation
+Mufasa : Le Roi Lion|2024|FR | Animation
+Le Voyage de Chihiro|2001|FR | Animation
+Ratatouille|2007|FR | Animation
+Coco|2017|FR | Animation
+Toy Story|1995|FR | Animation
+Spider-Man : Across the Spider-Verse|2023|FR | Animation
+Le Roi Lion|1994|FR | Animation
+WALL-E|2008|FR | Animation
+Mon voisin Totoro|1988|FR | Animation
+Flow, le chat qui n’avait plus peur de l’eau|2024|FR | Animation
+Les Oiseaux migrateurs|2001|FR | Documentaires
+Megadoc|2025|FR | Documentaires
+Microcosmos|1996|FR | Documentaires
+La Marche de l’empereur|2005|FR | Documentaires
+Free Solo|2018|FR | Documentaires
+Home|2009|FR | Documentaires
+Harry Potter à l’école des sorciers|2001|FR | Sagas
+Le Seigneur des anneaux : La Communauté de l’anneau|2001|FR | Sagas
+Star Wars : Un nouvel espoir|1977|FR | Sagas
+Les Aventuriers de l’arche perdue|1981|FR | Sagas
+Jurassic Park|1993|FR | Sagas
+Pirates des Caraïbes|2003|FR | Sagas
+Mickey 17|2025|FR | Nouveautés
+Conclave|2024|FR | Nouveautés
+Emilia Pérez|2024|FR | Nouveautés
+The Brutalist|2024|FR | Nouveautés
+Un parfait inconnu|2024|FR | Nouveautés
+L’Amour ouf|2024|FR | Nouveautés
+The Substance|2024|FR | Nouveautés
+Anora|2024|FR | Nouveautés
+Avatar : La Voie de l’eau|2022|EN | Movies 4K
+Tenet|2020|EN | Movies 4K
+1917|2019|EN | Movies 4K
+Dunkerque|2017|EN | Movies 4K
+Stranger Things|2016|FR | Séries Netflix
+The Crown|2016|FR | Séries Netflix
+Lupin|2021|FR | Séries Netflix
+Squid Game|2021|FR | Séries Netflix
+Dark|2017|FR | Séries Netflix
+Mindhunter|2017|FR | Séries Netflix
+Arcane|2021|FR | Séries Netflix
+Le Jeu de la dame|2020|FR | Séries Netflix
+The Bear|2022|FR | Séries Disney+
+Andor|2022|FR | Séries Disney+
+Shōgun|2024|FR | Séries Disney+
+The Mandalorian|2019|FR | Séries Disney+
+Only Murders in the Building|2021|FR | Séries Disney+
+Le Bureau des légendes|2015|FR | Séries Canal+
+Kaamelott|2005|FR | Séries Canal+
+Baron noir|2016|FR | Séries Canal+
+Validé|2020|FR | Séries Canal+
+Engrenages|2005|FR | Séries Canal+
+Hippocrate|2018|FR | Séries Canal+
+Fallout|2024|FR | Séries Prime Video
+The Boys|2019|FR | Séries Prime Video
+Reacher|2022|FR | Séries Prime Video
+Invincible|2021|FR | Séries Prime Video
+Frieren|2023|FR | Animés
+One Piece|1999|FR | Animés
+L’Attaque des Titans|2013|FR | Animés
+Demon Slayer|2019|FR | Animés
+Jujutsu Kaisen|2020|FR | Animés
+Death Note|2006|FR | Animés
+Cowboy Bebop|1998|FR | Animés
+Severance|2022|EN | TV Shows
+The Last of Us|2023|EN | TV Shows
+The White Lotus|2021|EN | TV Shows
+House of the Dragon|2022|EN | TV Shows
+Slow Horses|2022|EN | TV Shows
+The Office|2005|EN | TV Shows
+Breaking Bad|2008|EN | TV Shows
+Succession|2018|EN | TV Shows
+The Wire|2002|EN | TV Shows
+`.trim().split('\n').map((l) => { const [titre, annee, ...reste] = l.split('|'); const categorie = reste.join('|'); const type = CATEGORIES.find((c) => c.nom === categorie)?.type || 'films'; return { titre, annee: +annee, categorie, type }; });
+
   // Une affiche de démonstration, comme celles que l'app dessine quand le fournisseur n'en donne pas.
   function affiche(t, { classe = '' } = {}) {
     const [a, b, c] = PALETTES[t.palette];
@@ -196,7 +335,7 @@
   }
 
   window.Aurora = {
-    FIGE, icone, barre, CHAINES, PALETTES, TITRES, CATEGORIES, ETAPES, TOTAL, ATTENTE,
+    FIGE, icone, barre, CHAINES, PALETTES, TITRES, CATEGORIES, CATALOGUE, ETAPES, TOTAL, ATTENTE,
     affiche, logo, fmt, pluriel, duree, clamp, hasard, etatA, chargement,
   };
 })();

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Teenage Engineering</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 5 — d'après Teenage Engineering.
+ * Le premier lancement comme la façade d'un petit appareil : un écran noir, quatre molettes de
+ * couleur, une rangée de touches carrées, des inscriptions sérigraphiées en minuscules, et une
+ * notice en marge. La molette bleue choisit la source, la verte le français, la blanche reprend
+ * une sauvegarde ; la touche orange valide. Tout se clique pour de vrai.
+ */
+:root { color-scheme: light; --fond: #d9d9d6; --plaque: #ebebe8; --encre: #111; --t2: #6b6b66; --orange: #ff4f00; --bleu: #2f6be0; --vert: #22a85a; --mono-t: 'IBM Plex Mono', ui-monospace, monospace; }
+body { background: var(--fond); color: var(--encre); font: 13px/1.45 var(--mono-t); }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); gap: 4vw; align-items: center; padding: 0 var(--gouttiere); }
+.notice h1 { margin: 0 0 4px; font: 700 15px var(--mono-t); text-transform: lowercase; }
+.notice .gros { margin: 0 0 28px; font: 600 clamp(30px, 3vw, 52px)/1.02 'Inter', sans-serif; letter-spacing: -0.04em; text-transform: lowercase; }
+.notice ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: n; }
+.notice li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; }
+.notice li::before { counter-increment: n; content: counter(n); display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--encre); color: var(--plaque); font-size: 11px; font-weight: 600; }
+.notice li b { font-weight: 600; }
+.notice .pt { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: 0; }
+.notice small { display: block; color: var(--t2); font-size: 12px; }
+.notice .secu { margin-top: 26px; padding-top: 12px; border-top: 1px solid #bdbdb8; color: var(--t2); font-size: 12px; }
+
+.appareil { position: relative; width: min(100%, 780px); justify-self: center; padding: 44px 40px 40px; border-radius: 26px; background: linear-gradient(180deg, #f3f3f0, var(--plaque)); box-shadow: inset 0 2px 0 #fff, inset 0 -3px 0 #c9c9c4, 0 40px 60px rgba(60, 60, 50, 0.22), 0 2px 4px rgba(0, 0, 0, 0.12); display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 30px 34px; }
+.appareil > * { min-width: 0; }
+.serig { position: absolute; font-size: 10.5px; letter-spacing: 0.06em; color: #85857f; text-transform: lowercase; }
+.lcd { position: relative; border-radius: 10px; background: #0c0c0c; box-shadow: inset 0 0 0 5px #1d1d1d, inset 0 4px 10px rgba(0, 0, 0, 0.9); padding: 14px 16px; color: #e8e8e8; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 1.7; }
+.lcd .l1 { display: flex; justify-content: space-between; font-size: 11px; color: #9a9a9a; }
+.lcd .l1 b { color: var(--orange); font-weight: 600; }
+.lcd canvas { width: 100%; height: 100%; display: block; }
+.lcd .l3 { font-size: 12.5px; }
+.lcd .l3 b { color: #fff; }
+.molettes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-content: center; }
+.mol { display: grid; justify-items: center; gap: 8px; }
+.mol button { all: unset; box-sizing: border-box; position: relative; width: 66px; height: 66px; border-radius: 50%; cursor: pointer; background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 45%), var(--c); box-shadow: 0 6px 0 color-mix(in srgb, var(--c) 70%, #000), 0 10px 16px rgba(0, 0, 0, 0.25); transform: rotate(var(--a, 0deg)); transition: transform 300ms cubic-bezier(.3, 1.4, .6, 1); }
+.mol button::after { content: ''; position: absolute; left: 50%; top: 9%; width: 3px; height: 26%; margin-left: -1.5px; border-radius: 2px; background: rgba(0, 0, 0, 0.55); }
+.mol button:focus-visible { outline: 2px solid var(--encre); outline-offset: 4px; }
+.mol span { font-size: 10.5px; text-transform: lowercase; color: #6b6b66; text-align: center; line-height: 1.25; }
+.mol span b { display: block; color: var(--encre); font-weight: 600; }
+.touches { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.touche { all: unset; box-sizing: border-box; min-width: 0; display: grid; align-content: space-between; aspect-ratio: 1; padding: 10px; border-radius: 9px; cursor: pointer; background: linear-gradient(180deg, #fbfbf9, #e2e2de); box-shadow: inset 0 1px 0 #fff, 0 4px 0 #b9b9b3, 0 6px 10px rgba(0, 0, 0, 0.12); font-size: 11px; text-transform: lowercase; }
+.touche:active, .touche.on { transform: translateY(3px); box-shadow: inset 0 1px 0 #fff, 0 1px 0 #b9b9b3; }
+.touche svg { width: 22px; height: 22px; fill: none; stroke: var(--encre); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.touche.ok { background: linear-gradient(180deg, #ff6a26, var(--orange)); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 0 #c43c00, 0 6px 10px rgba(0, 0, 0, 0.15); }
+.touche.ok svg { stroke: #fff; }
+.touche.on:not(.ok) { background: var(--encre); color: #fff; }
+.touche.on:not(.ok) svg { stroke: #fff; }
+.touche:focus-visible { outline: 2px solid var(--encre); outline-offset: 3px; }
+.etiquette { background: rgba(255, 255, 255, 0.7); color: #6b6b66; border-color: #c6c6c0; font-family: var(--mono-t); }
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="notice">
+    <h1>aurora — premier lancement</h1>
+    <p class="gros">ton abonnement,<br>enfin rangé.</p>
+    <ol>
+      <li><span><b>choisis la source</b> avec la molette <span class="pt" style="background:#2f6be0"></span>bleue, ou une touche.<small>xtream : serveur, identifiant, mot de passe. m3u : une adresse ou un fichier.</small></span></li>
+      <li><span><b>français uniquement</b> : molette <span class="pt" style="background:#22a85a"></span>verte.<small>cache ce qui porte « EN - », « AR - »… ce qui n’a aucune étiquette reste. réglages ▸ catalogue pour défaire.</small></span></li>
+      <li><span><b>tu réinstalles ?</b> molette <span class="pt" style="background:#fff;box-shadow:inset 0 0 0 1px #999"></span>blanche : reprend le fichier .aurora.<small>comptes, réglages, favoris et historique.</small></span></li>
+      <li><span><b>valide</b> avec la touche <span class="pt" style="background:#ff4f00"></span>orange.</span></li>
+    </ol>
+    <p class="secu">identifiants chiffrés sur ce pc. rien ne part ailleurs.</p>
+  </section>
+
+  <section class="appareil">
+    <span class="serig" style="left:5%;top:2%">aurora au-1 · iptv field player</span>
+    <span class="serig" style="right:5%;top:2%">fig. 1 — mise en route</span>
+    <div class="lcd" aria-live="polite">
+      <div class="l1"><span>setup <b>1·3</b></span><span id="lcdFr">lang: tout</span></div>
+      <canvas id="onde" aria-hidden="true"></canvas>
+      <div class="l3">source : <b id="lcdSrc">xtream</b></div>
+    </div>
+    <div class="molettes">
+      <div class="mol"><button type="button" id="mSrc" style="--c:#2f6be0" aria-label="Changer de source"></button><span><b>source</b>3 choix</span></div>
+      <div class="mol"><button type="button" id="mFr" style="--c:#22a85a" role="switch" aria-checked="false" aria-label="Français uniquement"></button><span><b>langue</b>tout·fr</span></div>
+      <div class="mol"><button type="button" id="mRest" style="--c:#f4f4f2" aria-label="Reprendre une sauvegarde"></button><span><b>reprise</b>.aurora</span></div>
+      <div class="mol"><button type="button" style="--c:#ff4f00" aria-label="Volume"></button><span><b>volume</b>plus tard</span></div>
+    </div>
+    <div class="touches" id="touches">
+      <button class="touche on" type="button" data-s="xtream"><svg viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/></svg>xtream</button>
+      <button class="touche" type="button" data-s="m3u"><svg viewBox="0 0 24 24"><path d="M21 5H3M11 12H3M11 19H3M15 12v7l6-3.5z"/></svg>m3u</button>
+      <button class="touche" type="button" data-s="fichier"><svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>fichier</button>
+      <button class="touche" type="button" id="tFr"><svg viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>fr</button>
+      <button class="touche" type="button" id="tRest"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>reprise</button>
+      <button class="touche ok" type="button"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>ok</button>
+    </div>
+    <span class="serig" style="left:5%;bottom:2%">chiffré sur ce pc</span>
+    <span class="serig" style="right:5%;bottom:2%">made for your sofa</span>
+  </section>
+</main>
+<span class="etiquette">Variante 5 · d’après Teenage Engineering</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const SOURCES = ['xtream', 'm3u', 'fichier'];
+  let src = 0, fr = false, rot = [0, 0, 0];
+  function maj() {
+    $('lcdSrc').textContent = SOURCES[src];
+    $('lcdFr').textContent = `lang: ${fr ? 'fr' : 'tout'}`;
+    document.querySelectorAll('[data-s]').forEach((t) => t.classList.toggle('on', t.dataset.s === SOURCES[src]));
+    $('tFr').classList.toggle('on', fr);
+    $('mFr').setAttribute('aria-checked', String(fr));
+  }
+  const tourne = (el, i, d) => { rot[i] += d; el.style.setProperty('--a', `${rot[i]}deg`); };
+  $('mSrc').addEventListener('click', () => { src = (src + 1) % 3; tourne($('mSrc'), 0, 60); maj(); });
+  $('mFr').addEventListener('click', () => { fr = !fr; tourne($('mFr'), 1, fr ? 90 : -90); maj(); });
+  $('mRest').addEventListener('click', () => tourne($('mRest'), 2, 45));
+  document.querySelectorAll('[data-s]').forEach((t) => t.addEventListener('click', () => { src = SOURCES.indexOf(t.dataset.s); maj(); }));
+  $('tFr').addEventListener('click', () => { fr = !fr; maj(); });
+
+  // L'écran : quatre barres de couleur qui dansent, et le Λ en fil de fer.
+  const c = $('onde'), x = c.getContext('2d');
+  const t0 = performance.now();
+  function image(now) {
+    const r = c.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1);
+    if (c.width !== Math.round(r.width * dpr)) { c.width = r.width * dpr; c.height = r.height * dpr; }
+    const W = r.width, H = r.height, t = Aurora.FIGE ? 1 : (now - t0) / 1000;
+    x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+    const COUL = ['#2f6be0', '#22a85a', '#f4f4f2', '#ff4f00'];
+    COUL.forEach((k, i) => {
+      const h = H * (0.25 + 0.55 * Math.abs(Math.sin(t * (1.3 + i * 0.4) + i)));
+      x.fillStyle = k; x.fillRect(8 + i * 18, H - h, 10, h);
+    });
+    x.strokeStyle = '#e8e8e8'; x.lineWidth = 1.5; x.lineJoin = 'round';
+    const cx0 = W * 0.65, h0 = H * 0.8, dx = h0 * 14 / 31;
+    for (let k = 0; k < 3; k++) { const o = k * 7; x.globalAlpha = 1 - k * 0.3; x.beginPath(); x.moveTo(cx0 - dx - o, H - 4); x.lineTo(cx0, H - 4 - h0 + o * 0.4 + Math.sin(t * 2) * 2); x.lineTo(cx0 + dx + o, H - 4); x.stroke(); }
+    x.globalAlpha = 1;
+    if (!Aurora.FIGE) requestAnimationFrame(image);
+  }
+  requestAnimationFrame(image);
+})();
+</script>
+</body>
+</html>

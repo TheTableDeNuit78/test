@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Duolingo</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 11 — d'après Duolingo.
+ * Un Λ devenu personnage (des yeux, des joues, il cligne et sautille) pose la question dans une
+ * bulle. Une question par écran, la barre de progression épaisse en haut, les grosses cartes
+ * réponses à bord épais qui s'enfoncent quand on clique, le bouton « Valider » en 3D, et le
+ * bandeau vert de bonne réponse qui remonte du bas avec l'astuce.
+ */
+:root { color-scheme: light; --n: 'Nunito', 'Segoe UI', sans-serif; --vert: #58cc02; --vertF: #58a700; --bleu: #1cb0f6; --bleuF: #1899d6; --bleuC: #ddf4ff; --gris: #e5e5e5; --grisF: #afafaf; --t1: #4b4b4b; --t2: #777; }
+body { background: #fff; color: var(--t1); font: 700 16px/1.4 var(--n); }
+.page { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; }
+.haut { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 22px; width: min(1080px, 100% - 64px); margin: 34px auto 0; }
+.fermer { width: 22px; height: 22px; fill: none; stroke: var(--grisF); stroke-width: 3; stroke-linecap: round; }
+.barre { position: relative; height: 16px; border-radius: 8px; background: var(--gris); overflow: hidden; }
+.barre i { position: absolute; inset: 0 auto 0 0; width: var(--p, 25%); border-radius: 8px; background: var(--vert); transition: width 500ms cubic-bezier(.3, 1.4, .5, 1); }
+.barre i::after { content: ''; position: absolute; left: 8px; right: 8px; top: 4px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.3); }
+.coeurs { display: flex; align-items: center; gap: 6px; color: #ff4b4b; font-weight: 800; }
+.coeurs svg { width: 26px; height: 26px; fill: #ff4b4b; }
+.milieu { align-self: center; width: min(1080px, 100% - 64px); margin: 0 auto; }
+.consigne { margin: 0 0 26px; font-size: 38px; font-weight: 800; color: var(--t1); letter-spacing: -0.01em; }
+.scene { display: flex; align-items: flex-end; gap: 18px; margin-bottom: 26px; }
+.perso { width: 200px; height: 200px; flex: none; animation: saut 2.6s cubic-bezier(.3, 1.6, .5, 1) infinite; transform-origin: 50% 100%; }
+@keyframes saut { 0%, 72%, 100% { transform: translateY(0) scale(1, 1); } 78% { transform: translateY(0) scale(1.08, 0.92); } 86% { transform: translateY(-16px) scale(0.96, 1.05); } 94% { transform: translateY(0) scale(1.04, 0.96); } }
+.paupiere { animation: cligne 4s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes cligne { 0%, 92%, 100% { transform: scaleY(0); } 95% { transform: scaleY(1); } }
+.bulle { position: relative; margin-bottom: 96px; padding: 18px 24px; max-width: 620px; border: 2px solid var(--gris); border-radius: 16px; font-size: 21px; font-weight: 700; background: #fff; }
+.bulle::before { content: ''; position: absolute; left: -11px; bottom: 22px; width: 18px; height: 18px; background: #fff; border-left: 2px solid var(--gris); border-bottom: 2px solid var(--gris); transform: rotate(45deg); }
+.bulle b { color: var(--bleu); }
+.choix { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.carte { all: unset; box-sizing: border-box; display: grid; justify-items: center; gap: 10px; padding: 24px 12px 22px; border: 2px solid var(--gris); border-bottom-width: 5px; border-radius: 16px; text-align: center; cursor: pointer; transition: transform 80ms; }
+.carte:hover { background: #f7f7f7; }
+.carte:active { transform: translateY(3px); border-bottom-width: 2px; margin-top: 3px; }
+.carte svg { width: 88px; height: 88px; }
+.carte b { font-size: 19px; font-weight: 800; color: var(--t1); }
+.carte small { font-size: 14.5px; font-weight: 600; color: var(--t2); }
+.carte[aria-checked="true"] { border-color: #84d8ff; background: var(--bleuC); }
+.carte[aria-checked="true"] b { color: var(--bleuF); }
+.num { justify-self: start; display: grid; place-items: center; width: 26px; height: 26px; margin: -8px 0 -14px -2px; border: 2px solid var(--gris); border-radius: 8px; font-size: 13px; color: var(--grisF); }
+.carte[aria-checked="true"] .num { border-color: #84d8ff; color: var(--bleu); }
+.astuce { display: flex; align-items: center; gap: 16px; margin-top: 18px; padding: 16px 20px; border: 2px solid var(--gris); border-radius: 16px; cursor: pointer; }
+.astuce .ico2 { width: 34px; height: 34px; flex: none; }
+.astuce span { flex: 1; }
+.astuce small { display: block; font-size: 14.5px; font-weight: 600; color: var(--t2); }
+.astuce input { appearance: none; width: 30px; height: 30px; margin: 0; border: 2px solid var(--gris); border-bottom-width: 4px; border-radius: 9px; cursor: pointer; flex: none; }
+.astuce input:checked { background: var(--bleu) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 18px no-repeat; border-color: var(--bleuF); }
+.bas { border-top: 2px solid var(--gris); transition: background 250ms, border-color 250ms; }
+.bas.bravo { background: #d7ffb8; border-color: #d7ffb8; }
+.basIn { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1080px, 100% - 64px); margin: 0 auto; padding: 28px 0 34px; }
+.btn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; min-width: 150px; height: 50px; padding: 0 24px; border-radius: 16px; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; }
+.btn.vert { background: var(--vert); color: #fff; box-shadow: 0 4px 0 var(--vertF); }
+.btn.vert:active { transform: translateY(4px); box-shadow: none; }
+.btn.blanc { border: 2px solid var(--gris); box-shadow: 0 2px 0 var(--gris); color: var(--grisF); }
+.btn.blanc:hover { background: #f7f7f7; }
+.resultat { display: none; align-items: center; gap: 16px; color: var(--vertF); }
+.resultat .rond { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #fff; }
+.resultat svg { width: 38px; height: 38px; fill: none; stroke: var(--vert); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.resultat b { display: block; font-size: 24px; font-weight: 800; }
+.resultat small { font-size: 14.5px; font-weight: 700; }
+.bravo .resultat { display: flex; }
+.bravo .passer { display: none; }
+.passer small { display: block; max-width: 46ch; font-size: 13px; font-weight: 600; color: var(--t2); }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: #999; border-color: var(--gris); }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="haut">
+    <svg class="fermer" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <div class="barre"><i id="barre" style="--p:25%"></i></div>
+    <span class="coeurs"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C1 8.5 3 5 6.4 5c2 0 3.3 1.1 4 2.2h3.2C14.3 6.1 15.6 5 17.6 5 21 5 23 8.5 21.6 11.7 19.5 16.4 12 21 12 21z"/></svg>5</span>
+  </header>
+  <section class="milieu">
+    <h1 class="consigne">Ton abonnement, enfin rangé.</h1>
+    <div class="scene">
+      <svg class="perso" viewBox="0 0 150 150" aria-hidden="true">
+        <defs><linearGradient id="peau" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4ea8f5"/><stop offset=".55" stop-color="#9d5cff"/><stop offset="1" stop-color="#ff6cab"/></linearGradient></defs>
+        <ellipse cx="75" cy="142" rx="44" ry="6" fill="#e5e5e5"/>
+        <path d="M24 134 L75 18 L126 134" fill="none" stroke="url(#peau)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(0 4)">
+          <circle cx="62" cy="62" r="11" fill="#fff"/><circle cx="88" cy="62" r="11" fill="#fff"/>
+          <circle cx="64" cy="64" r="6" fill="#3c3c3c"/><circle cx="86" cy="64" r="6" fill="#3c3c3c"/>
+          <circle cx="66" cy="61" r="2" fill="#fff"/><circle cx="88" cy="61" r="2" fill="#fff"/>
+          <rect class="paupiere" x="50" y="50" width="24" height="24" rx="12" fill="#7d6cf6"/><rect class="paupiere" x="76" y="50" width="24" height="24" rx="12" fill="#a46cf3"/>
+          <path d="M68 80 q7 7 14 0" fill="none" stroke="#3c3c3c" stroke-width="3.5" stroke-linecap="round"/>
+          <ellipse cx="54" cy="80" rx="5" ry="3" fill="#ff8fc1" opacity=".8"/><ellipse cx="96" cy="80" rx="5" ry="3" fill="#ff8fc1" opacity=".8"/>
+        </g>
+      </svg>
+      <p class="bulle" id="bulle">Salut ! Ton fournisseur t’a donné <b>quoi</b>, exactement ?</p>
+    </div>
+    <div class="choix" id="choix" role="radiogroup">
+      <button class="carte" type="button" role="radio" aria-checked="false" data-r="Bien vu ! Il me faudra l’adresse du serveur, ton identifiant et ton mot de passe."><span class="num">1</span>
+        <svg viewBox="0 0 64 64"><rect x="8" y="12" width="48" height="16" rx="5" fill="#1cb0f6"/><rect x="8" y="34" width="48" height="16" rx="5" fill="#1899d6"/><circle cx="17" cy="20" r="3" fill="#fff"/><circle cx="17" cy="42" r="3" fill="#fff"/><rect x="26" y="18" width="22" height="4" rx="2" fill="#ddf4ff"/><rect x="26" y="40" width="16" height="4" rx="2" fill="#ddf4ff"/></svg>
+        <b>Un compte Xtream</b><small>serveur, identifiant, mot de passe</small></button>
+      <button class="carte" type="button" role="radio" aria-checked="false" data-r="Parfait ! Colle simplement le lien de ta playlist, je m’occupe du reste."><span class="num">2</span>
+        <svg viewBox="0 0 64 64"><rect x="8" y="12" width="40" height="7" rx="3.5" fill="#ce82ff"/><rect x="8" y="27" width="26" height="7" rx="3.5" fill="#ce82ff"/><rect x="8" y="42" width="26" height="7" rx="3.5" fill="#ce82ff"/><path d="M42 28 L58 38 L42 48 Z" fill="#a560e8" stroke="#a560e8" stroke-width="4" stroke-linejoin="round"/></svg>
+        <b>Un lien M3U</b><small>une adresse en http…</small></button>
+      <button class="carte" type="button" role="radio" aria-checked="false" data-r="Super ! Montre-moi où tu as rangé le fichier .m3u sur ce PC."><span class="num">3</span>
+        <svg viewBox="0 0 64 64"><path d="M14 6h24l14 14v36a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z" fill="#ffc800"/><path d="M38 6v10a4 4 0 0 0 4 4h10z" fill="#e5a400"/><rect x="18" y="32" width="24" height="5" rx="2.5" fill="#fff"/><rect x="18" y="42" width="16" height="5" rx="2.5" fill="#fff"/></svg>
+        <b>Un fichier .m3u</b><small>téléchargé sur ce PC</small></button>
+      <button class="carte" type="button" role="radio" aria-checked="false" data-r="Bon retour ! Le fichier .aurora rend tes comptes, tes réglages, tes favoris et ton historique."><span class="num">4</span>
+        <svg viewBox="0 0 64 64"><rect x="8" y="14" width="48" height="40" rx="8" fill="#58cc02"/><rect x="8" y="14" width="48" height="12" rx="6" fill="#58a700"/><path d="M32 46V32m-7 6 7-7 7 7" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <b>Une sauvegarde</b><small>un fichier .aurora</small></button>
+    </div>
+    <label class="astuce" for="fr">
+      <svg class="ico2" viewBox="0 0 34 34"><rect x="2" y="6" width="10" height="22" rx="3" fill="#1cb0f6"/><rect x="12" y="6" width="10" height="22" fill="#fff" stroke="#e5e5e5" stroke-width="2"/><rect x="22" y="6" width="10" height="22" rx="3" fill="#ff4b4b"/></svg>
+      <span>N’afficher que le français<small>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Réglages ▸ Catalogue pour défaire.</small></span>
+      <input id="fr" type="checkbox">
+    </label>
+  </section>
+  <footer class="bas" id="bas">
+    <div class="basIn">
+      <span class="passer"><button class="btn blanc" type="button">Passer</button><small>Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</small></span>
+      <span class="resultat"><span class="rond"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>Génial !</b><small id="reponse"></small></span></span>
+      <button class="btn vert" type="button" id="valider">Valider</button>
+    </div>
+  </footer>
+</main>
+<span class="etiquette" style="bottom:auto;top:76px">Variante 11 · d’après Duolingo</span>
+<script>
+'use strict';
+(() => {
+  const cartes = [...document.querySelectorAll('.carte')];
+  const bas = document.getElementById('bas'), barre = document.getElementById('barre');
+  let choisie = null;
+  const choisir = (c) => { choisie = c; cartes.forEach((x) => x.setAttribute('aria-checked', String(x === c))); bas.classList.remove('bravo'); barre.style.setProperty('--p', '25%'); document.getElementById('valider').textContent = 'Valider'; };
+  cartes.forEach((c) => c.addEventListener('click', () => choisir(c)));
+  addEventListener('keydown', (e) => { const i = parseInt(e.key, 10); if (i >= 1 && i <= 4) choisir(cartes[i - 1]); else if (e.key === 'Enter') valider(); });
+  function valider() {
+    if (!choisie) choisir(cartes[0]);
+    document.getElementById('reponse').textContent = choisie.dataset.r;
+    bas.classList.add('bravo'); barre.style.setProperty('--p', '50%');
+    document.getElementById('valider').textContent = 'Continuer';
+  }
+  document.getElementById('valider').addEventListener('click', valider);
+  if (new URLSearchParams(location.search).has('bravo')) { choisir(cartes[0]); valider(); }
+})();
+</script>
+</body>
+</html>

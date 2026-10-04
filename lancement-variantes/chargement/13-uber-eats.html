@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après Uber Eats</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 13 — d'après le suivi de commande d'Uber Eats.
+ * La carte à gauche (rues claires, parcs, la rivière), le trajet en noir du fournisseur jusqu'à
+ * « ce PC » et le livreur qui avance dessus. À droite : l'heure d'arrivée en très gros, la barre
+ * en segments (un par étape), le livreur, et le détail de la commande, article par article.
+ */
+:root { color-scheme: light; --u: 'Inter', -apple-system, sans-serif; --t1: #000; --t2: #5e5e5e; --t3: #a6a6a6; --ligne: #eee; --vert: #06c167; }
+body { background: #fff; color: var(--t1); font: 15px/1.4 var(--u); }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1.35fr) 480px; }
+.carte { position: relative; overflow: hidden; background: #f3f2ee; }
+.carte svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.carte .haut { position: absolute; left: 20px; top: 20px; display: flex; gap: 10px; }
+.carte .haut span { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); font-weight: 600; font-size: 14px; }
+.carte .haut .lambda { width: 18px; height: 18px; background: #000; }
+.panneau { display: grid; grid-template-rows: auto auto 1fr auto; padding: 30px 32px 26px; box-shadow: -1px 0 0 var(--ligne); overflow: hidden; }
+.eta small { color: var(--t2); font-size: 14px; }
+.eta b { display: block; font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.eta p { margin: 6px 0 0; font-size: 17px; font-weight: 600; }
+.segs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 18px 0 6px; }
+.segs i { position: relative; height: 5px; border-radius: 3px; background: #e2e2e2; overflow: hidden; }
+.segs i b { position: absolute; inset: 0 auto 0 0; width: calc(var(--k, 0) * 100%); background: var(--vert); }
+.segs i.encours::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); animation: brille 1.2s linear infinite; }
+@keyframes brille { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.segInfo { display: flex; justify-content: space-between; color: var(--t2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.livreur { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; margin: 20px 0 6px; padding: 14px 0; border-top: 1px solid var(--ligne); border-bottom: 1px solid var(--ligne); }
+.livreur .av { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #000; }
+.livreur .av .lambda { width: 26px; height: 26px; }
+.livreur b { display: block; font-size: 16px; }
+.livreur small { color: var(--t2); font-size: 13.5px; }
+.livreur .note { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 999px; background: #f3f3f3; font-weight: 600; font-size: 13.5px; }
+.commande { overflow: hidden; }
+.commande h3 { margin: 14px 0 8px; font-size: 18px; font-weight: 700; }
+.art { display: grid; grid-template-columns: 70px 1fr auto; gap: 12px; align-items: center; padding: 9px 0; font-size: 14.5px; }
+.art .q { display: grid; place-items: center; height: 28px; border-radius: 6px; background: #f3f3f3; font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.art.fait .q { background: #e6f9ef; color: #057a43; }
+.art.encours .q { background: #000; color: #fff; }
+.art .st { color: var(--t2); font-size: 13px; }
+.art.fait .st { color: #057a43; }
+.art.attente { color: var(--t3); }
+.bas p { margin: 0 0 12px; color: var(--t2); font-size: 13.5px; }
+.bU { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 54px; border-radius: 10px; background: #000; color: #fff; font-weight: 600; font-size: 16px; cursor: pointer; }
+.bU:hover { background: #333; }
+.pret .bU { background: var(--vert); }
+.etiquette { background: rgba(255, 255, 255, 0.9); color: var(--t2); border-color: #ddd; }
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="carte">
+    <svg id="plan" viewBox="0 0 900 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+    <div class="haut"><span><span class="lambda"></span>Aurora</span><span id="pastille">En route</span></div>
+  </section>
+  <section class="panneau">
+    <div class="eta"><small>Arrivée prévue</small><b id="eta">dans 12 s</b><p id="statut">Ton catalogue est en route</p></div>
+    <div><div class="segs" id="segs"></div><div class="segInfo"><span id="segT">Catégories</span><span id="pct">0 %</span></div>
+      <div class="livreur"><span class="av"><span class="lambda"></span></span><span><b>Aurora</b><small>depuis fournisseur.example · ta connexion</small></span><span class="note">★ 4,98</span></div></div>
+    <div class="commande"><h3>Ta commande · 5 articles</h3><div id="arts"></div></div>
+    <div class="bas"><p id="avis">Le catalogue est chargé en entier, pour que rien ne rame ensuite. Si tu n’attends pas, l’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive.</p><button class="bU" type="button" id="continuer">Continuer sans attendre</button></div>
+  </section>
+</main>
+<span class="etiquette" style="right:auto;left:14px">Chargement · Variante 13 · d’après Uber Eats</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, pluriel, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  // Le plan : îlots, une avenue en biais, un parc, une rivière, puis le trajet.
+  const r = hasard(11); let s = '';
+  s += '<path d="M-20 560C120 520 220 600 360 580S600 470 720 520 900 600 940 590V680C820 690 760 610 640 620S420 690 300 680 100 620-20 650Z" fill="#cfe3f3"/>';
+  for (let x = 0; x < 900; x += 90) for (let y = 0; y < 900; y += 90) {
+    if (y + 60 > 520 && y < 690) continue;
+    const parc = r() < 0.08; s += `<rect x="${x + 8}" y="${y + 8}" width="74" height="74" rx="4" fill="${parc ? '#d6ebcf' : '#e9e8e3'}"/>`;
+  }
+  s += '<path d="M-20 900 920 0" stroke="#fff" stroke-width="22"/><path d="M-20 900 920 0" stroke="#f7e7b6" stroke-width="10"/>';
+  s += '<text x="470" y="414" font-family="Inter" font-size="12" fill="#9a9a9a" transform="rotate(-44.5 470 414)">Avenue du Catalogue</text>';
+  const T = 'M180 810V720H270V630H360V450H540V360H630V180H720';
+  s += `<path d="${T}" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += `<path id="trajet" d="${T}" fill="none" stroke="#000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += '<path id="fait" fill="none" stroke="#a6a6a6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>';
+  s += '<g transform="translate(180 810)"><circle r="20" fill="#000"/><rect x="-8" y="-7" width="16" height="12" rx="2" fill="#fff"/><rect x="-5" y="-11" width="10" height="5" fill="#fff"/><text y="40" text-anchor="middle" font-family="Inter" font-weight="600" font-size="13">fournisseur.example</text></g>';
+  s += '<g transform="translate(720 180)"><rect x="-22" y="-22" width="44" height="44" rx="8" fill="#000"/><path d="M-10 4-10-2 0-10 10-2V8H-10Z" fill="#fff"/><text y="44" text-anchor="middle" font-family="Inter" font-weight="600" font-size="13">Ce PC</text></g>';
+  s += '<g id="livreur"><circle r="24" fill="#06c167" opacity=".18"><animate attributeName="r" values="18;30;18" dur="1.6s" repeatCount="indefinite"/></circle><circle r="15" fill="#fff" stroke="#000" stroke-width="2"/><path d="M-6 4-0-7 6 4" fill="none" stroke="#000" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></g>';
+  $('plan').innerHTML = s;
+  const trajet = $('trajet'), L = trajet.getTotalLength(), liv = $('livreur'), fait = $('fait');
+  $('segs').innerHTML = ETAPES.map(() => '<i><b></b></i>').join('');
+  $('arts').innerHTML = ETAPES.map((e, i) => `<div class="art attente" id="a${i}"><span class="q"></span><span>${e.nom}</span><span class="st"></span></div>`).join('');
+  const h = (sec) => { const d = new Date(Date.now() + sec * 1000); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  chargement({
+    rendu(etat) {
+      const pt = trajet.getPointAtLength(etat.p * L);
+      liv.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`);
+      // Le bout déjà parcouru passe en gris, comme sur l'app.
+      let d = 'M180 810'; const n = 80; for (let i = 1; i <= n; i++) { const q = trajet.getPointAtLength((i / n) * etat.p * L); d += `L${q.x.toFixed(1)} ${q.y.toFixed(1)}`; } fait.setAttribute('d', d);
+      const sec = Math.max(1, Math.round(etat.reste));
+      $('eta').textContent = etat.fini ? 'Arrivé' : `dans ${sec} s`;
+      $('statut').textContent = etat.fini ? 'Ton catalogue est arrivé' : etat.t < 0.5 ? 'Le fournisseur prépare ta commande' : 'Ton catalogue est en route';
+      $('pastille').textContent = etat.fini ? `Livré à ${h(0)}` : `Arrivée vers ${h(sec)}`;
+      [...$('segs').children].forEach((g, i) => { const e = etat.etapes[i]; g.className = e.etat; g.firstChild.style.setProperty('--k', e.k.toFixed(3)); });
+      $('segT').textContent = etat.fini ? 'Tout est arrivé' : `${etat.etapes[etat.courante].nom} · étape ${etat.courante + 1} sur 5`;
+      $('pct').textContent = `${Math.round(etat.p * 100)} %`;
+      etat.etapes.forEach((e, i) => {
+        const a = $(`a${i}`); a.className = `art ${e.etat}`;
+        a.querySelector('.q').textContent = e.etat === 'attente' ? `${fmt(e.cible)}` : `${fmt(e.n)}`;
+        a.querySelector('.st').textContent = e.etat === 'fait' ? 'Livré ✓' : e.etat === 'encours' ? `${Math.round(e.k * 100)} %` : 'En attente';
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('avis').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite. Si tu n’attends pas, l’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive.';
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · d’après Material 3</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Chargement — variante 9 — d'après Material 3 Expressive (Google).
+ * Le grand indicateur circulaire « ondulé » qui avance, avec au centre la forme de chargement qui
+ * passe de l'une à l'autre (pétales, coussin, cookie…) en tournant. À droite, une liste M3 : icône
+ * dans un rond tonal, texte d'appui, petite barre ondulée pour l'étape en cours, coche ensuite.
+ */
+:root { color-scheme: light; --g: 'Google Sans Flex', 'Roboto', sans-serif; --p: #5b4ccf; --pc: #e5deff; --onpc: #1a0a63; --tc: #ffd8e8; --t: #a43d74; --sc: #e8e0f5; --surf: #fcf8ff; --surfC: #f2ecf8; --surfH: #e7e0ee; --on: #1c1b20; --onv: #48454f; --outl: #79747e; }
+body { background: var(--surf); color: var(--on); font: 16px/1.5 var(--g); }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 5vw; padding: 0 var(--gouttiere); }
+.cercle { position: relative; justify-self: center; width: min(100%, 520px); aspect-ratio: 1; }
+.cercle svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.centre { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.centre b { display: block; font-size: 84px; font-weight: 500; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--onpc); }
+.centre small { color: var(--onv); font-size: 16px; font-weight: 500; }
+.droite { max-width: 560px; }
+.sur { margin: 0 0 6px; color: var(--p); font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.sur .lambda { width: 18px; height: 18px; }
+h1 { margin: 0 0 6px; font-size: clamp(36px, 3.4vw, 52px); font-weight: 500; line-height: 1.05; letter-spacing: -0.03em; }
+.support { margin: 0 0 22px; color: var(--onv); font-size: 17px; }
+.liste { border-radius: 24px; background: var(--surfC); padding: 8px 0; }
+.it { display: grid; grid-template-columns: 44px 1fr auto; gap: 16px; align-items: center; padding: 10px 20px; }
+.it .ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--surfH); transition: background 300ms, border-radius 300ms; }
+.it .ic svg { width: 22px; height: 22px; fill: none; stroke: var(--onv); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.it.encours .ic { background: var(--pc); border-radius: 14px; }
+.it.encours .ic svg { stroke: var(--p); }
+.it.fait .ic { background: var(--p); }
+.it.fait .ic svg { stroke: #fff; }
+.it b { display: block; font-weight: 500; font-size: 16px; }
+.it small { color: var(--onv); font-size: 14px; font-variant-numeric: tabular-nums; }
+.it .tr { font-size: 14px; color: var(--onv); font-variant-numeric: tabular-nums; }
+.it svg.onde { display: block; width: 100%; height: 10px; margin-top: 4px; overflow: visible; }
+.carteA { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin-top: 16px; padding: 16px 16px 16px 20px; border-radius: 24px; background: var(--tc); color: #3e0526; }
+.carteA small { font-size: 14px; }
+.tonal { all: unset; height: 44px; padding: 0 22px; border-radius: 999px; background: #fff; color: var(--t); font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; transition: border-radius 220ms cubic-bezier(.3, 1.4, .5, 1); }
+.tonal:hover { border-radius: 12px; }
+.pret .carteA { background: var(--pc); color: var(--onpc); }
+.pret .tonal { background: var(--p); color: #fff; }
+.etiquette { background: rgba(255, 255, 255, 0.85); color: var(--onv); border-color: #e0d9e8; }
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="cercle" aria-hidden="true">
+    <svg viewBox="-120 -120 240 240"><path id="piste" fill="none" stroke="#e5deff" stroke-width="8" stroke-linecap="round"/><path id="onde" fill="none" stroke="#5b4ccf" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path id="forme" fill="#ffd8e8"/></svg>
+    <div class="centre"><span><b id="pct">0 %</b><small id="reste">encore 12 s</small></span></div>
+  </section>
+  <section class="droite">
+    <p class="sur"><span class="lambda"></span>Aurora</p>
+    <h1 id="titre">Ton catalogue arrive.</h1>
+    <p class="support" id="phrase">Il est chargé en entier, pour que rien ne rame ensuite.</p>
+    <div class="liste" id="liste"></div>
+    <div class="carteA" id="carteA"><small id="avis">Si tu continues, l’app s’ouvrira tout de suite, mais elle peut ramer le temps que le reste arrive.</small><button class="tonal" type="button" id="continuer">Continuer sans attendre</button></div>
+  </section>
+</main>
+<span class="etiquette">Chargement · Variante 9 · d’après Material 3 (Google)</span>
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, pluriel, icone, FIGE } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('liste').innerHTML = ETAPES.map((e, i) => `<div class="it attente" id="i${i}"><span class="ic">${icone(e.icone, '')}</span><span><b>${e.nom}</b><small></small><svg class="onde" viewBox="0 0 300 10" preserveAspectRatio="none" hidden><path fill="none" stroke="#e5deff" stroke-width="4" stroke-linecap="round"/><path fill="none" stroke="#5b4ccf" stroke-width="4" stroke-linecap="round"/></svg></span><span class="tr"></span></div>`).join('');
+  // L'arc ondulé : r(θ) = R + a·sin(nθ + φ), de midi jusqu'à la fraction p ; la piste finit le tour.
+  const R = 100, A = 4.5, NO = 14;
+  function arc(p, phi) {
+    const deb = -Math.PI / 2, fin = deb + p * Math.PI * 2; let d = '';
+    const n = Math.max(2, Math.round(p * 360));
+    for (let i = 0; i <= n; i++) { const t = deb + (fin - deb) * (i / n), r = R + A * Math.sin(NO * t + phi); d += `${i ? 'L' : 'M'}${(r * Math.cos(t)).toFixed(2)} ${(r * Math.sin(t)).toFixed(2)}`; }
+    return d;
+  }
+  function piste(p) {
+    if (p >= 0.995) return '';
+    const ecart = 0.035, deb = -Math.PI / 2 + (p + ecart) * Math.PI * 2, fin = -Math.PI / 2 + (1 - ecart) * Math.PI * 2;
+    if (fin <= deb) return '';
+    const g = fin - deb > Math.PI ? 1 : 0;
+    return `M${(R * Math.cos(deb)).toFixed(2)} ${(R * Math.sin(deb)).toFixed(2)}A${R} ${R} 0 ${g} 1 ${(R * Math.cos(fin)).toFixed(2)} ${(R * Math.sin(fin)).toFixed(2)}`;
+  }
+  // La forme du centre : on passe de n festons à m festons, en tournant.
+  const FORMES = [[7, 0.1], [4, 0.16], [9, 0.07], [5, 0.13], [12, 0.05]];
+  function forme(t) {
+    const cycle = t / 1.6, i = Math.floor(cycle) % FORMES.length, j = (i + 1) % FORMES.length;
+    let k = cycle % 1; k = k < 0.6 ? 0 : (1 - Math.cos(((k - 0.6) / 0.4) * Math.PI)) / 2;
+    const [n1, a1] = FORMES[i], [n2, a2] = FORMES[j], rot = t * 0.9; let d = '';
+    for (let s = 0; s <= 240; s++) { const th = (s / 240) * Math.PI * 2; const r = 50 * ((1 - k) * (1 + a1 * Math.cos(n1 * (th + rot))) + k * (1 + a2 * Math.cos(n2 * (th + rot)))); d += `${s ? 'L' : 'M'}${(r * Math.cos(th)).toFixed(2)} ${(r * Math.sin(th)).toFixed(2)}`; }
+    return `${d}Z`;
+  }
+  const onde = (k, phi) => { let d = ''; const n = Math.max(2, Math.round(k * 60)); for (let i = 0; i <= n; i++) { const x = (i / n) * k * 300; d += `${i ? 'L' : 'M'}${x.toFixed(1)} ${(5 + 3 * Math.sin(x / 9 + phi)).toFixed(2)}`; } return d; };
+  const t0 = performance.now();
+  chargement({
+    rendu(etat) {
+      const t = FIGE ? 0.6 : (performance.now() - t0) / 1000;
+      $('onde').setAttribute('d', arc(Math.max(0.01, etat.p), etat.fini ? 0 : -t * 3));
+      $('piste').setAttribute('d', piste(etat.p));
+      $('forme').setAttribute('d', forme(etat.fini ? 0 : t));
+      $('forme').setAttribute('fill', etat.fini ? '#e5deff' : '#ffd8e8');
+      $('pct').textContent = `${Math.round(etat.p * 100)} %`;
+      $('reste').textContent = etat.fini ? 'tout est là' : `encore ${Math.max(1, Math.round(etat.reste))} s`;
+      etat.etapes.forEach((e, i) => {
+        const it = $(`i${i}`); it.className = `it ${e.etat}`;
+        it.querySelector('.ic').innerHTML = icone(e.etat === 'fait' ? 'check' : e.icone, '');
+        it.querySelector('small').textContent = e.etat === 'attente' ? 'En attente' : `${fmt(e.n)} ${pluriel(e.n, e.unite)}${e.etat === 'encours' ? ' sur ' + fmt(e.cible) : ''}`;
+        it.querySelector('.tr').textContent = e.etat === 'encours' ? `${Math.round(e.k * 100)} %` : '';
+        const o = it.querySelector('.onde'); o.hidden = e.etat !== 'encours';
+        if (e.etat === 'encours') { const [pi, pa] = o.querySelectorAll('path'); pa.setAttribute('d', onde(Math.max(0.02, e.k), -t * 4)); pi.setAttribute('d', `M${Math.min(300, e.k * 300 + 10).toFixed(1)} 5H300`); }
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('titre').textContent = etat.fini ? 'Ton catalogue est là.' : 'Ton catalogue arrive.';
+      $('phrase').textContent = etat.fini ? 'Les écrans s’ouvriront d’un coup.' : 'Il est chargé en entier, pour que rien ne rame ensuite.';
+      $('avis').textContent = etat.fini ? 'Tout est arrivé : 332 349 éléments, rangés.' : 'Si tu continues, l’app s’ouvrira tout de suite, mais elle peut ramer le temps que le reste arrive.';
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

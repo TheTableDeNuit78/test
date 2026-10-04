@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · d’après Nothing</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 4 — d'après Nothing.
+ * Noir, blanc, un seul rouge. Le titre en matrice de points, les textes en chasse fixe, des
+ * filets en pointillés, des pastilles blanches pour agir. À droite, le Λ dessiné en diodes,
+ * comme l'interface Glyph au dos des téléphones : une lumière le parcourt, un seul point rouge.
+ */
+:root { --rouge: #d71921; --gris: #8b8b8b; --mono-n: 'IBM Plex Mono', ui-monospace, monospace; }
+body { background: #000; color: #fff; font: 13px/1.5 var(--mono-n); }
+.points { position: fixed; inset: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.3px); background-size: 16px 16px; pointer-events: none; }
+.page { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); grid-template-rows: auto 1fr auto; padding: 30px var(--gouttiere) 28px; column-gap: 5vw; }
+.barre { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gris); }
+.barre .nom { display: inline-flex; align-items: center; gap: 10px; color: #fff; }
+.barre .nom i { width: 8px; height: 8px; border-radius: 50%; background: var(--rouge); }
+.heure { font: 600 28px/1 'Doto', monospace; color: #fff; letter-spacing: 0.04em; }
+.texte { align-self: center; }
+h1 { margin: 0 0 18px; font: 900 clamp(48px, 6.4vw, 118px)/0.92 'Doto', monospace; letter-spacing: -0.01em; text-transform: uppercase; }
+.chap { margin: 0 0 30px; max-width: 46ch; color: var(--gris); text-transform: uppercase; letter-spacing: 0.04em; font-size: 12.5px; }
+.choix { margin: 0; padding: 0; list-style: none; max-width: 600px; }
+.choix li { border-top: 1px dashed #3a3a3a; }
+.choix li:last-child { border-bottom: 1px dashed #3a3a3a; }
+.choix button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; width: 100%; padding: 15px 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; }
+.choix button span:first-child { color: var(--gris); }
+.choix button small { display: block; text-transform: none; letter-spacing: 0; color: var(--gris); font-size: 12px; margin-top: 2px; }
+.choix button:hover, .choix button:focus-visible { background: #fff; color: #000; padding-left: 14px; padding-right: 14px; border-radius: 999px; outline: none; }
+.choix button:hover span:first-child, .choix button:hover small { color: #555; }
+.choix .fl { font-size: 18px; }
+.pastilles { display: flex; gap: 10px; margin-top: 26px; }
+.pastille { padding: 14px 26px; border-radius: 999px; border: 1px solid #fff; background: #fff; color: #000; font: 600 13px var(--mono-n); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.pastille.creuse { background: transparent; color: #fff; border-color: #555; }
+.pastille:focus-visible { outline: 2px solid var(--rouge); outline-offset: 3px; }
+.glyphe { position: relative; align-self: center; justify-self: center; width: min(100%, 560px); aspect-ratio: 1; }
+#diodes { width: 100%; height: 100%; display: block; }
+.legende { position: absolute; right: 0; bottom: -11%; text-align: right; color: var(--gris); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; }
+.legende b { color: #fff; font-weight: 600; }
+.pied { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 5vw; align-items: end; padding-top: 18px; border-top: 1px dashed #3a3a3a; }
+.bascule { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; cursor: pointer; }
+.bascule input { appearance: none; position: relative; width: 44px; height: 24px; margin: 2px 0 0; border-radius: 12px; border: 1px solid #555; background: #000; cursor: pointer; }
+.bascule input::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #777; transition: transform 200ms, background 200ms; }
+.bascule input:checked { border-color: #fff; }
+.bascule input:checked::after { transform: translateX(20px); background: var(--rouge); }
+.bascule b { display: block; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.bascule span span { color: var(--gris); font-size: 12px; }
+.droitP { text-align: right; color: var(--gris); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.droitP button { all: unset; cursor: pointer; color: #fff; border-bottom: 1px solid #fff; }
+.etiquette { background: #000; color: #8b8b8b; border-color: #333; font-family: var(--mono-n); }
+</style>
+</head>
+<body>
+<div class="points" aria-hidden="true"></div>
+<main class="page">
+  <div class="barre"><span class="nom"><i></i>Aurora (1)</span><span>Premier lancement · 0.9.0</span><span class="heure" id="heure">21:34</span></div>
+
+  <section class="texte">
+    <h1>Ton abonnement, enfin rangé.</h1>
+    <p class="chap">Chaînes, films, séries. Guide TV, téléchargements, enregistrements, favoris.</p>
+    <ul class="choix">
+      <li><button type="button"><span>[01]</span><span>Compte Xtream<small>serveur · identifiant · mot de passe</small></span><span class="fl">→</span></button></li>
+      <li><button type="button"><span>[02]</span><span>Playlist M3U<small>adresse http ou fichier .m3u</small></span><span class="fl">→</span></button></li>
+      <li><button type="button"><span>[03]</span><span>Restaurer .aurora<small>comptes, réglages, favoris, historique</small></span><span class="fl">→</span></button></li>
+    </ul>
+    <div class="pastilles"><button class="pastille" type="button">Continuer</button><button class="pastille creuse" type="button">Plus tard</button></div>
+  </section>
+
+  <section class="glyphe" aria-hidden="true">
+    <canvas id="diodes"></canvas>
+    <p class="legende"><b>Chiffré sur ce PC.</b><br>Rien ne part ailleurs.</p>
+  </section>
+
+  <footer class="pied">
+    <label class="bascule" for="fr"><input id="fr" type="checkbox"><span><b>Français uniquement</b><span>Cache ce qui porte une autre langue (« EN - », « AR - »). Ce qui n’a aucune étiquette reste. Réglages ▸ Catalogue pour défaire.</span></span></label>
+    <p class="droitP">Tu réinstalles ? <button type="button">Reprends ta sauvegarde</button></p>
+  </footer>
+</main>
+<span class="etiquette" style="bottom:auto;top:64px">Variante 4 · d’après Nothing</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  // Le Λ en diodes : une grille de points ; ceux qui tombent sur le trait du logo sont des diodes.
+  const toile = document.getElementById('diodes'), cx = toile.getContext('2d');
+  const N = 31; // points par côté
+  let T, dpr, diodes;
+  const dist = (p, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy))); return [Math.hypot(p[0] - a[0] - vx * t, p[1] - a[1] - vy * t), t]; };
+  function mesurer() {
+    dpr = Math.min(2, devicePixelRatio || 1);
+    const r = toile.getBoundingClientRect(); T = r.width;
+    toile.width = T * dpr; toile.height = T * dpr;
+    const L = [7, 26], S = [15, 4], R = [23, 26];
+    diodes = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const [d1, t1] = dist([x, y], L, S), [d2, t2] = dist([x, y], S, R);
+      const d = Math.min(d1, d2);
+      const pos = d1 <= d2 ? t1 / 2 : 0.5 + t2 / 2; // position le long du Λ, de 0 à 1
+      diodes.push({ x, y, allume: d < 1.6, pos });
+    }
+  }
+  const t0 = performance.now();
+  function image(now) {
+    const t = Aurora.FIGE ? 1.2 : (now - t0) / 1000;
+    const pas = T / N, r = pas * 0.3;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, T, T);
+    const front = (t * 0.45) % 1.6; // la lumière qui parcourt le Λ
+    for (const d of diodes) {
+      const px = (d.x + 0.5) * pas, py = (d.y + 0.5) * pas;
+      if (!d.allume) { continue; }
+      const ecart = front - d.pos;
+      const lum = ecart >= 0 && ecart < 0.35 ? 1 - ecart / 0.35 : 0;
+      cx.fillStyle = `rgba(255,255,255,${0.32 + 0.68 * lum})`;
+      if (lum > 0.6) { cx.shadowColor = 'rgba(255,255,255,0.8)'; cx.shadowBlur = 10; } else cx.shadowBlur = 0;
+      cx.beginPath(); cx.arc(px, py, r * (1 + 0.25 * lum), 0, 6.283); cx.fill();
+    }
+    cx.shadowBlur = 0;
+    // Le seul point rouge : au sommet.
+    cx.fillStyle = '#d71921'; cx.beginPath(); cx.arc(15.5 * pas, 3.5 * pas, r * 1.1, 0, 6.283); cx.fill();
+    if (!Aurora.FIGE) requestAnimationFrame(image);
+  }
+  mesurer(); addEventListener('resize', mesurer); requestAnimationFrame(image);
+  const h = document.getElementById('heure');
+  setInterval(() => { const d = new Date(); h.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }, 1000);
+})();
+</script>
+</body>
+</html>

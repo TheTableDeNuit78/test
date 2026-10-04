@@ -93,6 +93,8 @@ h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
   font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .nouveau .num::after { content: ' · nouveau'; font-weight: 500; color: #b9a6ff; }
+.gardee .num::after { content: ' · gardée'; font-weight: 500; color: #7fe0a8; }
+.tag.marqueT { color: var(--texte); }
 .carte b { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
 .carte small { margin-top: -5px; font-size: 13px; line-height: 1.5; color: var(--texte-2); }
 .carte .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -2px; }
@@ -139,8 +141,8 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 <body>
 <main>
   <span class="marque"><span class="lambda"></span>Aurora · le lancement</span>
-  <h1>Trente écrans pour le lancement</h1>
-  <p class="chapeau">Quinze pistes pour <b>le premier lancement</b> et quinze pour <b>le chargement</b>, chacune à côté de l’écran actuel. Elles vont du plus sobre au plus osé : contenu de l’app, marque, éditorial, rétro, ludique, technique, et deux en thème clair. Aucune ne garde la lueur floue de l’arrière-plan. Touche une vignette pour voir l’écran vivant, à sa taille réelle de 1440 × 900.</p>
+  <h1>Le lancement, d’après de vraies marques</h1>
+  <p class="chapeau">Tu as gardé <b>Tout de suite</b> pour le premier lancement, <b>Le journal</b> et <b>Le générique</b> pour le chargement. Les vingt-sept autres repartent de zéro, chacune d’après une vraie marque : Windows, Apple, Nothing, Teenage Engineering, Notion, Nintendo, Google, Raycast, Spotify, Duolingo, IKEA, Airbnb, Netflix, Stripe, Uber Eats, Tesla. On reprend leur façon de faire, jamais leur logo : partout, c’est Aurora et son Λ. Touche une vignette pour voir l’écran vivant, à sa taille réelle de 1440 × 900.</p>
 
   <div class="filtres" role="toolbar" aria-label="Filtrer par style" id="filtres"></div>
 
@@ -156,11 +158,12 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 
   <div class="regles">
     <h2>Ce qui vaut pour les trente</h2>
-    <p><b>Le logo est le Λ</b>, le trait d’un seul geste tranché le 20 septembre. La tuile « A » de l’écran actuel disparaît partout.</p>
-    <p><b>Une couleur = un état</b> : bleu pour ce qui est en cours, vert pour ce qui est terminé, ambre pour ce qui attend. L’iris reste à ce qui est actif.</p>
-    <p><b>Les chiffres de « Mon abonnement »</b>, ceux de l’écran Comptes : 99 123 films, 24 936 séries, 21 576 chaînes, avec 312 catégories et 7 jours de guide.</p>
-    <p><b>Les polices</b> : Familjen Grotesk partout ; les variantes de style ajoutent Instrument Serif, Anton, JetBrains Mono, VT323 ou Unbounded (toutes libres, dans <code>polices/</code>).</p>
-    <p><b>Les paires</b> : certaines bienvenues ont leur chargement assorti (générique, terminal, papier, télé rétro), pour garder le même monde de bout en bout.</p>
+    <p><b>D’après, pas copié</b> : les mises en page, les gestes et les couleurs des marques, mais ni leurs logos ni leurs noms dans l’écran. Le logo est partout le Λ, le trait d’un seul geste.</p>
+    <p><b>Tout le premier lancement est là</b> : compte Xtream, playlist M3U, fichier .m3u, sauvegarde .aurora, « N’afficher que le français » avec son explication, et la phrase sur les identifiants chiffrés sur ce PC.</p>
+    <p><b>Tout le chargement est là</b> : les cinq étapes et leurs nombres, le pourcentage, le temps restant, et « Continuer sans attendre » avec son avertissement (l’app peut ramer le temps que le reste arrive).</p>
+    <p><b>Les chiffres de « Mon abonnement »</b>, ceux de l’écran Comptes : 99 123 films, 24 936 séries, 21 576 chaînes, avec 312 catégories et 186 402 programmes de guide.</p>
+    <p><b>Les paires</b> : dix marques ont leur bienvenue et leur chargement assortis (« va avec »), pour garder le même monde de bout en bout.</p>
+    <p><b>Les polices</b> sont des équivalents libres, dans <code>polices/</code> : Inter, Figtree, Nunito, Nunito Sans, Manrope, Noto Sans, Google Sans Flex, Doto, IBM Plex Mono, JetBrains Mono, Caveat, Anton, Familjen Grotesk.</p>
     <p><b>Pour les captures</b> : <code>?p=0.4</code> fige un chargement à 40 %, <code>?fige</code> arrête les animations d’ambiance. Le mouvement s’arrête quand le système demande moins d’animations.</p>
   </div>
 </main>
@@ -179,48 +182,48 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 <script>
 'use strict';
 (() => {
-  // [numéro, nom, phrase, fichier, style, paire]
+  // [numéro, nom, phrase, fichier, style, marque, paire]
   const B = [
-    ['1', 'La vitrine', 'Six tuiles vivantes montrent ce que dit la phrase : reprendre, enregistrer, télécharger, multi-écran, favoris, guide.', '1-vitrine', 'Contenu'],
-    ['2', 'Le mur d’affiches', 'Sept colonnes d’affiches défilent lentement, de biais. Le côté cinéma, sans lueur peinte.', '2-affiches', 'Contenu'],
-    ['3', 'Le guide en toile de fond', 'La grille du Guide TV en perspective, qui avance sous la ligne « maintenant ».', '3-guide', 'Contenu'],
-    ['4', 'Le Λ qui émet', 'Le Λ de l’intro en grand, qui émet des ondes nettes dans son dégradé.', '4-ondes', 'Marque', 'Chargement 1'],
-    ['5', 'Tout de suite', 'Le formulaire Xtream / M3U est déjà là, adresse vérifiée pendant la frappe. Un écran de moins.', '5-connexion', 'Sobre'],
-    ['6', 'Le générique', 'Bandes noires, grain de pellicule, titre en capitales condensées ; la phrase rassurante en sous-titre.', '6-generique', 'Éditorial', 'Chargement 13'],
-    ['7', 'Le magazine télé', 'Une couverture : titre de une en dégradé, affiches en sujet, sommaire avec numéros de page, code-barres.', '7-magazine', 'Éditorial'],
-    ['8', 'Le télétexte', 'Page P100, 40 colonnes, le Λ en mosaïque, et les quatre touches de couleur pour les quatre actions.', '8-teletexte', 'Rétro', 'Chargement 9'],
-    ['9', 'La télécommande', 'Une télécommande Aurora dessinée en CSS ; ses touches de couleur portent les actions de l’écran.', '9-telecommande', 'Ludique'],
-    ['10', 'L’affiche suisse', 'Grille visible, texte calé à gauche, aucun arrondi, un Λ iris géant que le titre inverse.', '10-suisse', 'Éditorial'],
-    ['11', 'Papier', 'En thème clair : le Λ en papier découpé, sept bandes empilées qui suivent la souris.', '11-papier', 'Clair', 'Chargement 11'],
-    ['12', 'Le paysage', 'Une aurore boréale en gravure : traits d’un pixel, montagnes en aplats, et le sommet du milieu est le Λ.', '12-paysage', 'Marque'],
-    ['13', 'Le terminal', 'Une session de ligne de commande : flèches, Entrée, Espace, et le Λ en art ASCII.', '13-terminal', 'Technique', 'Chargement 8'],
-    ['14', 'Pop', 'Fond iris tramé, ombres dures, Λ chromé, et des autocollants qu’on peut déplacer.', '14-pop', 'Ludique'],
-    ['15', 'Les trois panneaux', 'Chaînes, Films, Séries : trois panneaux qui s’élargissent au survol, chacun avec un vrai morceau de l’app.', '15-panneaux', 'Contenu'],
+    ['1', 'Tout de suite', 'Le formulaire Xtream / M3U est déjà là, adresse vérifiée pendant la frappe. Un écran de moins.', '1-tout-de-suite', 'Gardée'],
+    ['2', 'La fenêtre d’installation', 'Comme le premier démarrage de l’ordinateur : une fenêtre claire, l’illustration à gauche, la liste de choix et « Suivant ».', '2-windows', 'Clair', 'Windows 11', 'Chargement 3'],
+    ['3', 'Bonjour', 'Le « bonjour » écrit à la main qui se trace, puis des listes groupées, un interrupteur, « Continuer ».', '3-apple', 'Clair', 'Apple', 'Chargement 4'],
+    ['4', 'Les diodes', 'Noir, grille de points, titre en points ; le Λ est un tracé de diodes balayé par la lumière, avec un seul point rouge.', '4-nothing', 'Sombre', 'Nothing', 'Chargement 5'],
+    ['5', 'L’appareil', 'Une façade d’appareil : écran LCD, quatre molettes de couleur qu’on peut tourner, six touches, et la notice à côté.', '5-teenage-engineering', 'Clair', 'Teenage Engineering', 'Chargement 6'],
+    ['6', 'La page', 'Une page de wiki : couverture, propriétés, encadré, menus dépliants et case à cocher, avec un dessin au trait.', '6-notion', 'Clair', 'Notion', 'Chargement 7'],
+    ['7', 'Le menu de console', 'Grandes tuiles blanches, cadre turquoise qui pulse, ronds en dessous ; tout se pilote aux flèches.', '7-switch', 'Clair', 'Nintendo Switch', 'Chargement 8'],
+    ['8', 'Les formes', 'Palette tonale tirée de l’iris, grande typo, une forme qui se transforme ; boutons segmentés et champs remplis.', '8-material', 'Clair', 'Material 3 (Google)', 'Chargement 9'],
+    ['9', 'La palette de commandes', 'Une seule fenêtre de recherche : on tape, on filtre, on choisit au clavier, raccourcis à droite.', '9-raycast', 'Sombre', 'Raycast'],
+    ['10', 'Ce que tu aimes', 'À gauche la connexion en pilules ; à droite les tuiles de couleur pour dire ce qu’on aime : l’Accueil se range dans cet ordre.', '10-spotify', 'Sombre', 'Spotify', 'Chargement 10'],
+    ['11', 'La leçon', 'Un Λ personnage pose la question, quatre grosses cartes, « Valider » en relief et le bandeau vert de bonne réponse.', '11-duolingo', 'Clair', 'Duolingo', 'Chargement 11'],
+    ['12', 'La notice', 'Noir sur blanc, presque sans mots : la liste des pièces, des cases dessinées, et le formulaire en tableau A, B, C.', '12-ikea', 'Clair', 'notices IKEA', 'Chargement 12'],
+    ['13', 'La barre de recherche', 'Trois onglets à grosse icône, la pilule Serveur | Identifiant | Mot de passe, et des annonces en exemple.', '13-airbnb', 'Clair', 'Airbnb'],
+    ['14', 'La page d’accueil', 'Noir, énorme titre centré, un seul champ, un gros bouton ; l’arc lumineux et le top 6 aux grands chiffres.', '14-netflix', 'Sombre', 'Netflix'],
+    ['15', 'Le paiement', 'Le récapitulatif à 0,00 € à gauche, le formulaire net à droite : bouton express, onglets, champs soudés.', '15-stripe', 'Clair', 'Stripe Checkout'],
   ];
   const C = [
-    ['1', 'Le Λ qui se remplit', 'Le logo devient la barre : le dégradé monte le long du trait et passe cinq repères nommés.', '1-lambda', 'Marque', 'Bienvenue 4'],
-    ['2', 'L’accueil qui se construit', 'L’Accueil s’ouvre en squelette et se remplit à chaque étape ; une capsule garde le bouton.', '2-accueil', 'Contenu'],
-    ['3', 'Les cinq compteurs', 'Cinq colonnes, cinq compteurs en très grand, une ligne de progression d’un bord à l’autre.', '3-compteurs', 'Éditorial'],
-    ['4', 'Le journal', 'Le catalogue arrive catégorie par catégorie, avec ses affiches et ses logos.', '4-journal', 'Technique'],
-    ['5', 'La mosaïque', 'Les affiches et les chaînes s’allument depuis le centre ; à 100 %, l’écran est plein.', '5-mosaique', 'Contenu'],
-    ['6', 'Le tableau des arrivées', 'Un tableau à palettes de gare : ATTENDU, EN APPROCHE, ARRIVÉ, et les caractères qui basculent.', '6-tableau', 'Rétro'],
-    ['7', 'Les VU-mètres', 'Une façade d’ampli : cinq galvanomètres, des afficheurs à LED, une rampe de segments.', '7-vumetres', 'Rétro'],
-    ['8', 'Le terminal', '« aurora sync » : barres en caractères, et le journal des requêtes au serveur Xtream.', '8-terminal', 'Technique', 'Bienvenue 13'],
-    ['9', 'La recherche des chaînes', 'Le menu bleu des vieilles télés ; la neige s’éclaircit et le Λ se cale.', '9-recherche', 'Rétro', 'Bienvenue 8'],
-    ['10', 'Le sablier', 'Un V sur un Λ : le sable coule et se dépose en strates, une couleur par étape.', '10-sablier', 'Marque'],
-    ['11', 'Le ticket', 'En thème clair : une imprimante sort le relevé du catalogue, ligne par ligne.', '11-ticket', 'Clair', 'Bienvenue 11'],
-    ['12', 'L’orbite', 'Un planétaire : chaque étape fait un tour autour du Λ et laisse sa trace.', '12-orbite', 'Marque'],
-    ['13', 'Le générique de fin', 'Le catalogue défile comme un générique, section par section, jusqu’à « Fin ».', '13-generique-fin', 'Éditorial', 'Bienvenue 6'],
-    ['14', 'Les blocs', 'Des pièces tombent et s’empilent jusqu’à former le Λ ; score, niveau, pièce suivante.', '14-blocs', 'Ludique'],
-    ['15', 'Le tableau de bord', 'Débit en direct, composition du catalogue, état des serveurs : la version Moniteur.', '15-tableau-de-bord', 'Technique'],
+    ['1', 'Le journal', 'Le catalogue arrive catégorie par catégorie, avec ses affiches et ses logos.', '1-journal', 'Gardée'],
+    ['2', 'Le générique de fin', 'Le catalogue défile comme un générique, section par section, jusqu’à « Fin ».', '2-generique', 'Gardée'],
+    ['3', 'La fenêtre de copie', '« 42 % terminé », le graphique vert du débit avec sa ligne de vitesse, et une ligne par étape.', '3-windows', 'Sombre', 'Windows 11', 'Bienvenue 2'],
+    ['4', 'Le transfert', 'Deux appareils face à face et des points qui filent, la fine barre bleue, la liste groupée.', '4-apple', 'Clair', 'Apple', 'Bienvenue 3'],
+    ['5', 'Les rangées de diodes', 'Le pourcentage géant en points, cinq rangées de diodes qui s’allument, une tête rouge qui clignote.', '5-nothing', 'Sombre', 'Nothing', 'Bienvenue 4'],
+    ['6', 'Le magnétophone', 'Deux bobines qui se vident et se remplissent, la bande en cinq pistes, quatre molettes, la touche orange.', '6-teenage-engineering', 'Clair', 'Teenage Engineering', 'Bienvenue 5'],
+    ['7', 'Le tableau', 'Une base en vue Tableau : chaque étape est une carte qui glisse de « À venir » à « Terminé ».', '7-notion', 'Clair', 'Notion', 'Bienvenue 6'],
+    ['8', 'Les téléchargements', 'Une tuile par étape : grisée, puis avec sa barre, puis en couleur ; Ⓐ continue sans attendre.', '8-switch', 'Clair', 'Nintendo Switch', 'Bienvenue 7'],
+    ['9', 'L’onde', 'Le grand cercle ondulé qui avance, la forme qui se transforme au centre, une liste à petites ondes.', '9-material', 'Clair', 'Material 3 (Google)', 'Bienvenue 8'],
+    ['10', 'Les stories', 'Une story par étape, des chiffres énormes qui comptent, et la carte résumé à la fin.', '10-spotify-wrapped', 'Sombre', 'Spotify Wrapped', 'Bienvenue 10'],
+    ['11', 'Le parcours', 'Le chemin en zigzag : une pastille par étape, l’anneau de progression, le coffre au bout.', '11-duolingo', 'Clair', 'Duolingo', 'Bienvenue 11'],
+    ['12', 'L’étagère', 'Une étagère à cinq tablettes qui se remplit de boîtiers ; le bonhomme montre celle en cours.', '12-ikea', 'Clair', 'notices IKEA', 'Bienvenue 12'],
+    ['13', 'Le suivi de livraison', 'La carte, le trajet et le livreur qui avance ; l’heure d’arrivée et la commande, article par article.', '13-uber-eats', 'Clair', 'Uber Eats'],
+    ['14', 'La recharge', 'La voiture branchée, la batterie en cinq cellules, le pourcentage en grand, débit et temps restant.', '14-tesla', 'Sombre', 'Tesla'],
+    ['15', 'Les anneaux', 'Trois anneaux pour les films, les séries et les chaînes, qui font un tour d’honneur en se fermant.', '15-apple-watch', 'Sombre', 'Apple Watch'],
   ];
-  const groupe = (cle, l) => l.map(([n, nom, txt, f, style, paire]) => ({ n, nom, txt, style, paire, groupe: cle, page: `${cle}/${f}.html`, mini: `captures/mini/${cle}-${f}.webp`, img: `captures/${cle}-${f}.png`, nouveau: +n > 5 }));
+  const groupe = (cle, l) => l.map(([n, nom, txt, f, style, marque, paire]) => ({ n, nom, txt, style, marque, paire, groupe: cle, page: `${cle}/${f}.html`, mini: `captures/mini/${cle}-${f}.webp`, img: `captures/${cle}-${f}.png`, nouveau: style !== 'Gardée', gardee: style === 'Gardée' }));
   const ECRANS = {
     bienvenue: [{ n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Le texte à gauche, une lueur floue à droite, et beaucoup de vide.', groupe: 'bienvenue', style: 'Actuel', mini: 'captures/mini/actuel-bienvenue.webp', img: 'actuel/bienvenue.png' }, ...groupe('bienvenue', B)],
     chargement: [{ n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Une carte au centre, posée sur deux halos flous, violet et vert.', groupe: 'chargement', style: 'Actuel', mini: 'captures/mini/actuel-chargement.webp', img: 'actuel/chargement.png' }, ...groupe('chargement', C)],
   };
   const TITRES = { bienvenue: 'Premier lancement', chargement: 'Chargement' };
-  const STYLES = ['Contenu', 'Marque', 'Éditorial', 'Rétro', 'Ludique', 'Technique', 'Clair', 'Sobre'];
+  const STYLES = ['Gardée', 'Clair', 'Sombre'];
   const $ = (id) => document.getElementById(id);
   const tous = [];
 
@@ -229,10 +232,10 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
       tous.push(e);
       const i = tous.length - 1;
       const etiquette = e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`;
-      return `<button class="carte${e.page ? '' : ' actuelle'}${e.nouveau ? ' nouveau' : ''}" type="button" data-i="${i}" data-style="${e.style}">
+      return `<button class="carte${e.page ? '' : ' actuelle'}${e.nouveau ? ' nouveau' : ''}${e.gardee ? ' gardee' : ''}" type="button" data-i="${i}" data-style="${e.style}">
         <span class="vue"><img src="${e.mini}" alt="${TITRES[cle]}, ${etiquette} : ${e.nom}" loading="lazy" width="720" height="450"><span class="num">${etiquette}</span></span>
         <b>${e.nom}</b><small>${e.txt}</small>
-        ${e.page ? `<span class="meta"><span class="tag">${e.style}</span>${e.paire ? `<span class="tag paire">va avec : ${e.paire}</span>` : ''}</span>` : ''}</button>`;
+        ${e.page ? `<span class="meta">${e.marque ? `<span class="tag marqueT">d’après ${e.marque}</span>` : '<span class="tag">Gardée</span>'}<span class="tag">${e.gardee ? 'thème de l’app' : e.style.toLowerCase()}</span>${e.paire ? `<span class="tag paire">va avec : ${e.paire}</span>` : ''}</span>` : ''}</button>`;
     }).join('');
   }
 
