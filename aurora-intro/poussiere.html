@@ -325,6 +325,7 @@ body {
   backdrop-filter: blur(14px) saturate(140%);
   transition: background-color .2s ease, border-color .2s ease;
 }
+a.bouton { text-decoration: none; }
 .bouton:hover { background: rgb(242 240 255 / .12); border-color: rgb(242 240 255 / .2); }
 .bouton:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
 .bouton svg {
@@ -366,6 +367,7 @@ body {
   .onglet { padding: 6px 10px; font-size: 13px; }
   .note { left: 16px; right: 16px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .commandes { right: 16px; }
+  a.bouton span { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -447,6 +449,10 @@ body {
 <canvas id="poussiere" aria-hidden="true"></canvas>
 
 <div class="commandes" id="commandes">
+  <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
+    <span>Toutes les intros</span>
+  </a>
   <button class="bouton" id="rejouer" type="button" title="Rejouer l’intro (R)">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.2 10.5a5.9 5.9 0 1 0 1.7-4.6"/><path d="M5.6 2.8v3.4H9"/></svg>
     <span>Rejouer</span>
