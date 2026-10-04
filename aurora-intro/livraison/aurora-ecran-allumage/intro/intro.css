@@ -1,0 +1,79 @@
+/*
+ * **L'intro du lancement**, version « Allumage », avec le logo **Écran** (sans son). Les tailles
+ * suivent `--k` (1 = 1280 × 800), posé par le composant selon l'écran : l'écran du logo fait
+ * 236 px de côté (sa grille de 256), le nom 62 px, comme la maquette.
+ *
+ * Rien n'est animé ici : tout le mouvement est dans le composant (Web Animations). Ce fichier ne
+ * pose que les éléments à leur place finale.
+ */
+.intro {
+  --k: 1;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  overflow: hidden;
+  color: #f2f0ff;
+}
+/* Tant que la police n'est pas là (un court instant), on ne voit que le fond. */
+.intro:not(.introPret) .introScene {
+  visibility: hidden;
+}
+
+/* La couche percée par la fenêtre : le fond de nuit, le cadre de l'écran et le nom. */
+.introCouvert,
+.introAube {
+  position: absolute;
+  inset: 0;
+}
+.introCouvert {
+  background: #0a0a0e;
+}
+/* La couche de l'aube, par-dessus, au même endroit : elle s'efface quand l'écran s'allume. */
+.introAube {
+  pointer-events: none;
+}
+.introScene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+}
+.introMarque {
+  display: block;
+  width: calc(var(--k) * 236px);
+  height: calc(var(--k) * 236px);
+  overflow: visible;
+}
+.introCadreTrace {
+  fill: none;
+  stroke: #f2f0ff;
+  stroke-width: 24;
+  stroke-dasharray: 1 2;
+}
+.introNom {
+  display: block;
+  margin-top: calc(var(--k) * 14px);
+  font-size: calc(var(--k) * 62px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  clip-path: inset(-40% -10% 0 -10%);
+}
+.introLettre {
+  display: inline-block;
+}
+/* Dans la couche de l'aube, le nom ne sert qu'à garder la même mise en page. */
+.introCale {
+  visibility: hidden;
+}
+
+/* Le cadre du DOM qui prend le relais du cadre dessiné, et grandit avec la fenêtre. */
+.introCadre {
+  position: fixed;
+  box-sizing: border-box;
+  border: 0 solid #f2f0ff;
+  opacity: 0;
+  pointer-events: none;
+}

@@ -2,6 +2,16 @@
 
 Des intros courtes pour le lancement d’Aurora, et de nouvelles pistes de logo. Ouvrez `index.html` : c’est la galerie, avec une vignette réelle de chaque intro et ce que font les grandes plateformes.
 
+## Le choix : logo Écran et intro Allumage
+
+Tout ce qu’il faut pour le projet est dans `livraison/aurora-ecran-allumage.zip` (et décompressé à côté, pour le relire) :
+
+- `intro/IntroLancement.tsx` et `intro/intro.css` : l’intro Allumage, qui remplace l’intro actuelle sans rien changer d’autre (même nom, même branchement), sans son ; `intro/apercu.html` pour la voir seule ;
+- `logo/` : le logo final en formes pleines (couleurs, fond clair, aplat, blanc, noir, avec le nom, favicon), et `LogoAurora.tsx` pour l’afficher dans l’app ;
+- `icones/` : Windows (`.ico`), macOS (`.icns`), Linux, iOS, Android, et toutes les tailles en PNG.
+
+Le mode d’emploi est dans `LISEZMOI.md`. `logos/logo_final.py` redessine le logo final (il lit la police du projet instanciée en graisse 600).
+
 ## Nouveau logo : une intro par logo (sans son)
 
 Le Λ ne collait pas au nom : un fil fin aux bouts ronds à côté de lettres pleines, et sans barre on lisait un λ ou un « ^ ». Les nouvelles pistes partent du nom (Aurora, c’est l’aube et l’aurore boréale), elles ont été construites et testées comme le fait un designer (16 px, une couleur, fond clair et sombre, flou, à côté du nom), et chacune a son intro, qui finit dans l’app avec ce logo dans l’en-tête.
