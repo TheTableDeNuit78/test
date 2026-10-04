@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Λ</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 1 — « Le Λ qui se remplit ».
+ * L'intro dessine le Λ ; le chargement le remplit. Le logo devient la barre de progression : le
+ * dégradé monte le long du trait, du pied gauche au pied droit, et passe cinq repères — les cinq
+ * étapes, nommées à côté du trait. Le pourcentage loge à l'intérieur du Λ. Pas de carte, pas de
+ * halo : le logo occupe l'écran à lui seul.
+ */
+.ecran {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  padding: 34px var(--gouttiere) 40px;
+}
+.compte {
+  justify-self: start;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--text-faint);
+}
+.compte b { color: var(--text-dim); font-weight: 600; }
+.scene { position: relative; align-self: center; width: min(46vh, 34vw); aspect-ratio: 36 / 39; container-type: inline-size; }
+.scene svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.piste { fill: none; stroke: rgba(238, 238, 242, 0.07); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.plein { fill: none; stroke: url(#prisme); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; }
+.repere { fill: var(--bg); stroke: rgba(238, 238, 242, 0.25); stroke-width: 0.35; transition: fill 200ms, stroke 200ms; }
+.repere.fait { fill: #fff; stroke: #fff; }
+.repere.encours { fill: var(--etat-cours); stroke: var(--etat-cours); }
+.onde { fill: none; stroke: var(--etat-cours); stroke-width: 0.4; opacity: 0; }
+.onde.vive { animation: onde 1.4s var(--ease-out) infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes onde { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(3.2); } }
+
+.etape {
+  position: absolute;
+  left: var(--x); top: var(--y);
+  display: grid; gap: 1px;
+  width: max-content;
+  transform: translate(var(--tx), -50%);
+  font-size: 14px;
+  white-space: nowrap;
+  transition: opacity 300ms;
+}
+.etape.g { --tx: calc(-100% - 7.6cqw - 16px); text-align: right; }
+.etape.d { --tx: calc(7.6cqw + 16px); }
+.etape b { font-weight: 600; color: var(--text); }
+.etape span { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.etape.fait span { color: var(--ok); }
+.etape.encours span { color: var(--etat-cours); }
+.etape.attente b { color: var(--text-faint); font-weight: 500; }
+.etape.attente span { color: var(--text-faint); }
+
+.pct {
+  position: absolute;
+  left: 50%; top: 73%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 4.6vh, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.pct small { font-size: 0.5em; font-weight: 600; color: var(--text-dim); margin-left: 3px; }
+
+.pied { display: grid; justify-items: center; gap: 14px; text-align: center; max-width: 620px; }
+.pied .phrase { margin: 0; font-size: 15px; max-width: none; }
+.ou { display: flex; gap: 14px; font-size: 13px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.ou i { width: 3px; height: 3px; align-self: center; border-radius: 50%; background: currentColor; }
+.avis { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--text-faint); max-width: 54ch; }
+.avis strong { color: var(--text-dim); }
+.pret .pied .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="ecran" id="ecran">
+  <div class="compte"><span class="lambda" style="width:18px;height:18px"></span><span><b>Mon abonnement</b> · fournisseur.example</span></div>
+
+  <div class="scene" id="scene">
+    <svg viewBox="14 13 36 39" aria-hidden="true">
+      <defs>
+        <linearGradient id="prisme" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#4ea8f5"/><stop offset=".5" stop-color="#9d5cff"/><stop offset="1" stop-color="#ff6cab"/>
+        </linearGradient>
+      </defs>
+      <path class="piste" d="M18 48L32 17l14 31"/>
+      <path class="plein" id="plein" pathLength="1" d="M18 48L32 17l14 31" style="stroke-dashoffset:1"/>
+      <g id="reperes"></g>
+    </svg>
+    <div id="etapes"></div>
+    <div class="pct" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100" id="pct">0<small>%</small></div>
+  </div>
+
+  <div class="pied">
+    <p class="phrase" id="phrase">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+    <div class="ou" id="ou"></div>
+    <button class="go fantome" type="button" id="continuer">Continuer sans attendre</button>
+    <p class="avis" id="avis">L’app s’ouvrira tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+  </div>
+</div>
+
+<span class="etiquette">Chargement · Variante 1 · Le Λ qui se remplit</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt, pluriel } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const N = ETAPES.length;
+
+  // Un point du Λ à la fraction f de sa longueur (les deux jambes ont la même longueur).
+  const point = (f) => (f < 0.5 ? [18 + 14 * f * 2, 48 - 31 * f * 2] : [32 + 14 * (f - 0.5) * 2, 17 + 31 * (f - 0.5) * 2]);
+  const pctBox = ([x, y]) => [((x - 14) / 36) * 100, ((y - 13) / 39) * 100];
+
+  // Cinq repères à égale distance : la fin de chaque étape.
+  const reps = ETAPES.map((e, i) => {
+    const f = (i + 1) / N;
+    const [x, y] = point(f);
+    const [px, py] = pctBox(point(f));
+    return { f, x, y, px, py, cote: f <= 0.5 ? 'g' : 'd' };
+  });
+  $('reperes').innerHTML = reps.map((r, i) => `<circle class="onde" id="o${i}" cx="${r.x}" cy="${r.y}" r="0.95"/><circle class="repere" id="r${i}" cx="${r.x}" cy="${r.y}" r="0.95"/>`).join('');
+  $('etapes').innerHTML = reps.map((r, i) => `<div class="etape ${r.cote}" id="e${i}" style="--x:${r.px}%;--y:${r.py}%"><b>${ETAPES[i].nom}</b><span></span></div>`).join('');
+
+  const plein = $('plein');
+  chargement({
+    rendu(etat) {
+      const cour = etat.etapes[etat.courante] || null;
+      const k = etat.fini ? 1 : (etat.finies + (cour ? cour.k : 0)) / N;
+      plein.style.strokeDashoffset = (1 - k).toFixed(4);
+      const p = Math.round(k * 100);
+      $('pct').innerHTML = `${p}<small>%</small>`;
+      $('pct').setAttribute('aria-valuenow', p);
+      etat.etapes.forEach((e, i) => {
+        const el = $(`e${i}`);
+        el.className = `etape ${reps[i].cote} ${e.etat}`;
+        el.lastChild.textContent = e.etat === 'fait' ? `${fmt(e.cible)} ${pluriel(e.cible, e.unite)}`
+          : e.etat === 'encours' ? `${fmt(e.n)} ${pluriel(e.n, e.unite)}…` : 'en attente';
+        $(`r${i}`).setAttribute('class', `repere ${e.etat}`);
+        $(`o${i}`).setAttribute('class', `onde${e.etat === 'encours' ? ' vive' : ''}`);
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('phrase').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite.';
+      $('ou').innerHTML = etat.fini ? `<span>5 étapes sur 5</span><i></i><span>${Math.round(Aurora.TOTAL + Aurora.ATTENTE)} s</span>`
+        : `<span>${etat.finies} ${etat.finies > 1 ? 'étapes' : 'étape'} sur ${N}</span><i></i><span>encore ${Math.max(1, Math.round(etat.reste))} s environ</span>`;
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+      $('avis').hidden = etat.fini;
+    },
+  });
+})();
+</script>
+</body>
+</html>

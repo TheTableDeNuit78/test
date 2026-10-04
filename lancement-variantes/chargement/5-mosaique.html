@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Mosaïque</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 5 — « La mosaïque ».
+ * Le fond de l'écran, c'est le catalogue lui-même. Une grille de cases vides se dessine pendant
+ * les catégories ; les affiches des films s'allument ensuite depuis le centre, puis celles des
+ * séries, puis les logos des chaînes ; le guide pose enfin, sous chaque logo, la barre du
+ * programme en cours. À 100 %, l'écran est plein. Le texte loge dans une fenêtre laissée vide au
+ * milieu de la grille : il se lit sur le fond de l'app, sans voile.
+ */
+.mosaique { position: fixed; inset: 0; overflow: hidden; }
+.case {
+  position: absolute;
+  width: var(--t); height: calc(var(--t) * 1.5);
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 1px rgba(238, 238, 242, 0.05);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-out);
+}
+.case.trace { opacity: 1; }
+.case > .vrai {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+  opacity: 0; transform: scale(0.55);
+  transition: opacity 380ms var(--ease-out), transform 560ms var(--ease-back);
+}
+.case.la > .vrai { opacity: 1; transform: none; }
+.case .affiche { aspect-ratio: auto; height: 100%; border-radius: inherit; --taille-titre: max(9px, calc(var(--t) * 0.135)); }
+.case .chaineCase {
+  display: grid; justify-items: center; align-content: start; gap: 8px; padding-top: 16%;
+  background: var(--bg-elev2); box-shadow: inset 0 1px 0 var(--surface-line);
+}
+.case .chaineCase .logoChaine { --l: calc(var(--t) * 0.58); }
+.case .chaineCase b { max-width: 90%; font-size: max(9px, calc(var(--t) * 0.13)); font-weight: 600; color: var(--text-dim); text-align: center; line-height: 1.15; }
+.case .direct {
+  position: absolute; left: 10%; right: 10%; bottom: 9%; height: 3px; border-radius: 2px;
+  background: rgba(238, 238, 242, 0.12); overflow: hidden;
+  opacity: 0; transition: opacity 400ms;
+}
+.case .direct i { display: block; height: 100%; width: var(--w); background: var(--sec-direct); }
+.case.guide .direct { opacity: 1; }
+
+.fenetre {
+  position: fixed;
+  left: 50%; top: 50%;
+  width: var(--fw, 560px);
+  transform: translate(-50%, -50%);
+  display: grid; justify-items: center; text-align: center;
+}
+.fenetre .marque { margin-bottom: 18px; }
+.pct { font-size: clamp(64px, 8vw, 112px); font-weight: 700; line-height: 0.92; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+.pct small { font-size: 0.38em; color: var(--text-dim); margin-left: 5px; letter-spacing: 0; }
+.ligne1 { margin-top: 12px; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ligne1 em { font-style: normal; color: var(--etat-cours); }
+.pret .ligne1 em { color: var(--ok); }
+.ligne2 { margin-top: 4px; font-size: 13px; color: var(--text-dim); }
+.puces { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 20px 0 22px; }
+.puce {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 9px; border-radius: var(--r-pill);
+  font-size: 12.5px; color: var(--text-faint); box-shadow: inset 0 0 0 1px var(--border);
+}
+.puce .ico { width: 13px; height: 13px; }
+.puce.fait { color: var(--ok); background: var(--ok-soft); box-shadow: none; }
+.puce.encours { color: var(--etat-cours); background: var(--etat-cours-soft); box-shadow: none; }
+.puce.encours .ico { animation: tourne 0.9s linear infinite; }
+@keyframes tourne { to { transform: rotate(1turn); } }
+.avis { margin: 12px 0 0; max-width: 48ch; font-size: 12.5px; line-height: 1.55; color: var(--text-faint); }
+.avis strong { color: var(--text-dim); }
+.pret .fenetre .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="mosaique" id="mosaique" aria-hidden="true"></div>
+
+<div class="fenetre" id="fenetre">
+  <span class="marque"><span class="lambda"></span>Aurora</span>
+  <div class="pct" id="pct" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100">0<small>%</small></div>
+  <div class="ligne1" id="ligne1">On se connecte à ton serveur…</div>
+  <div class="ligne2" id="ligne2">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</div>
+  <div class="puces" id="puces"></div>
+  <button class="go fantome" type="button" id="continuer">Continuer sans attendre</button>
+  <p class="avis" id="avis">L’app s’ouvrira tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+</div>
+
+<span class="etiquette">Chargement · Variante 5 · La mosaïque</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, CHAINES, TITRES, logo, affiche, chargement, fmt, hasard, icone, clamp } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('puces').innerHTML = ETAPES.map((e, i) => `<span class="puce" id="p${i}"></span>`).join('');
+
+  let cases = [], par = { films: [], series: [], chaines: [] }, traces = [];
+  const FILMS = TITRES.filter((t) => t.genre === 'film'), SERIES = TITRES.filter((t) => t.genre === 'serie');
+
+  function construire() {
+    const W = innerWidth, H = innerHeight;
+    const t = clamp(Math.round(Math.min(W, H) / 12.5), 56, 96), th = t * 1.5, g = Math.round(t * 0.14), pas = t + g, pasV = th + g;
+    const cols = Math.ceil(W / pas) + 1, rangs = Math.ceil(H / pasV) + 1;
+    const ox = (W - (cols * pas - g)) / 2, oy = (H - (rangs * pasV - g)) / 2;
+    // La fenêtre du milieu : là où loge le texte, aucune case.
+    const fw = Math.min(600, W - 40), fh = Math.min(560, H - 60);
+    $('fenetre').style.setProperty('--fw', `${fw}px`);
+    const trou = { x0: (W - fw) / 2 - g, x1: (W + fw) / 2 + g, y0: (H - fh) / 2 - g, y1: (H + fh) / 2 + g };
+    const alea = hasard(23);
+    const html = [];
+    cases = [];
+    for (let r = 0; r < rangs; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = ox + c * pas, y = oy + r * pasV;
+        if (x + t > trou.x0 && x < trou.x1 && y + th > trou.y0 && y < trou.y1) continue;
+        const d = Math.hypot(x + t / 2 - W / 2, (y + th / 2 - H / 2) * 1.3);
+        const u = alea();
+        const type = u < 0.45 ? 'films' : u < 0.72 ? 'series' : 'chaines';
+        let vrai;
+        if (type === 'chaines') {
+          const ch = CHAINES[Math.floor(alea() * CHAINES.length)];
+          vrai = `<div class="vrai chaineCase">${logo(ch)}<b>${ch.nom.replace(/^(FR|UK|BE) - /, '').replace(/ (FHD|HD)$/, '')}</b><span class="direct"><i style="--w:${Math.round(15 + alea() * 75)}%"></i></span></div>`;
+        } else {
+          const liste = type === 'films' ? FILMS : SERIES;
+          vrai = `<div class="vrai">${affiche(liste[Math.floor(alea() * liste.length)])}</div>`;
+        }
+        cases.push({ type, d: d + alea() * pas * 2.2, html: `<div class="case" style="--t:${t}px;left:${x}px;top:${y}px">${vrai}</div>` });
+      }
+    }
+    $('mosaique').innerHTML = cases.map((k) => k.html).join('');
+    const els = [...$('mosaique').children];
+    cases.forEach((k, i) => { k.el = els[i]; });
+    // Chaque famille s'allume du centre vers les bords.
+    par = { films: [], series: [], chaines: [] };
+    for (const k of cases) par[k.type].push(k);
+    for (const l of Object.values(par)) l.sort((a, b) => a.d - b.d);
+    traces = [...cases].sort((a, b) => a.d - b.d);
+  }
+
+  const allumer = (liste, k, classe = 'la') => liste.forEach((c, i) => c.el.classList.toggle(classe, k * liste.length > i + 0.5));
+
+  construire();
+  let minuterie = 0;
+  addEventListener('resize', () => { clearTimeout(minuterie); minuterie = setTimeout(construire, 150); });
+
+  chargement({
+    rendu(etat) {
+      const [cat, fil, ser, cha, gui] = etat.etapes;
+      // Les cases vides se tracent pendant la connexion et les catégories.
+      allumer(traces, etat.t < Aurora.ATTENTE ? etat.t / Aurora.ATTENTE * 0.3 : 0.3 + cat.k * 0.7, 'trace');
+      allumer(par.films, fil.k);
+      allumer(par.series, ser.k);
+      allumer(par.chaines, cha.k);
+      allumer(par.chaines, gui.k, 'guide');
+
+      const p = Math.round(etat.p * 100);
+      $('pct').innerHTML = `${p}<small>%</small>`;
+      $('pct').setAttribute('aria-valuenow', p);
+      const c = etat.etapes[etat.courante];
+      document.body.classList.toggle('pret', etat.fini);
+      if (etat.fini) {
+        $('ligne1').innerHTML = '<em>Tout est là.</em>';
+        $('ligne2').textContent = 'Les écrans s’ouvriront d’un coup.';
+      } else {
+        $('ligne1').innerHTML = etat.t < Aurora.ATTENTE ? 'On se connecte à ton serveur…' : `${c.nom} — <em>${fmt(c.n)}</em> sur ${fmt(c.cible)}`;
+        $('ligne2').textContent = `${etat.finies} ${etat.finies > 1 ? 'étapes' : 'étape'} sur 5 · encore ${Math.max(1, Math.round(etat.reste))} s environ`;
+      }
+      etat.etapes.forEach((e, i) => {
+        const el = $(`p${i}`);
+        el.className = `puce ${e.etat}`;
+        el.innerHTML = `${icone(e.etat === 'fait' ? 'check' : e.etat === 'encours' ? 'loader' : e.icone)}${e.nom}`;
+      });
+      $('avis').hidden = etat.fini;
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

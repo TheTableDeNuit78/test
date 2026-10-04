@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Ondes</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 4 — « Le Λ qui émet ».
+ * L'intro finit sur le Λ ; la bienvenue le reprend, en grand, à droite. Il émet : des chevrons
+ * parallèles partent de lui comme les ondes d'un émetteur et s'éteignent en s'éloignant. Des traits
+ * nets d'un pixel, le dégradé du logo, et la poussière de l'intro qui flotte encore — pas une seule
+ * tache floue. Le rendu est un canevas 2D : une vingtaine de tracés par image.
+ */
+#ondes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000 56%);
+  mask-image: linear-gradient(90deg, transparent 30%, #000 56%);
+}
+.page {
+  position: absolute;
+  inset: 90px 0 0;
+  display: flex;
+  align-items: center;
+  padding: 24px var(--gouttiere) 48px;
+  pointer-events: none;
+}
+.colonne { position: relative; z-index: 2; width: min(46vw, 640px); pointer-events: auto; }
+.nomSeul {
+  display: block;
+  margin-bottom: clamp(28px, 4.5vh, 56px);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.colonne .langue { margin-top: 26px; }
+.colonne .reprise { margin-top: 14px; }
+.sous {
+  position: absolute;
+  z-index: 2;
+  left: var(--sx, 68%);
+  top: var(--sy, 80%);
+  transform: translateX(-50%);
+  margin: 0;
+  padding-left: 0.22em;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<canvas id="ondes" aria-hidden="true"></canvas>
+<div id="barre"></div>
+
+<main class="page">
+  <section class="colonne entre">
+    <span class="nomSeul">Aurora</span>
+    <h1 class="titre">Ton abonnement,<br>enfin rangé.</h1>
+    <p class="phrase">Guide TV, téléchargements, enregistrements, favoris. Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</p>
+    <div class="boutons">
+      <button class="go primaire" type="button">Compte Xtream</button>
+      <button class="go" type="button">Playlist M3U</button>
+    </div>
+    <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte une autre langue (« EN&nbsp;- », « AR&nbsp;- »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages&nbsp;▸&nbsp;Catalogue.</span></span></label>
+    <p class="reprise">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button> <span class="muted small">— le fichier <code>.aurora</code> rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+  </section>
+</main>
+<p class="sous" id="sous">Chaînes · Films · Séries</p>
+
+<span class="etiquette">Variante 4 · Le Λ qui émet</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { barre, icone, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('barre').outerHTML = barre();
+  $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
+
+  const toile = $('ondes'), cx = toile.getContext('2d');
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches || Aurora.FIGE;
+
+  // Le Λ du logo : M18 48 L32 17 L46 48, trait de 5. Demi-angle au sommet : tan α = 14 / 31.
+  const ALPHA = Math.atan2(14, 31), SIN = Math.sin(ALPHA), TAN = Math.tan(ALPHA);
+  const COULEURS = ['#4ea8f5', '#9d5cff', '#ff6cab'];
+
+  let W, H, dpr, g, poussiere;
+  function mesurer() {
+    dpr = Math.min(2, devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    toile.width = Math.round(W * dpr); toile.height = Math.round(H * dpr);
+    // Le Λ occupe ~42 % de la hauteur, sommet aux deux tiers de la largeur.
+    const haut = Math.min(H * 0.44, W * 0.3);
+    const u = haut / 31;
+    g = { u, sx: W * 0.69, sy: H * 0.3, haut, ep: 5 * u };
+    $('sous').style.setProperty('--sx', `${g.sx}px`);
+    $('sous').style.setProperty('--sy', `${g.sy + haut + g.ep * 0.9 + 26}px`);
+    // La poussière de l'intro : des points nets, quelques-uns teintés.
+    const alea = hasard(11);
+    poussiere = Array.from({ length: Math.round((W * H) / 5200) }, () => {
+      const z = alea();
+      return {
+        x: W * (0.35 + alea() * 0.7), y: alea() * H, z,
+        r: 0.4 + z * z * 1.3, a: 0.12 + z * 0.5, ph: alea() * 6.28,
+        c: alea() < 0.55 ? '#eeeef2' : COULEURS[Math.floor(alea() * 3)],
+        v: 4 + z * 10,
+      };
+    });
+  }
+
+  // Un chevron parallèle au Λ, décalé de d vers l'extérieur (d < 0 : vers l'intérieur).
+  function chevron(d, bas) {
+    const sy = g.sy - d / SIN;
+    const dx = (bas - sy) * TAN;
+    cx.beginPath();
+    cx.moveTo(g.sx - dx, bas);
+    cx.lineTo(g.sx, sy);
+    cx.lineTo(g.sx + dx, bas);
+  }
+  function degrade(sy, bas) {
+    const dx = (bas - sy) * TAN;
+    const gr = cx.createLinearGradient(g.sx - dx, bas, g.sx + dx * 0.6, sy);
+    gr.addColorStop(0, COULEURS[0]); gr.addColorStop(0.5, COULEURS[1]); gr.addColorStop(1, COULEURS[2]);
+    return gr;
+  }
+
+  const ECART = 30, N = 24, PERIODE = 2.2; // une onde toutes les 2,2 s
+  const t0 = performance.now();
+  function image(now) {
+    const t = reduit ? 3.1 : (now - t0) / 1000;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, W, H);
+    const pied = g.sy + g.haut;
+
+    // Les ondes : elles naissent sur le Λ et s'éteignent vers le bord.
+    const phase = (t / PERIODE) % 1;
+    cx.lineJoin = 'round';
+    cx.lineCap = 'round';
+    for (let i = 0; i < N; i++) {
+      const k = i + phase;
+      const d = g.ep * 0.5 + 6 + k * ECART;
+      const vie = 1 - k / N;
+      const a = Math.pow(Math.max(0, vie), 1.7) * 0.62 * Math.min(1, k * 1.4);
+      if (a < 0.004) continue;
+      chevron(d, H + 40);
+      cx.strokeStyle = degrade(g.sy - d / SIN, pied);
+      cx.globalAlpha = a;
+      cx.lineWidth = 1.15;
+      cx.stroke();
+    }
+    // À l'intérieur, trois échos fixes, plus fins : la profondeur du trait.
+    for (let i = 1; i <= 3; i++) {
+      const d = -(g.ep * 0.5 + 10 + i * 16);
+      chevron(d, pied + g.ep * 0.4);
+      cx.strokeStyle = degrade(g.sy - d / SIN, pied);
+      cx.globalAlpha = 0.16 / i;
+      cx.lineWidth = 1;
+      cx.stroke();
+    }
+
+    // Le Λ lui-même, plein, avec le reflet qui le parcourt de temps en temps (comme dans l'intro).
+    cx.globalAlpha = 1;
+    chevron(0, pied);
+    cx.strokeStyle = degrade(g.sy, pied);
+    cx.lineWidth = g.ep;
+    cx.stroke();
+    const r = ((t - 0.6) % 5.5) / 1.3;
+    if (r > 0 && r < 1) {
+      // Une lueur douce qui court du pied gauche au pied droit, contenue dans le trait.
+      const f = r * 2;
+      const px = f < 1 ? g.sx - g.haut * TAN * (1 - f) : g.sx + g.haut * TAN * (f - 1);
+      const py = f < 1 ? pied - g.haut * f : g.sy + g.haut * (f - 1);
+      const lueur = cx.createRadialGradient(px, py, 0, px, py, g.ep * 2.4);
+      lueur.addColorStop(0, `rgba(255,255,255,${(0.45 * Math.sin(r * Math.PI)).toFixed(3)})`);
+      lueur.addColorStop(1, 'rgba(255,255,255,0)');
+      cx.save();
+      chevron(0, pied);
+      cx.globalCompositeOperation = 'lighter';
+      cx.strokeStyle = lueur;
+      cx.lineWidth = g.ep;
+      cx.stroke();
+      cx.restore();
+    }
+
+    // La poussière qui monte doucement.
+    for (const p of poussiere) {
+      const y = ((p.y - t * p.v) % H + H) % H;
+      const x = p.x + Math.sin(t * 0.3 + p.ph) * 6 * p.z;
+      cx.globalAlpha = p.a * (0.6 + 0.4 * Math.sin(t * 1.3 + p.ph * 3));
+      cx.fillStyle = p.c;
+      cx.beginPath();
+      cx.arc(x, y, p.r, 0, 6.2832);
+      cx.fill();
+    }
+    cx.globalAlpha = 1;
+    if (!reduit) requestAnimationFrame(image);
+  }
+
+  mesurer();
+  addEventListener('resize', () => { mesurer(); if (reduit) requestAnimationFrame(image); });
+  requestAnimationFrame(image);
+})();
+</script>
+</body>
+</html>

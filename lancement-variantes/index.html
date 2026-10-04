@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Variantes du lancement</title>
+<style>
+/* Galerie : l'écran actuel puis cinq variantes, pour la bienvenue et pour le chargement.
+   Délibérément sombre seulement : c'est le monde de l'app qu'on regarde. */
+@font-face {
+  font-family: 'Familjen Grotesk';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('polices/familjen-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Familjen Grotesk';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('polices/familjen-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+A720-A7FF;
+}
+:root {
+  color-scheme: dark;
+  --fond: #0e0e12;
+  --carte: #15151c;
+  --carte-2: #1a1a22;
+  --trait: #24242e;
+  --trait-fort: #3a3a47;
+  --texte: #eeeef2;
+  --texte-2: #9494a4;
+  --texte-3: #75757f;
+  --iris: #7c5cff;
+  --ok: #38d18a;
+  --cours: #4ea8f5;
+  --prisme: linear-gradient(45deg, #4ea8f5, #9d5cff 50%, #ff6cab);
+  --police: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--fond); }
+body {
+  margin: 0;
+  padding-block: 40px 72px;
+  padding-inline: max(16px, 4vw);
+  background: var(--fond);
+  color: var(--texte);
+  font: 15px/1.55 var(--police);
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 1320px; margin: 0 auto; }
+.lambda {
+  display: inline-block; width: 24px; height: 24px; flex: none; background: var(--prisme);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='14 14.5 36 36'%3E%3Cpath d='M18 48L32 17l14 31' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='14 14.5 36 36'%3E%3Cpath d='M18 48L32 17l14 31' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.marque { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--texte-2); }
+h1 { margin: 22px 0 12px; font-size: clamp(32px, 4.4vw, 56px); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+.chapeau { margin: 0; max-width: 68ch; color: var(--texte-2); font-size: 16px; }
+.chapeau b { color: var(--texte); font-weight: 600; }
+
+section { margin-top: 56px; }
+.tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; padding-bottom: 14px; border-bottom: 1px solid var(--trait); }
+h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+.tete p { margin: 0; color: var(--texte-3); font-size: 14px; }
+
+.grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 20px; margin-top: 22px; }
+.carte {
+  display: grid; gap: 10px; align-content: start; min-width: 0;
+  padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer;
+}
+.vue { position: relative; display: block; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 12px; background: #000; box-shadow: 0 0 0 1px var(--trait); transition: box-shadow 160ms; }
+.vue img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms cubic-bezier(.2,.7,.3,1); }
+.carte:hover .vue, .carte:focus-visible .vue { box-shadow: 0 0 0 2px var(--iris); }
+.carte:hover .vue img { transform: scale(1.015); }
+.carte:focus-visible { outline: none; }
+.num {
+  position: absolute; left: 10px; top: 10px;
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(14, 14, 18, 0.78); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.actuelle .num { color: var(--texte-2); }
+.carte b { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.carte small { margin-top: -6px; font-size: 13.5px; line-height: 1.5; color: var(--texte-2); }
+.actuelle .vue { opacity: 0.82; }
+.actuelle b { color: var(--texte-2); }
+
+.regles { margin-top: 56px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 40px; padding: 22px 0 0; border-top: 1px solid var(--trait); }
+.regles h2 { grid-column: 1 / -1; font-size: 18px; }
+.regles p { margin: 0; font-size: 14px; color: var(--texte-2); }
+.regles p b { color: var(--texte); font-weight: 600; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: var(--texte); }
+
+/* La visionneuse : l'écran vivant, à 1440 × 900, réduit pour tenir. */
+.visio { position: fixed; inset: 0; z-index: 50; display: grid; grid-template-rows: auto 1fr; background: rgba(6, 6, 9, 0.96); }
+.visio[hidden] { display: none; }
+.barre {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+  border-bottom: 1px solid var(--trait);
+}
+.barre .titre { min-width: 0; flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barre .titre span { color: var(--texte-3); }
+.bt {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px;
+  border: 1px solid var(--trait-fort); background: var(--carte-2); color: var(--texte);
+  font: 600 13px/1 var(--police); text-decoration: none; cursor: pointer; white-space: nowrap;
+}
+.bt:hover { background: #24242e; }
+.bt[hidden] { display: none; }
+.bt:focus-visible { outline: 2px solid var(--iris); outline-offset: 2px; }
+.bt svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.scene { position: relative; overflow: hidden; display: grid; place-items: center; }
+.cadre { position: absolute; left: 50%; top: 50%; width: 1440px; height: 900px; transform-origin: 50% 50%; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px var(--trait), 0 30px 90px rgba(0, 0, 0, 0.6); background: #0e0e12; }
+.cadre iframe, .cadre img { display: block; width: 1440px; height: 900px; border: 0; }
+
+@media (max-width: 1000px) { .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .grille { grid-template-columns: 1fr; }
+  .regles { grid-template-columns: 1fr; }
+  .bt .txt { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .vue img { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <span class="marque"><span class="lambda"></span>Aurora · le lancement</span>
+  <h1>Dix variantes pour le lancement</h1>
+  <p class="chapeau">Cinq pistes pour <b>le premier lancement</b> et cinq pour <b>le chargement</b>, chacune comparée à l’écran actuel. Aucune ne garde la lueur floue de l’arrière-plan : la couleur vient du contenu (affiches, logos, guide) ou du Λ lui-même. Touche une vignette pour voir l’écran vivant, à sa taille réelle de 1440 × 900.</p>
+
+  <section aria-labelledby="h-bienvenue">
+    <div class="tete"><h2 id="h-bienvenue">Premier lancement</h2><p>Le vide de droite, rempli de cinq façons.</p></div>
+    <div class="grille" id="bienvenue"></div>
+  </section>
+
+  <section aria-labelledby="h-chargement">
+    <div class="tete"><h2 id="h-chargement">Pendant que tout arrive</h2><p>Le chargement s’y déroule en boucle, en 11 secondes environ.</p></div>
+    <div class="grille" id="chargement"></div>
+  </section>
+
+  <div class="regles">
+    <h2>Ce qui vaut pour les dix</h2>
+    <p><b>Le logo est le Λ</b>, le trait d’un seul geste tranché le 20 septembre. La tuile « A » de l’écran actuel disparaît.</p>
+    <p><b>Une couleur = un état</b> : bleu pour ce qui est en cours, vert pour ce qui est terminé. L’iris reste à ce qui est actif.</p>
+    <p><b>Les tokens de l’app</b> : fond <code>#0e0e12</code>, Familjen Grotesk, la barre du haut aux mesures de la maquette C2, le bouton blanc de la bienvenue.</p>
+    <p><b>Les chiffres de « Mon abonnement »</b>, ceux de l’écran Comptes : 99 123 films, 24 936 séries, 21 576 chaînes.</p>
+    <p><b>Pour les captures</b> : <code>?p=0.4</code> fige un chargement à 40 %, <code>?fige</code> arrête les animations d’ambiance.</p>
+    <p><b>Le mouvement</b> s’arrête quand le système demande moins d’animations.</p>
+  </div>
+</main>
+
+<div class="visio" id="visio" role="dialog" aria-modal="true" aria-labelledby="visioTitre" hidden>
+  <div class="barre">
+    <span class="titre" id="visioTitre"></span>
+    <button class="bt" type="button" id="prec" aria-label="Variante précédente"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="bt" type="button" id="suiv" aria-label="Variante suivante"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+    <a class="bt" id="seule" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span class="txt">Ouvrir seule</span></a>
+    <button class="bt" type="button" id="fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="txt">Fermer</span></button>
+  </div>
+  <div class="scene" id="scene"><div class="cadre" id="cadre"></div></div>
+</div>
+
+<script>
+'use strict';
+(() => {
+  const ECRANS = {
+    bienvenue: [
+      { n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Le texte à gauche, une lueur floue à droite, et beaucoup de vide.', img: 'actuel/bienvenue.png' },
+      { n: '1', nom: 'La vitrine', txt: 'Six tuiles vivantes montrent ce que dit la phrase : reprendre, enregistrer, télécharger, multi-écran, favoris, guide.', page: 'bienvenue/1-vitrine.html', img: 'captures/bienvenue-1-vitrine.png' },
+      { n: '2', nom: 'Le mur d’affiches', txt: 'Sept colonnes d’affiches défilent lentement, de biais. Le côté cinéma d’Aurora, sans aucune lueur peinte.', page: 'bienvenue/2-affiches.html', img: 'captures/bienvenue-2-affiches.png' },
+      { n: '3', nom: 'Le guide en toile de fond', txt: 'La grille du Guide TV en perspective, qui avance en temps réel sous la ligne « maintenant ».', page: 'bienvenue/3-guide.html', img: 'captures/bienvenue-3-guide.png' },
+      { n: '4', nom: 'Le Λ qui émet', txt: 'Le Λ de l’intro en grand, qui émet des ondes nettes dans son dégradé. La suite directe de l’intro.', page: 'bienvenue/4-ondes.html', img: 'captures/bienvenue-4-ondes.png' },
+      { n: '5', nom: 'Tout de suite', txt: 'Le formulaire est déjà là, onglets Xtream et M3U, adresse vérifiée pendant la frappe. Un écran de moins.', page: 'bienvenue/5-connexion.html', img: 'captures/bienvenue-5-connexion.png' },
+    ],
+    chargement: [
+      { n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Une carte au centre, posée sur deux halos flous, violet et vert.', img: 'actuel/chargement.png' },
+      { n: '1', nom: 'Le Λ qui se remplit', txt: 'Le logo devient la barre : le dégradé monte le long du trait et passe cinq repères nommés.', page: 'chargement/1-lambda.html', img: 'captures/chargement-1-lambda.png' },
+      { n: '2', nom: 'L’accueil qui se construit', txt: 'L’Accueil s’ouvre en squelette et se remplit à chaque étape ; une capsule garde le pourcentage et le bouton.', page: 'chargement/2-accueil.html', img: 'captures/chargement-2-accueil.png' },
+      { n: '3', nom: 'Les cinq compteurs', txt: 'Cinq colonnes, cinq compteurs en très grand, une ligne de progression d’un bord à l’autre.', page: 'chargement/3-compteurs.html', img: 'captures/chargement-3-compteurs.png' },
+      { n: '4', nom: 'Le journal', txt: 'À droite, le catalogue arrive catégorie par catégorie, avec ses affiches et ses logos.', page: 'chargement/4-journal.html', img: 'captures/chargement-4-journal.png' },
+      { n: '5', nom: 'La mosaïque', txt: 'Les affiches et les chaînes s’allument depuis le centre ; à 100 %, l’écran est plein.', page: 'chargement/5-mosaique.html', img: 'captures/chargement-5-mosaique.png' },
+    ],
+  };
+  const TITRES = { bienvenue: 'Premier lancement', chargement: 'Chargement' };
+  const $ = (id) => document.getElementById(id);
+  const tous = [];
+
+  for (const [cle, liste] of Object.entries(ECRANS)) {
+    $(cle).innerHTML = liste.map((e, i) => {
+      tous.push({ ...e, groupe: cle });
+      return `<button class="carte${e.page ? '' : ' actuelle'}" type="button" data-i="${tous.length - 1}">
+        <span class="vue"><img src="${e.img}" alt="${TITRES[cle]}, ${e.n === 'Actuel' ? 'écran actuel' : `variante ${e.n}`} : ${e.nom}" loading="lazy" width="1440" height="900"><span class="num">${e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`}</span></span>
+        <b>${e.nom}</b><small>${e.txt}</small></button>`;
+    }).join('');
+  }
+
+  const visio = $('visio'), cadre = $('cadre'), scene = $('scene');
+  let courant = -1, retour = null;
+  function ajuster() {
+    const r = scene.getBoundingClientRect();
+    const k = Math.min((r.width - 24) / 1440, (r.height - 24) / 900, 1);
+    cadre.style.transform = `translate(-50%, -50%) scale(${k})`;
+  }
+  function ouvrir(i) {
+    courant = (i + tous.length) % tous.length;
+    const e = tous[courant];
+    $('visioTitre').innerHTML = `${TITRES[e.groupe]} · ${e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`} — ${e.nom} <span>${courant + 1} / ${tous.length}</span>`;
+    cadre.innerHTML = e.page
+      ? `<iframe src="${e.page}" title="${e.nom}" loading="eager"></iframe>`
+      : `<img src="${e.img}" alt="${e.nom}">`;
+    $('seule').hidden = !e.page;
+    if (e.page) $('seule').href = e.page;
+    if (visio.hidden) { retour = document.activeElement; visio.hidden = false; document.body.style.overflow = 'hidden'; $('fermer').focus(); }
+    ajuster();
+  }
+  function fermer() {
+    visio.hidden = true; cadre.innerHTML = ''; document.body.style.overflow = '';
+    if (retour) retour.focus();
+  }
+  document.querySelectorAll('.carte').forEach((b) => b.addEventListener('click', () => ouvrir(+b.dataset.i)));
+  $('fermer').addEventListener('click', fermer);
+  $('prec').addEventListener('click', () => ouvrir(courant - 1));
+  $('suiv').addEventListener('click', () => ouvrir(courant + 1));
+  addEventListener('resize', () => { if (!visio.hidden) ajuster(); });
+  addEventListener('keydown', (ev) => {
+    if (visio.hidden) return;
+    if (ev.key === 'Escape') fermer();
+    else if (ev.key === 'ArrowRight') ouvrir(courant + 1);
+    else if (ev.key === 'ArrowLeft') ouvrir(courant - 1);
+    else if (ev.key === 'Tab') {
+      // La visionneuse garde le focus pour elle.
+      const f = [...visio.querySelectorAll('button, a:not([hidden])')];
+      const i = f.indexOf(document.activeElement);
+      if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+      else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); }
+    }
+  });
+})();
+</script>
+</body>
+</html>

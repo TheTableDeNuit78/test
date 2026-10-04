@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Journal</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 4 — « Le journal ».
+ * À gauche, l'essentiel : le pourcentage, les cinq étapes, le bouton. À droite, ce qui arrive
+ * vraiment, catégorie par catégorie : « FR | Action — 3 184 films », avec les premières affiches,
+ * les logos des chaînes, puis le guide chaîne par chaîne. On voit son abonnement entrer dans
+ * l'app ; l'attente devient une visite. La ligne en cours est bleue, les terminées vertes.
+ */
+.ecran {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(340px, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(40px, 6vw, 110px);
+  padding: 38px var(--gouttiere) 40px;
+}
+.gauche { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; }
+.qui { display: grid; gap: 6px; }
+.qui .compte { font-size: 13px; color: var(--text-faint); }
+.qui .compte b { color: var(--text-dim); font-weight: 600; }
+.centre { align-self: center; }
+.pct { font-size: clamp(64px, 7.5vw, 140px); font-weight: 700; line-height: 0.9; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+.pct small { font-size: 0.4em; color: var(--text-dim); margin-left: 6px; letter-spacing: 0; }
+.centre .phrase { margin: 18px 0 0; font-size: 15px; }
+.barre { position: relative; height: 4px; margin: 26px 0 8px; border-radius: 2px; background: rgba(238, 238, 242, 0.09); overflow: hidden; }
+.barre i { position: absolute; inset: 0; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.pret .barre i { background: var(--ok); }
+.ou { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.etapes { display: grid; gap: 2px; margin: 22px 0 0; padding: 0; list-style: none; }
+.etapes li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+.etapes .ico { width: 16px; height: 16px; }
+.etapes .n { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-faint); }
+.etapes .fait { color: var(--text); }
+.etapes .fait .ico, .etapes .fait .n { color: var(--ok); }
+.etapes .encours { color: var(--text); font-weight: 600; }
+.etapes .encours .ico, .etapes .encours .n { color: var(--etat-cours); }
+.etapes .encours .ico { animation: tourne 0.9s linear infinite; }
+.etapes .attente { color: var(--text-faint); }
+@keyframes tourne { to { transform: rotate(1turn); } }
+.pied { display: grid; gap: 12px; justify-items: start; }
+.avis { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--text-faint); max-width: 50ch; }
+.avis strong { color: var(--text-dim); }
+.pret .pied .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+
+/* ───────── Le journal ───────── */
+.droite { position: relative; display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
+.entete { display: flex; align-items: center; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-dim); }
+.entete i { width: 7px; height: 7px; border-radius: 50%; background: var(--etat-cours); box-shadow: 0 0 0 4px var(--etat-cours-soft); animation: bat 1.2s ease-in-out infinite; }
+.pret .entete i { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-soft); animation: none; }
+@keyframes bat { 50% { opacity: 0.4; } }
+.entete code { margin-left: auto; color: var(--text-faint); font-size: 12px; }
+.flux {
+  position: relative; min-height: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+}
+.liste { display: grid; margin: 0; padding: 0; list-style: none; }
+.ligne {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
+  height: 62px; padding: 0 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.ligne:first-child { animation: arrive 420ms var(--ease-out); }
+@keyframes arrive { from { opacity: 0; transform: translateY(-14px); } }
+.ligne .etat { width: 16px; height: 16px; color: var(--ok); }
+.ligne.cours .etat { color: var(--etat-cours); animation: tourne 0.9s linear infinite; }
+.ligne .nom { display: grid; gap: 2px; min-width: 0; }
+.ligne .nom b { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ligne .nom span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-faint); }
+.tag { padding: 1px 7px; border-radius: var(--r-pill); font-size: 11px; font-weight: 600; background: color-mix(in srgb, var(--t) 16%, transparent); color: var(--t); }
+.mini { display: flex; gap: 5px; --l: 30px; }
+.mini .affiche { width: 22px; border-radius: 4px; --taille-titre: 0px; }
+.mini .logoChaine { --l: 30px; }
+.ligne .n { min-width: 9ch; text-align: right; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ligne.cours .n { color: var(--etat-cours); }
+.ligne .jauge { grid-column: 2 / -1; height: 2px; margin-top: -10px; border-radius: 1px; background: rgba(238, 238, 242, 0.08); overflow: hidden; }
+.ligne .jauge i { display: block; height: 100%; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--k, 0)); }
+.ligne.cours { grid-template-rows: 1fr auto; height: 68px; background: linear-gradient(90deg, var(--etat-cours-soft), transparent 80%); border-radius: 10px; padding: 0 12px; border-bottom-color: transparent; }
+.ligne.cours > .etat, .ligne.cours > .nom, .ligne.cours > .mini, .ligne.cours > .n { grid-row: 1; }
+</style>
+</head>
+<body>
+<div class="ecran">
+  <section class="gauche">
+    <div class="qui">
+      <span class="marque"><span class="lambda"></span>Aurora</span>
+      <span class="compte"><b>Mon abonnement</b> · fournisseur.example</span>
+    </div>
+    <div class="centre">
+      <div class="pct" id="pct" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100">0<small>%</small></div>
+      <p class="phrase" id="phrase">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+      <div class="barre"><i id="barre"></i></div>
+      <div class="ou"><span id="ou1"></span><span id="ou2"></span></div>
+      <ul class="etapes" id="etapes"></ul>
+    </div>
+    <div class="pied">
+      <button class="go fantome" type="button" id="continuer">Continuer sans attendre</button>
+      <p class="avis" id="avis">L’app s’ouvrira tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+    </div>
+  </section>
+
+  <section class="droite" aria-label="Ce qui arrive du serveur">
+    <div class="entete"><i></i><span id="titreFlux">Ce qui arrive de ton serveur</span><code>fournisseur.example:8080</code></div>
+    <div class="flux"><ul class="liste" id="liste"></ul></div>
+  </section>
+</div>
+
+<span class="etiquette">Chargement · Variante 4 · Le journal</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, TITRES, CHAINES, CATEGORIES, affiche, logo, chargement, fmt, pluriel, icone, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const TEINTES = { films: 'var(--sec-vod)', séries: '#b18cff', chaînes: 'var(--sec-direct)', guide: 'var(--sec-direct)' };
+
+  // Le journal complet du chargement : pour chaque étape, ses lignes dans l'ordre d'arrivée.
+  const alea = hasard(5);
+  const tirer = (liste, n) => Array.from({ length: n }, () => liste[Math.floor(alea() * liste.length)]);
+  const films = TITRES.filter((t) => t.genre === 'film');
+  const series = TITRES.filter((t) => t.genre === 'serie');
+  const ajuste = (cats, total) => { const s = cats.reduce((a, c) => a + c.n, 0); return cats.map((c) => ({ ...c, n: Math.round((c.n / s) * total) })); };
+  const JOURNAL = [
+    CATEGORIES.map((c) => ({ nom: c.nom, type: c.type, n: 0, unite: null })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'films'), ETAPES[1].cible).map((c) => ({ ...c, unite: ['film', 'films'], mini: tirer(films, 4).map((t) => affiche(t)).join('') })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'séries'), ETAPES[2].cible).map((c) => ({ ...c, unite: ['série', 'séries'], mini: tirer(series, 4).map((t) => affiche(t)).join('') })),
+    ajuste(CATEGORIES.filter((c) => c.type === 'chaînes'), ETAPES[3].cible).map((c) => ({ ...c, unite: ['chaîne', 'chaînes'], mini: tirer(CHAINES, 4).map((ch) => logo(ch)).join('') })),
+    ajuste(CHAINES.slice(0, 14).map((ch) => ({ nom: ch.nom, type: 'guide', n: 900 + Math.round(alea() * 900), ch })), ETAPES[4].cible)
+      .map((c) => ({ ...c, unite: ['programme', 'programmes'], sous: '7 jours de programmes', mini: logo(c.ch) })),
+  ];
+
+  $('etapes').innerHTML = ETAPES.map((e, i) => `<li id="e${i}"><span class="i"></span><span>${e.nom}</span><span class="n"></span></li>`).join('');
+
+  let cle = '';
+  function journal(etat) {
+    // Toutes les lignes arrivées jusqu'ici, la plus récente en haut.
+    const lignes = [];
+    etat.etapes.forEach((e, i) => {
+      const items = JOURNAL[i], m = items.length;
+      if (e.etat === 'attente') return;
+      const pos = e.k * m;
+      const faites = Math.min(m, Math.floor(pos));
+      for (let j = 0; j < faites; j++) lignes.push({ ...items[j], etape: i, k: 1 });
+      if (e.etat === 'encours' && faites < m) lignes.push({ ...items[faites], etape: i, k: pos - faites, cours: true });
+    });
+    const vues = lignes.slice(-12).reverse();
+    const nouvelleCle = vues.map((l) => `${l.etape}:${l.nom}:${l.cours ? 1 : 0}`).join('|');
+    const liste = $('liste');
+    if (nouvelleCle !== cle) {
+      cle = nouvelleCle;
+      liste.innerHTML = vues.map((l) => {
+        const tag = l.type === 'guide' ? '' : `<span class="tag" style="--t:${TEINTES[l.type]}">${l.type}</span>`;
+        const sous = l.sous || (l.unite ? `${l.type === 'chaînes' ? 'chaînes en direct' : 'catalogue'}` : 'catégorie');
+        return `<li class="ligne${l.cours ? ' cours' : ''}">${icone(l.cours ? 'loader' : 'check', 'ico etat')}
+          <span class="nom"><b>${l.nom}</b><span>${tag}${sous}</span></span>
+          <span class="mini">${l.mini || ''}</span>
+          <span class="n"></span>${l.cours ? '<span class="jauge"><i></i></span>' : ''}</li>`;
+      }).join('');
+    }
+    // Les nombres bougent à chaque image, sans reconstruire la liste.
+    [...liste.children].forEach((li, idx) => {
+      const l = vues[idx];
+      const n = l.unite ? Math.round(l.n * (l.cours ? l.k : 1)) : null;
+      li.querySelector('.n').textContent = n === null ? '' : `${fmt(n)} ${pluriel(n, l.unite)}`;
+      const j = li.querySelector('.jauge i');
+      if (j) j.style.setProperty('--k', l.k.toFixed(3));
+    });
+  }
+
+  chargement({
+    rendu(etat) {
+      const p = Math.round(etat.p * 100);
+      $('pct').innerHTML = `${p}<small>%</small>`;
+      $('pct').setAttribute('aria-valuenow', p);
+      $('barre').style.setProperty('--p', etat.p.toFixed(4));
+      $('ou1').textContent = `${etat.finies} ${etat.finies > 1 ? 'étapes' : 'étape'} sur 5`;
+      $('ou2').textContent = etat.fini ? `${Math.round(Aurora.TOTAL + Aurora.ATTENTE)} s` : `encore ${Math.max(1, Math.round(etat.reste))} s`;
+      etat.etapes.forEach((e, i) => {
+        const li = $(`e${i}`);
+        li.className = e.etat;
+        li.firstChild.innerHTML = icone(e.etat === 'fait' ? 'check' : e.etat === 'encours' ? 'loader' : e.icone);
+        li.lastChild.textContent = e.etat === 'attente' ? '' : `${fmt(e.n)}${e.etat === 'encours' ? '…' : ''}`;
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('phrase').textContent = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite.';
+      $('titreFlux').textContent = etat.fini ? 'Tout est arrivé' : 'Ce qui arrive de ton serveur';
+      $('avis').hidden = etat.fini;
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+      journal(etat);
+    },
+  });
+})();
+</script>
+</body>
+</html>

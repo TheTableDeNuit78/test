@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Vitrine</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 1 — « La vitrine ».
+ * La phrase de l'écran dit « Guide TV, téléchargements, enregistrements, favoris » : à droite, on les
+ * montre. Six tuiles, chacune un vrai morceau d'interface d'Aurora qui vit doucement (le chrono d'un
+ * enregistrement, un téléchargement qui avance, la ligne « maintenant » du guide). Pas de fond peint :
+ * le vide est rempli par ce que l'app sait faire.
+ */
+.page {
+  position: absolute;
+  inset: 90px 0 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(32px, 4vw, 80px);
+  align-items: center;
+  padding: 24px var(--gouttiere) 48px;
+}
+.colonne { min-width: 0; }
+.colonne .marque { margin-bottom: clamp(28px, 4.5vh, 56px); }
+.colonne .langue { margin-top: 26px; }
+.colonne .reprise { margin-top: 14px; }
+
+/* ───────── La vitrine ───────── */
+.vitrine {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  height: min(660px, calc(100vh - 170px));
+  min-height: 520px;
+}
+.tuile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+  box-shadow: inset 0 1px 0 var(--surface-line), 0 0 0 1px rgba(255, 255, 255, 0.025);
+  animation: tuile 700ms var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--i, 0) * 70ms);
+}
+@keyframes tuile { from { opacity: 0; transform: translateY(18px) scale(0.98); } }
+.large { grid-column: span 2; }
+.oeil {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.oeil .ico { width: 14px; height: 14px; color: var(--teinte, var(--text-dim)); }
+.tuile h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+.tuile p { margin: 3px 0 0; font-size: 12.5px; color: var(--text-dim); }
+
+/* Reprendre */
+.reprendre { --teinte: var(--sec-reprise); flex-direction: row; gap: 18px; align-items: stretch; }
+.reprendre .vignette {
+  position: relative;
+  flex: 0 0 46%;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    radial-gradient(55% 70% at 70% 30%, rgba(255, 108, 171, 0.55), transparent 70%),
+    linear-gradient(150deg, #5a2440, #170f18);
+}
+.reprendre .vignette b {
+  position: absolute; left: 14px; bottom: 12px;
+  font-size: clamp(16px, 1.5vw, 22px); line-height: 1.05; letter-spacing: -0.02em;
+}
+.reprendre .texte { display: flex; flex-direction: column; min-width: 0; padding-block: 2px; }
+.anneau {
+  --pct: 38;
+  position: absolute; top: 10px; right: 10px;
+  display: grid; place-items: center;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: conic-gradient(var(--sec-direct) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.16) 0);
+  font-size: 10.5px; font-weight: 700;
+}
+.anneau::before { content: ''; position: absolute; inset: 3.5px; border-radius: 50%; background: rgba(14, 14, 18, 0.82); }
+.anneau span { position: relative; }
+.reprendre .barreVue { height: 3px; margin-top: 12px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.reprendre .barreVue i { display: block; width: 38%; height: 100%; background: var(--sec-reprise); }
+.boutonLire {
+  display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
+  margin-top: 14px; padding: 8px 15px; border-radius: var(--r-pill);
+  background: #f57ab8; color: #1a0d14; font-size: 13px; font-weight: 600;
+}
+.boutonLire svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
+
+/* Enregistrement */
+.rec { --teinte: var(--danger); }
+.rec .temoin { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--danger); letter-spacing: 0.06em; }
+.rec .temoin::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); animation: bat 1.2s ease-in-out infinite; }
+@keyframes bat { 50% { opacity: 0.35; } }
+.rec .chrono { margin: 8px 0 10px; font-size: clamp(24px, 2.2vw, 34px); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.rec .chaine { display: flex; align-items: center; gap: 10px; --l: 30px; }
+
+/* Téléchargement */
+.telech { --teinte: var(--etat-cours); }
+.telech .ligne { display: flex; gap: 12px; align-items: center; }
+.telech .affiche { width: 40px; flex: none; border-radius: 6px; --taille-titre: 0px; }
+.jauge { height: 5px; margin-top: 12px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.jauge i { display: block; height: 100%; width: 100%; border-radius: 5px; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--p, 0.62)); }
+.telech .chiffres { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.telech .chiffres b { color: var(--etat-cours); font-weight: 600; }
+
+/* Multi-écran */
+.multi { --teinte: var(--accent); padding-bottom: 14px; }
+.ecrans { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; flex: 1; min-height: 0; }
+.ecran {
+  position: relative; border-radius: 6px; overflow: hidden;
+  background: radial-gradient(70% 80% at 70% 30%, color-mix(in srgb, var(--c) 60%, transparent), transparent 75%), linear-gradient(150deg, var(--a), var(--b));
+}
+.ecran .logoChaine { position: absolute; left: 6px; bottom: 6px; --l: 22px; }
+.ecran.actif { box-shadow: inset 0 0 0 2px var(--accent); }
+.ecran.actif::after {
+  content: ''; position: absolute; right: 6px; top: 6px; width: 12px; height: 12px;
+  background: #fff;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 4.7 6.7 8H3v8h3.7l4.3 3.3z'/%3E%3Cpath d='M16 9a5 5 0 0 1 0 6'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 4.7 6.7 8H3v8h3.7l4.3 3.3z'/%3E%3Cpath d='M16 9a5 5 0 0 1 0 6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* Favoris */
+.favoris { --teinte: #f5c84a; }
+.pile { display: flex; margin: 6px 0 12px; --l: 34px; }
+.pile .logoChaine { margin-right: -9px; box-shadow: 0 0 0 3px var(--bg-elev); }
+.pile .logoChaine:nth-child(1) { animation: pose 520ms var(--ease-back) 900ms backwards; }
+.pile .logoChaine:nth-child(2) { animation: pose 520ms var(--ease-back) 980ms backwards; }
+.pile .logoChaine:nth-child(3) { animation: pose 520ms var(--ease-back) 1060ms backwards; }
+.pile .logoChaine:nth-child(4) { animation: pose 520ms var(--ease-back) 1140ms backwards; }
+@keyframes pose { from { opacity: 0; transform: translateX(-10px) scale(0.8); } }
+.etoile { width: 16px; height: 16px; fill: #f5c84a; stroke: none; }
+
+/* Guide TV */
+.guide { --teinte: var(--sec-direct); padding-bottom: 12px; }
+.guide .oeil { margin-bottom: 10px; }
+.grille { position: relative; display: grid; gap: 5px; flex: 1; min-height: 0; align-content: start; }
+.heures { position: relative; height: 14px; margin-left: 40px; font-size: 11px; color: var(--text-faint); }
+.heures span { position: absolute; left: var(--x); }
+.rang { display: grid; grid-template-columns: 34px 1fr; gap: 6px; align-items: center; --l: 26px; height: 30px; }
+.progs { position: relative; height: 100%; min-width: 0; overflow: hidden; }
+.prog {
+  position: absolute; top: 0; bottom: 0; left: var(--g); width: calc(var(--w) - 4px);
+  display: flex; align-items: center; padding: 0 9px; border-radius: 6px; background: var(--bg-elev2);
+  font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prog.maintenant { background: color-mix(in srgb, var(--sec-direct) 22%, var(--bg-elev2)); box-shadow: inset 2px 0 0 var(--sec-direct); }
+.ligneMaintenant {
+  position: absolute; top: 16px; bottom: -2px; left: calc(40px + (100% - 40px) * var(--x, 0.36));
+  width: 2px; margin-left: -1px; border-radius: 2px; background: var(--sec-direct);
+  box-shadow: 0 0 10px var(--sec-direct);
+}
+.ligneMaintenant::before { content: ''; position: absolute; top: -4px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--sec-direct); }
+
+/* Chiffré */
+.cle { --teinte: var(--ok); }
+.cle .cadenas {
+  display: grid; place-items: center; width: 42px; height: 42px; margin-bottom: 12px;
+  border-radius: 12px; background: var(--ok-soft); color: var(--ok);
+}
+.cle .cadenas .ico { width: 20px; height: 20px; }
+
+@media (max-width: 1100px) {
+  .page { grid-template-columns: 1fr; overflow: auto; align-content: start; }
+  .vitrine { height: auto; grid-template-rows: none; grid-auto-rows: 180px; }
+}
+</style>
+</head>
+<body>
+<div id="barre"></div>
+
+<main class="page">
+  <section class="colonne entre">
+    <span class="marque"><span class="lambda"></span>Aurora</span>
+    <h1 class="titre">Ton abonnement,<br>enfin rangé.</h1>
+    <p class="phrase">Guide TV, téléchargements, enregistrements, favoris. Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</p>
+    <div class="boutons">
+      <button class="go primaire" type="button">Compte Xtream</button>
+      <button class="go" type="button">Playlist M3U</button>
+    </div>
+    <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte une autre langue (« EN&nbsp;- », « AR&nbsp;- »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages&nbsp;▸&nbsp;Catalogue.</span></span></label>
+    <p class="reprise">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button> <span class="muted small">— le fichier <code>.aurora</code> rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+  </section>
+
+  <section class="vitrine" aria-label="Ce que fait Aurora, avec des exemples">
+    <article class="tuile large reprendre" style="--i:0">
+      <div class="vignette"><span class="anneau"><span>38%</span></span><b>Dune :<br>Deuxième partie</b></div>
+      <div class="texte">
+        <span class="oeil" id="oeilReprendre"></span>
+        <h3>Reprends là où tu t’es arrêté</h3>
+        <p>Dune : Deuxième partie · il reste 1 h 14</p>
+        <div class="barreVue"><i></i></div>
+        <span class="boutonLire"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>Lire</span>
+      </div>
+    </article>
+
+    <article class="tuile rec" style="--i:1">
+      <span class="oeil"><span class="temoin">REC</span></span>
+      <div class="chrono" id="chrono">00:42:17</div>
+      <div class="chaine" id="recChaine"></div>
+    </article>
+
+    <article class="tuile telech" style="--i:2">
+      <span class="oeil" id="oeilTelech"></span>
+      <div class="ligne" id="telechLigne"></div>
+      <div class="jauge"><i id="jauge"></i></div>
+      <div class="chiffres"><b id="pct">62 %</b><span id="debit">8,4 Mo/s · 3 min</span></div>
+    </article>
+
+    <article class="tuile multi" style="--i:3">
+      <span class="oeil" id="oeilMulti" style="margin-bottom:0"></span>
+      <div class="ecrans" id="ecrans"></div>
+    </article>
+
+    <article class="tuile favoris" style="--i:4">
+      <span class="oeil" id="oeilFav"></span>
+      <div class="pile" id="pile"></div>
+      <h3>6 chaînes, 3 films</h3>
+      <p>Une étoile, et c’est en tête partout.</p>
+    </article>
+
+    <article class="tuile large guide" style="--i:5">
+      <span class="oeil" id="oeilGuide"></span>
+      <div class="grille" id="grille"></div>
+    </article>
+
+    <article class="tuile cle" style="--i:6">
+      <span class="oeil" style="margin-bottom:auto">Confidentialité</span>
+      <span class="cadenas" id="cadenas"></span>
+      <h3>Chiffré sur ce PC</h3>
+      <p>Ton serveur et ton mot de passe ne partent nulle part.</p>
+    </article>
+  </section>
+</main>
+
+<span class="etiquette">Variante 1 · La vitrine — exemples de démonstration</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { barre, icone, CHAINES, TITRES, PALETTES, logo, affiche } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('barre').outerHTML = barre();
+  $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
+
+  const oeil = (id, ico, texte) => { $(id).innerHTML = `${icone(ico)}${texte}`; };
+  oeil('oeilReprendre', 'play', 'Reprendre');
+  oeil('oeilTelech', 'download', 'Téléchargement');
+  oeil('oeilMulti', 'grid', 'Multi-écran');
+  oeil('oeilGuide', 'calendar', 'Guide TV · 7 jours');
+  $('oeilFav').innerHTML = `<svg class="etoile" viewBox="0 0 24 24">${'<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'}</svg>Favoris`;
+  $('cadenas').innerHTML = icone('lock');
+
+  const ch = (s) => CHAINES.find((c) => c.sigle === s);
+  $('recChaine').innerHTML = `${logo(ch('C+'))}<div><h3>Ligue 1 — Lyon / Marseille</h3><p>sur C+ · jusqu’à 22:45</p></div>`;
+  $('telechLigne').innerHTML = `${affiche(TITRES.find((t) => t.titre === 'Oppenheimer'))}<div><h3>Oppenheimer</h3><p>4K · 18,2 Go</p></div>`;
+  $('pile').innerHTML = ['TF1', 'Arte', 'C+', 'beIN1'].map((s) => logo(ch(s))).join('');
+
+  const ecrans = [['beIN1', 'violet'], ['TF1', 'bleu'], ['Arte', 'orange'], ['DAZN', 'vert']];
+  $('ecrans').innerHTML = ecrans.map(([s, p], i) => {
+    const [a, b, c] = PALETTES[p];
+    return `<div class="ecran${i === 0 ? ' actif' : ''}" style="--a:${a};--b:${b};--c:${c}">${logo(ch(s))}</div>`;
+  }).join('');
+
+  // Le guide : quatre chaînes de 20:40 à 22:10, la ligne « maintenant » avance doucement depuis 21:34.
+  const DEBUT = 20 * 60 + 40, FIN = 22 * 60 + 10, h = (s) => { const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+  const pos = (m) => ((m - DEBUT) / (FIN - DEBUT)) * 100;
+  const rangs = [
+    ['TF1', [['C’est Canteloup', '20:55', '21:10'], ['Le Comte de Monte-Cristo', '21:10', '23:05']]],
+    ['F2', [['Taratata', '20:50', '21:20'], ['Quelle époque !', '21:20', '23:20']]],
+    ['C+', [['Clique', '20:40', '21:00'], ['Ligue 1 — Lyon / Marseille', '21:00', '22:55']]],
+    ['Arte', [['28 minutes', '20:50', '21:05'], ['Paris, Texas', '21:05', '23:30']]],
+  ];
+  const MAINTENANT = h('21:34');
+  $('grille').innerHTML = `<div class="heures">${['21:00', '21:30', '22:00'].map((t) => `<span style="--x:${pos(h(t))}%">${t}</span>`).join('')}</div>` +
+    rangs.map(([s, progs]) => `<div class="rang">${logo(ch(s))}<div class="progs">${progs.map(([n, a, b]) =>
+      `<span class="prog${h(a) <= MAINTENANT && MAINTENANT < h(b) ? ' maintenant' : ''}" style="--g:${Math.max(0, pos(h(a)))}%;--w:${pos(h(b)) - Math.max(0, pos(h(a)))}%">${n}</span>`).join('')}</div></div>`).join('') +
+    `<span class="ligneMaintenant" id="maintenant"></span>`;
+
+  // Ce qui vit : le chrono de l'enregistrement, le téléchargement, la ligne du guide.
+  const debut = performance.now();
+  let chrono = 42 * 60 + 17;
+  const deux = (n) => String(n).padStart(2, '0');
+  setInterval(() => {
+    if (Aurora.FIGE) return;
+    chrono++;
+    $('chrono').textContent = `${deux(Math.floor(chrono / 3600))}:${deux(Math.floor(chrono / 60) % 60)}:${deux(chrono % 60)}`;
+  }, 1000);
+  const image = (now) => {
+    const t = Aurora.FIGE ? 0 : (now - debut) / 1000;
+    const p = 0.62 + ((t * 0.012) % 0.38);
+    $('jauge').style.setProperty('--p', p.toFixed(4));
+    $('pct').textContent = `${Math.round(p * 100)} %`;
+    const min = Math.max(1, Math.round((1 - p) * 8));
+    $('debit').textContent = `8,4 Mo/s · ${min} min`;
+    $('maintenant').style.setProperty('--x', (pos(MAINTENANT + ((t * 0.25) % 20)) / 100).toFixed(4));
+    requestAnimationFrame(image);
+  };
+  requestAnimationFrame(image);
+})();
+</script>
+</body>
+</html>
