@@ -319,11 +319,13 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
       reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
       majEchelle();
       if (preparer) preparer(reduit);
-      anims = reduit ? [] : animer();
+      anims = animer();
       t0 = maintenant() - (reduit ? FIN * 1000 : 0);
       const now = maintenant();
+      // Moins d'animations : chaque piste est posée directement sur sa dernière image.
       for (const a of anims) {
-        if (fige != null) figerPiste(a, fige); else demarrerPiste(a, t0, now);
+        if (reduit) figerPiste(a, Math.max(FIN, fige ?? 0));
+        else if (fige != null) figerPiste(a, fige); else demarrerPiste(a, t0, now);
       }
       racine.classList.add('pret');
       if (!raf) raf = requestAnimationFrame(boucle);
@@ -332,7 +334,16 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
       if (fige != null || temps() >= FIN) return;
       const now = maintenant();
       t0 = now - FIN * 1000;
-      for (const a of anims) demarrerPiste(a, t0, now);
+      // On saute à la fin par currentTime / finish() : changer startTime laisse parfois Chrome
+      // afficher l'ancienne image des animations confiées au compositeur.
+      for (const a of anims) {
+        if (!estWaapi(a)) { demarrerPiste(a, t0, now); continue; }
+        if (a.effect.getComputedTiming().endTime <= FIN * 1000) a.finish();
+        else { a.currentTime = FIN * 1000; a.play(); }
+      }
+      // Après un saut, Chrome peut garder à l'écran l'image d'avant : on force un repeint, invisible à l'œil.
+      document.body.style.opacity = '.999';
+      requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.opacity = ''; }));
       if (!raf) raf = requestAnimationFrame(boucle);
     }
 

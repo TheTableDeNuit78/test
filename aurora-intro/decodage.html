@@ -5,15 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Ruban</title>
+<title>Aurora — Décodage</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Ruban », dans l'esprit du « ta-dum » de Netflix, mais à l'envers : on démarre DANS la
- * lettre, au milieu de lames de lumière qui filent. La caméra recule en pivotant, et on découvre que
- * ces lames sont les fibres des deux jambes du Λ. Elles s'alignent, leurs bouts dessinent les
- * arrondis, puis tout se fige dans le dégradé de la marque. WebGL2 : ~110 lames instanciées, deux
- * passes (halo additif puis cœur).
+ * Variante « Décodage » : le signal arrive chiffré. Une pluie de caractères tombe aux couleurs de la
+ * marque, se fige, et les caractères qui restent allumés dessinent AURORA en géant. Le mot se dissout
+ * pendant que le vrai titre se déchiffre lettre à lettre, curseur clignotant. Canvas 2D (planche de
+ * glyphes, rendu sans état : chaque image ne dépend que de l'instant), GSAP 3.15 + ScrambleText.
  */
 :root {
   color-scheme: dark;
@@ -176,15 +175,31 @@ body {
 }
 
 
-.balai {
-  position: absolute;
-  width: calc(var(--k) * 5px);
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--bleu), var(--violet), var(--rose));
-  box-shadow: 0 0 18px 2px rgb(157 92 255 / .65);
-  opacity: 0;
-  pointer-events: none;
+.final { display: grid; justify-items: center; }
+.titre {
+  position: relative;
+  font-size: min(12vw, calc(var(--k) * 104px));
+  font-weight: 600;
+  letter-spacing: .14em;
+  padding-left: .14em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
+.curseur {
+  position: absolute;
+  left: 100%;
+  top: .12em;
+  bottom: .1em;
+  width: .09em;
+  margin-left: -.02em;
+  background: var(--rose);
+  box-shadow: 0 0 12px rgb(255 108 171 / .7);
+  animation: clignote 1s steps(1) infinite;
+}
+@keyframes clignote { 50% { opacity: 0; } }
+.final .trait-boite { margin-top: calc(var(--k) * 26px); }
+.final .sous { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .26em; padding-left: .26em; }
+@media (prefers-reduced-motion: reduce) { .curseur { animation: none; } }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -209,16 +224,13 @@ body {
 </svg>
 <canvas class="toile" id="toile" aria-hidden="true"></canvas>
 <div class="scene" aria-hidden="true">
-  <div class="marque" id="marque">
-    <div class="a-boite" id="boiteA">
-      <svg class="a" id="a" viewBox="14 13 36 39" aria-hidden="true"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg>
-    </div>
-    <div class="nom" id="nom">Aurora</div>
-    <div class="trait-boite" id="boiteTrait"><span class="trait" id="trait"></span></div>
+  <div class="marque final" id="final">
+    <div class="titre" id="titre"><span id="titreTexte">AURORA</span><span class="curseur" id="curseur"></span></div>
+    <div class="trait-boite"><span class="trait" id="trait"></span></div>
     <p class="sous" id="sous">Chaînes · Films · Séries</p>
   </div>
 </div>
-<p class="etiquette"><b>Ruban</b> · WebGL2, d’après le « ta-dum » de Netflix</p>
+<p class="etiquette"><b>Décodage</b> · Canvas 2D, GSAP 3.15 + ScrambleText</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -230,6 +242,8 @@ body {
   </button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrambleTextPlugin.min.js"></script>
 <script>
 'use strict';
 (() => {
@@ -386,205 +400,112 @@ void main() { vec2 p = vec2(gl_VertexID == 1 ? 3. : -1., gl_VertexID == 2 ? 3. :
   }
 
 
-  const VS = `#version 300 es
-precision highp float;
-layout(location=0) in vec2 a_coin;    // x : le long de la lame (0..1), y : en travers (-1..1)
-layout(location=1) in vec4 a_voie;    // jambe (0 gauche, 1 droite, 2 décor), décalage, largeur, graine
-layout(location=2) in vec4 a_bouts;   // début et fin de la lame au départ, luminosité
-layout(location=3) in vec3 a_coul;
-uniform vec2 u_res;
-uniform vec2 u_L, u_S, u_R;
-uniform float u_w;
-uniform vec2 u_foyer;
-uniform float u_zoom, u_rot;
-uniform float u_bouts, u_decor, u_solide, u_halo;
-out vec2 v_monde;
-out float v_travers;
-out float v_long;
-out float v_x;
-out float v_longPx;
-out vec3 v_coul;
-out float v_graine;
-out float v_lum;
-void main() {
-  float jambe = a_voie.x;
-  vec2 P0 = jambe > .5 && jambe < 1.5 ? u_S : u_L;
-  vec2 P1 = jambe > .5 && jambe < 1.5 ? u_R : u_S;
-  vec2 dir = normalize(P1 - P0), nrm = vec2(-dir.y, dir.x);
-  float Lg = length(P1 - P0);
-  float decal = a_voie.y * (jambe > 1.5 ? 1. + u_decor * 3. : 1.);
-  // Les bouts finissent en arrondi : une fibre décalée de d dépasse de sqrt(w² - d²), comme un bout rond.
-  float ext = sqrt(max(u_w * u_w - decal * decal, 0.)) / Lg;
-  float s0 = mix(a_bouts.x, -ext, u_bouts), s1 = mix(a_bouts.y, 1. + ext, u_bouts);
-  float s = mix(s0, s1, a_coin.x);
-  float largeur = a_voie.z * mix(1., 1.35, u_solide) * u_halo;
-  vec2 monde = P0 + dir * (s * Lg) + nrm * (decal + a_coin.y * largeur * .5);
-  vec2 d = (monde - u_foyer) * u_zoom;
-  float c = cos(u_rot), sn = sin(u_rot);
-  vec2 ecran = vec2(c * d.x - sn * d.y, sn * d.x + c * d.y) + u_res * .5;
-  v_monde = monde;
-  v_travers = a_coin.y;
-  v_long = s * Lg;
-  v_x = a_coin.x;
-  v_longPx = (s1 - s0) * Lg * u_zoom;
-  v_coul = a_coul;
-  v_graine = a_voie.w;
-  v_lum = a_bouts.z * (jambe > 1.5 ? 1. - u_decor : 1.);
-  vec2 clip = ecran / u_res * 2. - 1.;
-  gl_Position = vec4(clip.x, -clip.y, 0., 1.);
-}`;
+  const el = { toile: $('toile'), titre: $('titreTexte'), curseur: $('curseur'), trait: $('trait'), sous: $('sous'), final: $('final') };
+  const x = el.toile.getContext('2d');
+  const h2 = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const GLYPHES = '01ΛAURO#%&*+=<>/\\|{}[]$@?!:;~^ΣΔΩ7389B';
+  // Dans le mot, des glyphes pleins pour qu'il se lise de loin.
+  const DENSES = [...'#%&@$8B'].map((c) => GLYPHES.indexOf(c)).filter((i) => i >= 0);
+  const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace';
+  const TEINTES = ['#4ea8f5', '#6a8cf7', '#7c6cfb', '#9d5cff', '#c160e0', '#e866c0', '#ff6cab', '#f2f0ff'];
+  const CUE = { MASQUE: [1.15, 1.95], CHUTE: [1.9, 2.35], DISSOUT: [2.25, 3.0], TITRE: 2.3, SOUS: 2.85 };
 
-  const FS = `#version 300 es
-precision highp float;
-in vec2 v_monde;
-in float v_travers;
-in float v_long;
-in float v_x;
-in float v_longPx;
-in vec3 v_coul;
-in float v_graine;
-in float v_lum;
-uniform float u_t, u_solide, u_halo, u_alpha;
-uniform vec2 u_L, u_S, u_R;
-out vec4 sortie;
-vec3 degradeA(vec2 p) {
-  float g = clamp(((p.x - u_L.x) / (u_R.x - u_L.x) - (p.y - u_S.y) / (u_L.y - u_S.y) + 1.) * .5, 0., 1.);
-  vec3 c0 = vec3(.306, .659, .961), c1 = vec3(.616, .361, 1.), c2 = vec3(1., .424, .671);
-  return g < .5 ? mix(c0, c1, g * 2.) : mix(c1, c2, g * 2. - 1.);
-}
-void main() {
-  float ac = abs(v_travers);
-  float profil = u_halo > 1.5 ? exp(-ac * ac * 3.5) * .85 * (1. - u_solide) : mix(smoothstep(1., .35, ac), smoothstep(1., .82, ac), u_solide);
-  float fil = .5 + .5 * sin(v_long * (.45 + v_graine * .5) - u_t * (11. + v_graine * 9.) + v_graine * 40.);
-  fil = mix(.35 + .65 * fil * fil, 1., u_solide);
-  vec3 c = mix(v_coul, degradeA(v_monde), u_solide);
-  c = mix(c, vec3(1.), (1. - u_solide) * .35 * pow(fil, 6.));
-  float a = profil * fil * v_lum * u_alpha * smoothstep(0., 3., min(v_x, 1. - v_x) * v_longPx);
-  sortie = vec4(c * a, a);
-}`;
-
-  const el = { toile: $('toile'), boiteA: $('boiteA'), trace: $('trace'), nom: $('nom'), trait: $('trait'), sous: $('sous'), marque: $('marque') };
-  const lettresSous = eclater(el.sous, true);
-  const balai = document.createElement('span');
-  balai.className = 'balai';
-  el.marque.append(balai);
-
-  let gl = null, prog = null, u = {}, vao = null, n = 0, geo = null, cam0 = null;
-  try {
-    gl = el.toile.getContext('webgl2', { antialias: true, premultipliedAlpha: true });
-    if (!gl) throw new Error('WebGL2 indisponible');
-    prog = compilerGL(gl, VS, FS);
-    for (const k of ['res', 'L', 'S', 'R', 'w', 'foyer', 'zoom', 'rot', 'bouts', 'decor', 'solide', 'halo', 't', 'alpha']) u[k] = gl.getUniformLocation(prog, 'u_' + k);
-    vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
-    const coins = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, coins);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, -1, 1, -1, 0, 1, 1, 1]), gl.STATIC_DRAW);
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    [[1, 4, 0], [2, 4, 4], [3, 3, 8]].forEach(([loc, k, off]) => {
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, k, gl.FLOAT, false, 11 * 4, off * 4);
-      gl.vertexAttribDivisor(loc, 1);
-    });
-    gl.bindVertexArray(null);
-  } catch (err) {
-    console.warn('Aurora : rubans désactivés —', err.message);
-    gl = null;
-    el.toile.hidden = true;
+  let grille = null;
+  function preparerGrille() {
+    const W = innerWidth, H = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
+    const cw = W < 700 ? 10 : 13, ch = Math.round(cw * 1.55);
+    const cols = Math.ceil(W / cw), rows = Math.ceil(H / ch);
+    // La planche : chaque glyphe, dans chaque teinte.
+    const planche = document.createElement('canvas');
+    planche.width = GLYPHES.length * cw * dpr; planche.height = TEINTES.length * ch * dpr;
+    const p = planche.getContext('2d');
+    p.scale(dpr, dpr);
+    p.font = `600 ${Math.round(ch * .72)}px ${MONO}`;
+    p.textAlign = 'center'; p.textBaseline = 'middle';
+    TEINTES.forEach((c, j) => { p.fillStyle = c; [...GLYPHES].forEach((g, i) => p.fillText(g, i * cw + cw / 2, j * ch + ch / 2)); });
+    // Le masque : AURORA écrit à la résolution de la grille, une case = un pixel.
+    const m = document.createElement('canvas'); m.width = cols; m.height = rows;
+    const q = m.getContext('2d', { willReadFrequently: true });
+    let taille = rows * .62;
+    q.font = `800 ${taille}px ${getComputedStyle(document.body).fontFamily}`;
+    const lw = q.measureText('AURORA').width;
+    if (lw > cols * .88) { taille *= cols * .88 / lw; q.font = `800 ${taille}px ${getComputedStyle(document.body).fontFamily}`; }
+    // Une case est plus haute que large : on tasse le mot en hauteur pour qu'il garde ses proportions à l'écran.
+    q.setTransform(1, 0, 0, cw / ch, 0, 0);
+    q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillStyle = '#fff';
+    q.fillText('AURORA', cols / 2, rows / 2 * ch / cw);
+    const d = q.getImageData(0, 0, cols, rows).data;
+    const masque = new Uint8Array(cols * rows);
+    for (let i = 0; i < masque.length; i++) masque[i] = d[i * 4 + 3] > 110 ? 1 : 0;
+    const colonnes = Array.from({ length: cols }, (_, c) => ({ v: 14 + h2(c, 1) * 26, o: h2(c, 2) * (rows + 30), L: 8 + h2(c, 3) * 18, rythme: 6 + h2(c, 4) * 14 }));
+    grille = { W, H, dpr, cw, ch, cols, rows, planche, masque, colonnes };
   }
 
-  const PALETTE = ['#4ea8f5', '#6fd3ff', '#6a5cff', '#9d5cff', '#c46cff', '#ff6cab', '#ff9ccb', '#3d33ff', '#f2f0ff'].map(rvb);
-  function lames(w) {
-    let s = 7;
-    const alea = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-    const v = [];
-    for (const jambe of [0, 1]) {
-      const poids = Array.from({ length: 38 }, () => .4 + alea() * 1.2), somme = poids.reduce((a, b) => a + b, 0);
-      let x = -w;
-      for (const p of poids) {
-        const larg = (p / somme) * 2 * w;
-        const c = PALETTE[(alea() * PALETTE.length) | 0];
-        v.push(jambe, x + larg / 2, larg, alea(), -.55 + alea() * .75, .8 + alea() * .75, .55 + alea() * .5, 0, ...c);
-        x += larg;
+  function dessiner(t) {
+    if (el.toile.hidden || !grille) return;
+    const { W, H, dpr, cw, ch, cols, rows, planche, masque, colonnes } = grille;
+    if (el.toile.width !== Math.round(W * dpr)) { el.toile.width = Math.round(W * dpr); el.toile.height = Math.round(H * dpr); }
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.fillStyle = '#0a0a0e'; x.fillRect(0, 0, W, H);
+    const m = lisse(...CUE.MASQUE, t), chute = lisse(...CUE.CHUTE, t), dissout = lisse(...CUE.DISSOUT, t);
+    const gel = Math.min(t, 1.6 + (t - 1.6) * .15);
+    const apparition = lisse(0, .3, t);
+    for (let c = 0; c < cols; c++) {
+      const col = colonnes[c], teinteCol = Math.min(6, Math.floor(c / cols * 7));
+      const tete = (gel * col.v + col.o) % (rows + col.L + 10) - 5;
+      for (let r = 0; r < rows; r++) {
+        const i = r * cols + c, dans = masque[i] === 1;
+        const derriere = tete - r;
+        let b = derriere >= 0 && derriere < col.L ? Math.pow(1 - derriere / col.L, 1.6) : 0;
+        let teinte = derriere >= 0 && derriere < 1 ? 7 : teinteCol;
+        if (dans) {
+          b = mix(b, .78 + .22 * h2(i, Math.floor(t * 9)), m);
+          if (m > .5) teinte = h2(i, 5) > .82 ? 7 : teinteCol;
+          if (h2(i, 9) < dissout) b = 0;
+        } else {
+          b *= (1 - .8 * m) * (1 - chute);
+        }
+        b *= apparition;
+        if (b < .04) continue;
+        const g = dans && m > .5 ? DENSES[Math.floor(h2(i, 77) * DENSES.length)] : Math.floor(h2(i, Math.floor(t * col.rythme)) * GLYPHES.length);
+        x.globalAlpha = Math.min(1, b);
+        x.drawImage(planche, g * cw * dpr, teinte * ch * dpr, cw * dpr, ch * dpr, c * cw, r * ch, cw, ch);
       }
     }
-    for (let i = 0; i < 40; i++) {
-      const cote = i % 2 ? 1 : -1;
-      v.push(2, cote * (w + 1.5 + alea() * 30), .4 + alea() * 1.4, alea(), -.7 + alea() * .5, 1.1 + alea() * .6, .35 + alea() * .5, 0, ...PALETTE[(alea() * PALETTE.length) | 0]);
-    }
-    return new Float32Array(v);
+    x.globalAlpha = 1;
   }
 
-  const CUE = { RECUL: [.2, 2.25], DECOR: [.9, 1.7], BOUTS: [1.15, 2.2], SOLIDE: [1.8, 2.45], A_NET: 2.35, TOILE_PART: 2.55, NOM: 2.55, TRAIT: 2.95, SOUS: 3.2 };
-  const recul = (k) => (k < .5 ? 16 * k ** 5 : 1 - Math.pow(-2 * k + 2, 5) / 2) * .82 + k * .18;
+  let pilote = null;
+  function construire() {
+    const { gsap, ScrambleTextPlugin } = window;
+    gsap.registerPlugin(ScrambleTextPlugin);
+    const SOUS = el.sous.textContent.toUpperCase();
+    const tl = gsap.timeline({ paused: true });
+    tl.set([el.titre, el.sous], { autoAlpha: 0 }, 0)
+      .set([el.trait, el.curseur], { autoAlpha: 0 }, 0)
+      .set(el.titre, { autoAlpha: 1 }, CUE.TITRE)
+      .to(el.titre, { duration: 1.0, scrambleText: { text: 'AURORA', chars: GLYPHES, revealDelay: .3, speed: .55 } }, CUE.TITRE)
+      .fromTo(el.titre, { filter: 'blur(6px)' }, { filter: 'blur(0px)', duration: .5 }, CUE.TITRE)
+      .set(el.curseur, { autoAlpha: 1 }, CUE.TITRE + .15)
+      .fromTo(el.trait, { autoAlpha: 1, scaleX: 0 }, { scaleX: 1, duration: .5, ease: 'steps(12)' }, CUE.SOUS)
+      .set(el.sous, { autoAlpha: 1 }, CUE.SOUS + .1)
+      .to(el.sous, { duration: .75, scrambleText: { text: SOUS, chars: '01#%/\\|<>', revealDelay: .15, speed: .8 } }, CUE.SOUS + .1);
+    return { demarrer(t) { tl.play(t); }, aller(t) { tl.pause(t); }, annuler() { tl.pause(0); } };
+  }
 
   lancer({
-    FIN: 3.8,
+    FIN: 3.75,
     preparer(reduit) {
-      geo = geometrieA(el.boiteA);
-      const theta = Math.atan2(geo.S[1] - geo.L[1], geo.S[0] - geo.L[0]);
-      cam0 = { foyer: [mix(geo.L[0], geo.S[0], .45), mix(geo.L[1], geo.S[1], .45)], zoom: Math.max(innerWidth, innerHeight) / (geo.w * 2) * 1.1, rot: -Math.PI / 2 - theta };
-      if (gl) {
-        el.toile.hidden = reduit;
-        const d = lames(geo.w);
-        n = d.length / 11;
-        gl.bindVertexArray(vao);
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.getVertexAttrib(1, gl.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING));
-        gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW);
-        gl.bindVertexArray(null);
+      el.toile.hidden = reduit;
+      if (!reduit) preparerGrille();
+      if (!pilote && window.gsap && window.ScrambleTextPlugin) {
+        try { pilote = construire(); } catch (err) { console.warn('Aurora : GSAP indisponible —', err.message); }
       }
-      const nom = el.nom;
-      balai.style.left = nom.offsetLeft + 'px';
-      balai.style.top = nom.offsetTop + nom.offsetHeight * .12 + 'px';
-      balai.style.height = nom.offsetHeight * .78 + 'px';
     },
-    dessiner(t) {
-      if (!gl || el.toile.hidden) return;
-      const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
-      const lw = Math.round(W * dpr), lh = Math.round(H * dpr);
-      if (el.toile.width !== lw || el.toile.height !== lh) { el.toile.width = lw; el.toile.height = lh; }
-      gl.viewport(0, 0, lw, lh);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      const p = recul(lisse(...CUE.RECUL, t));
-      const zoom = Math.exp(mix(Math.log(cam0.zoom), 0, p));
-      gl.useProgram(prog);
-      gl.uniform2f(u.res, W, H);
-      gl.uniform2f(u.L, ...geo.L);
-      gl.uniform2f(u.S, ...geo.S);
-      gl.uniform2f(u.R, ...geo.R);
-      gl.uniform1f(u.w, geo.w);
-      gl.uniform2f(u.foyer, mix(cam0.foyer[0], W / 2, p), mix(cam0.foyer[1], H / 2, p));
-      gl.uniform1f(u.zoom, zoom);
-      gl.uniform1f(u.rot, mix(cam0.rot, 0, enDouceur(lisse(.35, 2.2, t))));
-      gl.uniform1f(u.bouts, enDouceur(lisse(...CUE.BOUTS, t)));
-      gl.uniform1f(u.decor, lisse(...CUE.DECOR, t));
-      gl.uniform1f(u.solide, enDouceur(lisse(...CUE.SOLIDE, t)));
-      gl.uniform1f(u.t, t);
-      gl.uniform1f(u.alpha, lisse(0, .3, t));
-      gl.bindVertexArray(vao);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.ONE, gl.ONE);                       // halo, additif
-      gl.uniform1f(u.halo, 5);
-      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
-      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);       // cœur
-      gl.uniform1f(u.halo, 1);
-      gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
-      gl.bindVertexArray(null);
-    },
+    dessiner,
     animer() {
-      const L = [];
-      const anim = (cible, kf, delai, duree, easing = 'cubic-bezier(.2,.7,.2,1)') =>
-        L.push(cible.animate(kf, { delay: delai * 1000, duration: duree * 1000, easing, fill: 'both' }));
-      const largeurNom = el.nom.offsetWidth;
-      anim(el.trace, [{ opacity: 0 }, { opacity: 1 }], CUE.A_NET, .35, 'ease-out');
-      if (gl) anim(el.toile, [{ opacity: 1 }, { opacity: 0 }], CUE.TOILE_PART, .4, 'ease-in');
-      anim(el.nom, [{ clipPath: 'inset(-10% 100% -10% 0)' }, { clipPath: 'inset(-10% 0% -10% 0)' }], CUE.NOM, .55, 'cubic-bezier(.55,0,.25,1)');
-      anim(balai, [{ transform: 'translateX(0)', opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: 1, offset: .85 }, { transform: `translateX(${largeurNom}px)`, opacity: 0 }], CUE.NOM, .55, 'cubic-bezier(.55,0,.25,1)');
-      anim(el.trait, [{ transform: 'scaleX(0)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: 'scaleX(1)', opacity: 1 }], CUE.TRAIT, .5, 'cubic-bezier(.2,.8,.2,1)');
-      lettresSous.forEach((l, i) => anim(l, [{ opacity: 0, transform: 'translateY(.5em)', filter: 'blur(4px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0px)' }], CUE.SOUS + i * .014, .5));
+      const L = pilote ? [pilote] : [];
+      L.push(el.toile.animate([{ opacity: 1 }, { opacity: 0 }], { delay: 3000, duration: 400, easing: 'ease-out', fill: 'both' }));
       return L;
     },
   });
