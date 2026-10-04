@@ -5,15 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Éclipse</title>
+<title>Aurora — Aube</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Éclipse » : une éclipse totale. La lune glisse devant un soleil blanc, le ciel s'éteint,
- * les grains de Baily scintillent sur le bord, puis l'anneau de diamant — un seul point de lumière,
- * avec ses aigrettes —, et la couronne se déploie aux couleurs d'Aurora. Quand elle pâlit, le Λ est
- * là où était le soleil. Shader WebGL2 (couronne en bruit fractal polaire) ; son : bourdon, chœur
- * synthétique, tintement du diamant, signature.
+ * Intro « Aube » (2,7 s) : Aurora, c'est l'aube. Une ligne d'horizon s'étire, la marque se lève
+ * derrière elle comme le soleil, la ligne se resserre et devient le trait sous le nom. Puis le jour
+ * se lève pour de bon : l'horizon s'étend d'un bord à l'autre et l'écran s'ouvre en deux sur l'app.
+ * Chaque élément naît du précédent : pas de fondu entre deux scènes.
  */
 :root {
   color-scheme: dark;
@@ -183,9 +182,332 @@ body {
   .commandes { right: 16px; }
   .bouton span { display: none; }
   .bouton { padding: 10px; }
-  .etiquette { left: 16px; }
+  .etiquette { left: 16px; font-size: 0; }
+  .etiquette b { font-size: 12px; }
 }
 
+/* ───────────── L'app, là où l'intro débouche ───────────── */
+.app {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--fond);
+}
+.js:not(.pret) .app { opacity: 0; }
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.intro .scene { position: absolute; }
+.app-cadre {
+  height: 100%;
+  padding: 0 clamp(16px, 3.4vw, 48px);
+}
+.app-haut {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 3.4vw, 44px);
+  height: 72px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-a {
+  display: block;
+  height: 25px;
+  aspect-ratio: 36 / 39;
+  overflow: visible;
+}
+.logo-a path {
+  fill: none;
+  stroke: url(#aurora-degrade);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.logo-nom {
+  display: block;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.03em;
+}
+.onglets {
+  display: flex;
+  gap: 24px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--gris);
+  white-space: nowrap;
+}
+.onglets .actif { position: relative; color: var(--encre); }
+.onglets .actif::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--indigo), var(--rose));
+}
+.app-outils {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.rond {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--verre-bord);
+  border-radius: 50%;
+  background: var(--verre);
+}
+.rond svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: var(--encre);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.avatar { border: 0; background: linear-gradient(135deg, var(--bleu), var(--violet) 55%, var(--rose)); }
+.app-corps {
+  display: grid;
+  gap: clamp(18px, 3.4vh, 30px);
+  padding-top: 4px;
+}
+
+/* La une : un ciel d'aurore boréale aux couleurs d'Aurora, en dégradés. */
+.une {
+  position: relative;
+  height: clamp(220px, 47vh, 440px);
+  overflow: hidden;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #0b1132 0%, #161039 48%, #22113a 76%, #120a1c 100%);
+  isolation: isolate;
+}
+.une-ciel {
+  position: absolute;
+  inset: -25% -10% 25% -10%;
+  background:
+    radial-gradient(34% 50% at 24% 62%, rgb(78 168 245 / .62), transparent 70%),
+    radial-gradient(30% 46% at 47% 46%, rgb(157 92 255 / .66), transparent 70%),
+    radial-gradient(26% 42% at 70% 56%, rgb(255 108 171 / .5), transparent 70%),
+    radial-gradient(24% 38% at 90% 36%, rgb(106 92 255 / .45), transparent 70%);
+  filter: blur(22px);
+  transform: skewY(-7deg);
+}
+.une-etoiles {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.3px 1.3px at 8% 14%, #fff, transparent),
+    radial-gradient(1px 1px at 19% 33%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 33% 9%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 22%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 63% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 77% 18%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 88% 11%, #fff, transparent),
+    radial-gradient(1px 1px at 94% 29%, #fff, transparent),
+    radial-gradient(1px 1px at 41% 30%, #fff, transparent);
+  opacity: .7;
+}
+.une-monts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  background: #08070d;
+  clip-path: polygon(0 58%, 8% 40%, 15% 52%, 26% 20%, 35% 44%, 44% 32%, 53% 50%, 64% 16%, 74% 42%, 84% 28%, 93% 46%, 100% 36%, 100% 100%, 0 100%);
+}
+.une-monts.loin {
+  height: 52%;
+  background: #15112a;
+  clip-path: polygon(0 40%, 11% 24%, 21% 38%, 31% 14%, 42% 34%, 50% 22%, 60% 40%, 71% 10%, 82% 32%, 91% 20%, 100% 30%, 100% 100%, 0 100%);
+}
+.une::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(10 10 14 / .78), rgb(10 10 14 / .2) 58%, transparent);
+}
+.une-texte {
+  position: absolute;
+  left: clamp(20px, 4vw, 52px);
+  bottom: clamp(20px, 5vh, 48px);
+  z-index: 1;
+}
+.puce {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #cfc6ff;
+}
+.une h2 {
+  margin: 10px 0 8px;
+  font-size: clamp(34px, 5.2vw, 60px);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.une p { margin: 0 0 20px; font-size: 14px; color: #b9b5cc; }
+.une-boutons { display: flex; gap: 10px; }
+.btn-plein, .btn-verre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px 11px 15px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.btn-plein { background: var(--encre); color: var(--fond); }
+.btn-verre { border: 1px solid rgb(242 240 255 / .2); background: rgb(242 240 255 / .12); }
+.btn-plein svg, .btn-verre svg { width: 16px; height: 16px; }
+.btn-plein svg path { fill: currentColor; }
+.btn-verre svg path { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.rangee h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.cartes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(170px, 18.5vw, 250px);
+  gap: 14px;
+}
+.carte, .affiche {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background:
+    radial-gradient(90% 80% at 80% 10%, rgb(255 255 255 / .14), transparent 60%),
+    linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+}
+.carte { aspect-ratio: 16 / 9; }
+.carte b { position: absolute; left: 12px; top: 10px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.carte .direct {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgb(10 10 14 / .45);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.carte .direct::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #ff4d6d;
+  vertical-align: 1px;
+}
+.carte .prog { position: absolute; left: 12px; bottom: 20px; font-size: 12.5px; color: rgb(255 255 255 / .78); }
+.carte .progres { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 3px; border-radius: 3px; background: rgb(255 255 255 / .2); }
+.carte .progres i { display: block; height: 100%; border-radius: inherit; background: #fff; }
+.affiches { grid-auto-columns: clamp(118px, 12.5vw, 172px); }
+.affiche { aspect-ratio: 2 / 3; }
+.affiche span {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+@media (max-width: 760px) {
+  .onglets { display: none; }
+  .une-boutons .btn-verre { display: none; }
+}
+
+
+.intro { --y: 60vh; }
+/* Le jour, entre l'app et les volets : on ne le voit que dans l'ouverture, d'abord pleine lumière. */
+.jour {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    transparent calc(var(--y) - 22vh),
+    rgb(106 92 255 / .45) calc(var(--y) - 8vh),
+    rgb(236 226 255 / .95) var(--y),
+    rgb(255 108 171 / .4) calc(var(--y) + 8vh),
+    transparent calc(var(--y) + 22vh));
+}
+.volet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  background: var(--fond);
+}
+.volet.haut { top: 0; height: calc(var(--y) + 1px); }
+.volet.bas { top: var(--y); bottom: 0; }
+.lueur {
+  position: absolute;
+  left: 50%;
+  width: min(1180px, 96vw);
+  translate: -50% 0;
+  pointer-events: none;
+}
+.haut .lueur {
+  bottom: 0;
+  height: min(560px, 66vh);
+  background: radial-gradient(50% 100% at 50% 100%, rgb(157 92 255 / .34), rgb(255 108 171 / .12) 46%, transparent 78%);
+}
+.bas .lueur {
+  top: 0;
+  height: min(280px, 34vh);
+  background: radial-gradient(50% 100% at 50% 0%, rgb(106 92 255 / .2), transparent 76%);
+}
+/* La marque se lève derrière la ligne : chaque moitié est coupée à l'horizon. */
+.leve-clip {
+  display: grid;
+  justify-items: center;
+  clip-path: inset(-60% -50% calc(var(--k) * -17px) -50%);
+}
+.nom { margin-top: calc(var(--k) * 26px); }
+.horizon-boite {
+  position: relative;
+  width: calc(var(--k) * 300px);
+  height: max(2px, calc(var(--k) * 2px));
+  margin-top: calc(var(--k) * 16px);
+}
+.horizon {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--bleu) 16%, var(--violet) 50%, var(--rose) 84%, transparent);
+  box-shadow: 0 0 calc(var(--k) * 12px) rgb(157 92 255 / .7);
+}
+.horizon::after {
+  content: '';
+  position: absolute;
+  inset: -1px 32%;
+  border-radius: 2px;
+  background: radial-gradient(closest-side, #fff, transparent);
+  opacity: .55;
+}
+.descend-clip {
+  margin-top: calc(var(--k) * 22px);
+  clip-path: inset(calc(var(--k) * -23px) -50% -60% -50%);
+}
+.descend-clip .sous { margin: 0; }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -208,18 +530,78 @@ body {
     </linearGradient>
   </defs>
 </svg>
-<canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="scene" aria-hidden="true">
-  <div class="marque" id="marque">
-    <div class="a-boite" id="boiteA">
-      <svg class="a" id="a" viewBox="14 13 36 39" aria-hidden="true"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg>
-    </div>
-    <div class="nom" id="nom">Aurora</div>
-    <div class="trait-boite" id="boiteTrait"><span class="trait" id="trait"></span></div>
-    <p class="sous" id="sous">Chaînes · Films · Séries</p>
+<div class="app" id="app" aria-hidden="true">
+  <div class="app-cadre" id="appCadre">
+    <header class="app-haut" id="appHaut">
+      <div class="logo">
+        <svg class="logo-a" id="logoA" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg>
+        <span class="logo-nom" id="logoNom">Aurora</span>
+      </div>
+      <nav class="onglets"><span class="actif">Accueil</span><span>Direct</span><span>Films</span><span>Séries</span><span>Ma liste</span></nav>
+      <div class="app-outils">
+        <span class="rond"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.2"/><path d="M13 13l3.6 3.6"/></svg></span>
+        <span class="rond avatar"></span>
+      </div>
+    </header>
+    <main class="app-corps">
+      <section class="une" id="une">
+        <div class="une-ciel"></div>
+        <div class="une-etoiles"></div>
+        <div class="une-monts loin"></div>
+        <div class="une-monts"></div>
+        <div class="une-texte">
+          <span class="puce">Nouveau · Film</span>
+          <h2>Nuit polaire</h2>
+          <p>Thriller · 2026 · 1 h 52</p>
+          <div class="une-boutons">
+            <span class="btn-plein"><svg viewBox="0 0 20 20"><path d="M6.5 4.5v11l9-5.5z"/></svg>Regarder</span>
+            <span class="btn-verre"><svg viewBox="0 0 20 20"><path d="M10 4.5v11M4.5 10h11"/></svg>Ma liste</span>
+          </div>
+        </div>
+      </section>
+      <section class="rangee" id="rangee1">
+        <h3>En direct</h3>
+        <div class="cartes">
+          <div class="carte" style="--c1:#1d3f8f;--c2:#0f1a3d"><b>Info 24</b><span class="direct">Direct</span><span class="prog">Le journal du soir</span><span class="progres"><i style="width:62%"></i></span></div>
+          <div class="carte" style="--c1:#0f6b4f;--c2:#0b2a26"><b>Stade</b><span class="direct">Direct</span><span class="prog">Finale · 2e mi-temps</span><span class="progres"><i style="width:78%"></i></span></div>
+          <div class="carte" style="--c1:#6a2a8f;--c2:#21123a"><b>Ciné Nuit</b><span class="direct">Direct</span><span class="prog">Classiques du soir</span><span class="progres"><i style="width:24%"></i></span></div>
+          <div class="carte" style="--c1:#8f4a1d;--c2:#2b160e"><b>Planète</b><span class="direct">Direct</span><span class="prog">Les grands fleuves</span><span class="progres"><i style="width:45%"></i></span></div>
+          <div class="carte" style="--c1:#8f1d4f;--c2:#2a0e1c"><b>Studio Live</b><span class="direct">Direct</span><span class="prog">Session acoustique</span><span class="progres"><i style="width:12%"></i></span></div>
+          <div class="carte" style="--c1:#1d7a8f;--c2:#0c2328"><b>Kids</b><span class="direct">Direct</span><span class="prog">Dessins animés</span><span class="progres"><i style="width:88%"></i></span></div>
+        </div>
+      </section>
+      <section class="rangee" id="rangee2">
+        <h3>Films populaires</h3>
+        <div class="cartes affiches">
+          <div class="affiche" style="--c1:#2b3f9e;--c2:#120b2a"><span>Le Dernier Phare</span></div>
+          <div class="affiche" style="--c1:#9e2b6a;--c2:#1c0b1f"><span>Orbite</span></div>
+          <div class="affiche" style="--c1:#2b9e86;--c2:#0b1f1c"><span>Marée haute</span></div>
+          <div class="affiche" style="--c1:#6a2b9e;--c2:#150b24"><span>Les Veilleurs</span></div>
+          <div class="affiche" style="--c1:#9e6a2b;--c2:#1f140b"><span>Cendres</span></div>
+          <div class="affiche" style="--c1:#2b6a9e;--c2:#0b141f"><span>Néon City</span></div>
+          <div class="affiche" style="--c1:#9e2b2b;--c2:#1f0b0b"><span>Fréquence</span></div>
+          <div class="affiche" style="--c1:#4f9e2b;--c2:#101f0b"><span>Lisière</span></div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
-<p class="etiquette"><b>Éclipse</b> · shader WebGL2, Web Audio</p>
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="jour" id="jour"></div>
+  <div class="volet haut" id="voletHaut"><div class="lueur" id="lueurHaut"></div></div>
+  <div class="volet bas" id="voletBas"><div class="lueur" id="lueurBas"></div></div>
+  <div class="scene">
+    <div class="marque" id="marque">
+      <div class="leve-clip" id="leveClip">
+        <div class="a-boite" id="boiteA"><svg class="a" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg></div>
+        <div class="nom" id="nom">Aurora</div>
+      </div>
+      <div class="horizon-boite" id="horizonBoite"><span class="horizon" id="horizon"></span></div>
+      <div class="descend-clip" id="descendClip"><p class="sous" id="sous">Chaînes · Films · Séries</p></div>
+    </div>
+  </div>
+</div>
+<p class="etiquette"><b>Aube</b> · CSS, Web Animations, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -753,9 +1135,35 @@ void main() {
   const figerPiste = (a, t) => (estWaapi(a) ? (a.pause(), (a.currentTime = t * 1000)) : a.aller(t));
   const annulerPiste = (a) => (estWaapi(a) ? a.cancel() : a.annuler());
 
-  function lancer({ FIN, preparer, dessiner, animer, sons, sonFin, ambiant = false, volume = 1 }) {
+  /*
+   * Une piste écrite en temps absolus : suite(cible, [[0.2, {…}], [0.9, {…}, easing], …]). Une seule
+   * piste par élément et par propriété : sinon le remplissage de la seconde masque la première avant
+   * son départ. L'easing d'une étape vaut pour le segment qui la suit. role 'app' : piste de l'app,
+   * mise directement à son état final quand on passe l'intro.
+   */
+  function suite(cible, etapes, { role = 'intro', ease = 'linear', fill = 'both', pseudo } = {}) {
+    const t0 = etapes[0][0], d = Math.max(.001, etapes[etapes.length - 1][0] - t0);
+    const images = etapes.map(([t, props, e]) => ({ ...props, offset: clamp((t - t0) / d, 0, 1), easing: e || ease }));
+    return cible.animate(images, { delay: t0 * 1000, duration: d * 1000, fill, id: role, ...(pseudo ? { pseudoElement: pseudo } : {}) });
+  }
+  // Échantillonne une courbe f(u) (u de 0 à 1) en images-clés linéaires : pour les zooms en
+  // exponentielle et les trajectoires, qu'aucune courbe de Bézier ne rend juste.
+  // Une courbe cubic-bezier() de CSS, évaluée en JS (par dichotomie) pour échantillonner.
+  function bezierCSS(x1, y1, x2, y2) {
+    const f = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let lo = 0, hi = 1, t = x;
+      for (let i = 0; i < 32; i++) { t = (lo + hi) / 2; if (f(x1, x2, t) < x) lo = t; else hi = t; }
+      return f(y1, y2, t);
+    };
+  }
+  const echantillons = (n, f) => Array.from({ length: n + 1 }, (_, i) => ({ ...f(i / n), offset: i / n }));
+
+  function lancer({ FIN, SORTIE = null, preparer, dessiner, animer, sons, sonFin, ambiant = false, volume = 1 }) {
     Sono.volume = volume;
-    let anims = [], t0 = 0, raf = 0, reduit = false;
+    let anims = [], fondus = [], t0 = 0, raf = 0, reduit = false, saute = false;
     let fige = params.has('t') ? Math.max(0, parseFloat(params.get('t')) || 0) : null;
     const maintenant = () => (document.timeline && document.timeline.currentTime) ?? performance.now();
     const temps = (now = maintenant()) => fige ?? Math.max(0, (now - t0) / 1000);
@@ -768,6 +1176,8 @@ void main() {
     }
     function jouer() {
       for (const a of anims) annulerPiste(a);
+      for (const a of fondus) a.cancel();
+      fondus = []; saute = false;
       Sono.couper(.05);
       reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
       majEchelle();
@@ -785,7 +1195,8 @@ void main() {
       if (!raf) raf = requestAnimationFrame(boucle);
     }
     function passer() {
-      if (fige != null || temps() >= FIN) return;
+      if (fige != null || saute || temps() >= (SORTIE ?? FIN)) return;
+      if (SORTIE != null) { entrerDansApp(); return; }
       const now = maintenant();
       t0 = now - FIN * 1000;
       // On saute à la fin par currentTime / finish() : changer startTime laisse parfois Chrome
@@ -801,6 +1212,27 @@ void main() {
       document.body.style.opacity = '.999';
       requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.opacity = ''; }));
       if (!raf) raf = requestAnimationFrame(boucle);
+    }
+
+    /*
+     * Passer une intro qui débouche sur l'app : l'app se met tout de suite en place, et l'intro
+     * s'efface en fondu enchaîné, sans s'arrêter net — ses animations continuent sous le fondu.
+     */
+    function entrerDansApp() {
+      saute = true;
+      for (const a of anims) {
+        if (!estWaapi(a) || a.id !== 'app') continue;
+        if (a.effect.getComputedTiming().endTime <= FIN * 1000) a.finish();
+        else { a.currentTime = FIN * 1000; a.play(); }
+      }
+      const intro = $('intro'), app = $('app'), cadre = $('appCadre');
+      const douceur = 'cubic-bezier(.2,.7,.2,1)';
+      // L'app passe-t-elle au-dessus de l'intro (Tracé) ou dessous (les autres) ?
+      if ((+getComputedStyle(app).zIndex || 0) > (+getComputedStyle(intro).zIndex || 0)) fondus.push(app.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: douceur }));
+      else fondus.push(intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: douceur, fill: 'forwards' }));
+      fondus.push(cadre.animate([{ transform: 'scale(.985)' }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.16,1,.3,1)' }));
+      Sono.couper(.3);
+      if (sonFin) Sono.jouer(sonFin);
     }
 
     if (sons) Sono.installer(jouer);
@@ -843,89 +1275,71 @@ void main() {
   }
 
 
-  const T_DIAMANT = 1.55, T_TOTALE = 1.75;
-  const FS = `#version 300 es
-precision highp float;
-out vec4 sortie;
-uniform vec2 u_res, u_centre;
-uniform float u_t, u_R, u_lune, u_couronne, u_diamant, u_fin, u_ech;
-${GLSL_OUTILS}
-void main() {
-  vec2 p = vec2(gl_FragCoord.x, u_res.y - gl_FragCoord.y) / u_ech;
-  vec2 d = p - u_centre;
-  float r = length(d), a = atan(d.y, d.x);
-  vec2 lune = u_centre + vec2(mix(-2.6, 0., u_lune) * u_R, mix(.35, 0., u_lune) * u_R);
-  float dl = length(p - lune);
-  float cache = smoothstep(u_R * 1.005, u_R * .995, dl);
-  // Le soleil et sa lumière diffuse, que la lune éteint.
-  float decouvert = 1. - u_lune;
-  vec3 c = vec3(.039, .039, .055);
-  float soleil = smoothstep(u_R, u_R * .99, r);
-  c += vec3(1., .97, .92) * soleil * (1. - cache);
-  c += vec3(.55, .5, .9) * exp(-r / (u_R * 1.4)) * .35 * (.2 + decouvert) * (1. - u_couronne * .5);
-  // La couronne : des jets de lumière en bruit fractal polaire, aux couleurs de la marque.
-  float rr = max(r - u_R * .98, 0.) / u_R;
-  float jets = fbm(vec2(a * 3.2 + 3., rr * 1.4 - u_t * .08)) * .7 + fbm(vec2(a * 9. - 1., rr * 3. + u_t * .05)) * .5;
-  float cour = exp(-rr * 2.4) * (.35 + jets * 1.3) * step(u_R * .995, r);
-  vec3 teinte = marque(.5 + .5 * sin(a + 1.2));
-  c += mix(vec3(1.), teinte, .55) * cour * u_couronne * 1.15;
-  // Les protubérances roses au ras du bord.
-  c += vec3(1., .35, .6) * exp(-pow((r - u_R) / (u_R * .025), 2.)) * smoothstep(.55, .8, bruit(vec2(a * 6., u_t * .3))) * u_couronne * .9;
-  // L'anneau de diamant : un point aveuglant sur le bord, avec ses aigrettes.
-  vec2 pd = u_centre + vec2(cos(-.75), sin(-.75)) * u_R;
-  vec2 dd = p - pd;
-  float diam = exp(-dot(dd, dd) / (u_R * u_R * .004)) * 2. + exp(-abs(dd.y) / 1.5) * exp(-abs(dd.x) / (u_R * 1.2)) * .8 + exp(-abs(dd.x) / 1.5) * exp(-abs(dd.y) / (u_R * .9)) * .6;
-  c += vec3(1., .98, .95) * diam * u_diamant;
-  c += vec3(.8, .78, 1.) * exp(-r / (u_R * 2.2)) * u_diamant * .18;
-  c = mix(c, vec3(.039, .039, .055), u_fin);
-  sortie = vec4(c, 1.);
-}`;
+  const GESTE = 'cubic-bezier(.65,0,.35,1)', LEVER = 'cubic-bezier(.2,.8,.2,1)', PORTES = 'cubic-bezier(.76,0,.24,1)';
+  const SORTIE = 1.7, OUVRE = SORTIE + .2, PORTES_D = .62, FIN = OUVRE + .8;
+  eclater($('sous'), true);
+  let G = null;
 
-  const el = elementsMarque();
-  let gl = null, prog = null, u = {}, geo = null;
-  try {
-    gl = $('toile').getContext('webgl2', { antialias: false, alpha: false });
-    if (!gl) throw new Error('WebGL2 indisponible');
-    prog = compilerGL(gl, VS_ECRAN, FS);
-    for (const n of ['res', 'centre', 't', 'R', 'lune', 'couronne', 'diamant', 'fin', 'ech']) u[n] = gl.getUniformLocation(prog, 'u_' + n);
-  } catch (err) { console.warn('Aurora : éclipse désactivée —', err.message); gl = null; $('toile').hidden = true; }
-
-  function dessiner(t) {
-    if (!gl || $('toile').hidden || !geo) return;
-    const toile = $('toile'), dpr = Math.min(devicePixelRatio || 1, 1.5), W = Math.round(innerWidth * dpr), H = Math.round(innerHeight * dpr);
-    if (toile.width !== W || toile.height !== H) { toile.width = W; toile.height = H; }
-    gl.viewport(0, 0, W, H);
-    gl.useProgram(prog);
-    gl.uniform2f(u.res, W, H);
-    gl.uniform1f(u.ech, W / innerWidth);
-    gl.uniform2f(u.centre, ...geo.centre);
-    gl.uniform1f(u.t, t);
-    gl.uniform1f(u.R, 88 * echelle());
-    gl.uniform1f(u.lune, sortie4(lisse(0, T_DIAMANT + .15, t) * .9 + lisse(T_DIAMANT, T_TOTALE, t) * .1));
-    gl.uniform1f(u.couronne, lisse(T_DIAMANT - .1, T_TOTALE + .3, t) * (1 - lisse(2.55, 3.0, t)));
-    gl.uniform1f(u.diamant, Math.exp(-Math.pow((t - T_DIAMANT) / .12, 2)));
-    gl.uniform1f(u.fin, lisse(2.75, 3.15, t));
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  function preparer() {
+    const r = $('horizonBoite').getBoundingClientRect(), y = r.top + r.height / 2;
+    $('intro').style.setProperty('--y', `${y.toFixed(1)}px`);
+    $('appCadre').style.transformOrigin = `50% ${y.toFixed(1)}px`;
+    G = { y, largeur: r.width, haut: $('leveClip').offsetHeight, bas: $('sous').offsetHeight };
   }
 
+  function animer() {
+    const L = [], k = echelle(), W = innerWidth;
+    const p = (cible, etapes, o) => L.push(suite(cible, etapes, o));
+    const large = W * .62 / G.largeur, plein = W * 1.5 / G.largeur;
+    // L'horizon : il s'étire depuis le centre, se resserre en trait, puis s'étend d'un bord à l'autre.
+    p($('horizon'), [
+      [.08, { transform: 'scaleX(0)', opacity: 0 }, GESTE],
+      [.6, { transform: `scaleX(${large})`, opacity: 1 }],
+      [.85, { transform: `scaleX(${large})`, opacity: 1 }, GESTE],
+      [1.3, { transform: 'scaleX(1)', opacity: 1 }],
+      [SORTIE, { transform: 'scaleX(1)', opacity: 1 }, 'cubic-bezier(.6,0,.3,1)'],
+      [SORTIE + .28, { transform: `scaleX(${plein})`, opacity: 1 }, 'ease-in'],
+      [OUVRE + .16, { transform: `scaleX(${plein})`, opacity: 0 }],
+    ]);
+    p($('horizon'), [[.08, { opacity: 1 }], [.85, { opacity: 1 }, 'ease-in-out'], [1.3, { opacity: .55 }], [SORTIE, { opacity: .55 }, 'ease-in'], [SORTIE + .26, { opacity: 1 }]], { pseudo: '::after' });
+    // Le lever : le Λ d'abord, le nom un rien après, depuis sous la ligne.
+    const monte = G.haut + 17 * k;
+    p($('boiteA'), [[.3, { transform: `translateY(${monte}px)` }, LEVER], [1.25, { transform: 'translateY(0)' }]]);
+    p($('nom'), [[.4, { transform: `translateY(${monte}px)` }, LEVER], [1.35, { transform: 'translateY(0)' }]]);
+    p($('lueurHaut'), [[.3, { opacity: 0 }, 'ease-out'], [1.05, { opacity: 1 }, 'ease-in-out'], [1.6, { opacity: .72 }]]);
+    p($('lueurBas'), [[.3, { opacity: 0 }, 'ease-out'], [1.05, { opacity: .85 }, 'ease-in-out'], [1.6, { opacity: .55 }]]);
+    // Le sous-titre descend de la ligne, quand elle s'est resserrée.
+    p($('sous'), [[.98, { transform: `translateY(${-(G.bas + 23 * k)}px)` }, LEVER], [1.55, { transform: 'translateY(0)' }]]);
+    // Le jour : l'écran s'ouvre à l'horizon. Chaque moitié emporte sa part de la marque.
+    const portes = (cible, vers) => p(cible, [[OUVRE, { transform: 'translateY(0)' }, PORTES], [OUVRE + PORTES_D, { transform: `translateY(${vers})` }]]);
+    portes($('voletHaut'), '-100%');
+    portes($('voletBas'), '100%');
+    portes($('leveClip'), `${-(G.y + 1)}px`);
+    portes($('descendClip'), `${innerHeight - G.y}px`);
+    p($('jour'), [[OUVRE + .05, { opacity: 1 }, 'cubic-bezier(.3,0,.3,1)'], [OUVRE + .36, { opacity: 0 }]]);
+    p($('intro'), [[FIN - .01, { visibility: 'visible' }], [FIN, { visibility: 'hidden' }]]);
+    // L'app, dessous, s'avance depuis la ligne d'horizon.
+    p($('appCadre'), [[OUVRE, { transform: 'scale(.94)', filter: 'brightness(.55)' }, 'cubic-bezier(.25,.7,.2,1)'], [FIN, { transform: 'none', filter: 'none' }]], { role: 'app' });
+    return L;
+  }
+
+  // Le son : un fil aigu qui s'étire avec l'horizon, la nappe chaude du lever, la signature quand la
+  // marque est posée ; à l'ouverture, un souffle large de part et d'autre.
   function sons(o, b) {
-    o.ton(b, 55, { duree: 3.6, crete: .09, attaque: 1.2, type: 'sawtooth', filtre: 260, humide: .4, courbe: 'lin' });
-    o.nappe(b + .5, [220, 277.18, 329.63, 440], { duree: 2.6, attaque: 1.1, crete: .04, filtre: 900, type: 'triangle' });
-    o.souffle(b + .4, { duree: 1.2, f0: 1200, f1: 400, q: 3, crete: .03, attaque: .9, humide: .8 });
-    o.cloche(b + T_DIAMANT, 2637, { crete: .07, duree: 3 });
-    o.cloche(b + T_DIAMANT + .02, 3520, { crete: .035, duree: 2.4 });
-    o.impact(b + T_TOTALE, { crete: .3, grave: 45, duree: 2.2, bruit: .2, humide: .7 });
-    o.signature(b + 2.7, 'nappe');
+    o.ton(b + .08, 1318.5, { duree: .9, crete: .012, attaque: .4, humide: .6 });
+    o.souffle(b + .08, { duree: .55, f0: 2200, f1: 6000, q: 3, crete: .025, attaque: .45, humide: .5 });
+    o.nappe(b + .3, [110, 164.81, 220, 277.18], { duree: 2.2, attaque: .8, crete: .05, filtre: 900 });
+    o.signature(b + .86, 'nappe');
+    o.souffle(b + SORTIE, { duree: .3, f0: 1500, f1: 7000, q: 2, crete: .03, attaque: .27, humide: .5 });
+    for (const pan of [-.75, .75]) o.souffle(b + OUVRE, { duree: PORTES_D, f0: 1600, f1: 280, q: .8, crete: .07, attaque: .18, humide: .4, pan0: pan * .3, pan1: pan });
+    o.ton(b + OUVRE, 70, { duree: .7, crete: .07, attaque: .05, vers: 45, humide: .2 });
   }
+  const sonFin = (o, b) => {
+    for (const pan of [-.7, .7]) o.souffle(b, { duree: .45, f0: 1600, f1: 300, q: .8, crete: .05, attaque: .12, humide: .4, pan0: pan * .3, pan1: pan });
+    o.nappe(b + .1, [220, 277.18, 329.63, 440], { duree: 1.6, attaque: .1, crete: .03, filtre: 1400, type: 'sine' });
+  };
 
-  lancer({
-    FIN: 3.85,
-    sons,
-    sonFin: (o, b) => o.signature(b + .05, 'nappe', .8),
-    preparer(reduit) { geo = geometrieA(el.boiteA); if (gl) $('toile').hidden = reduit; },
-    dessiner,
-    animer: () => revelerMarque(el, { a: 2.6, nom: 2.85, trait: 3.15, sous: 3.35, dureeA: .7, style: 'espace' }),
-  });
+  lancer({ FIN, SORTIE, sons, sonFin, volume: 1.5, preparer, animer });
 })();
 </script>
 </body>

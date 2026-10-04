@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Pulsation</title>
+<title>Aurora — Éclat</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Variante « Pulsation » : l'intro est une musique, et l'image l'écoute. Un spectre circulaire bat
- * au rythme du kick (120 BPM), la tension monte, puis le drop : le cercle s'effondre, le Λ claque au
- * centre et le trait sous le nom naît d'un égaliseur qui s'aplatit. Quand le son joue, les barres
- * lisent son spectre réel (AnalyserNode) ; sinon, un spectre calculé sur la même partition.
+ * Intro « Éclat » (1,7 s), la plus courte, faite selon les règles d'Android : une icône animée de
+ * moins d'une seconde, puis l'app. Le Λ se trace d'un coup, rebondit, un reflet le traverse ; puis
+ * il s'envole vers l'en-tête et devient le logo de l'app, au pixel près, pendant que l'app arrive
+ * dessous. La même icône du début à la fin : pas de relais visible.
  */
 :root {
   color-scheme: dark;
@@ -182,9 +182,283 @@ body {
   .commandes { right: 16px; }
   .bouton span { display: none; }
   .bouton { padding: 10px; }
-  .etiquette { left: 16px; }
+  .etiquette { left: 16px; font-size: 0; }
+  .etiquette b { font-size: 12px; }
 }
 
+/* ───────────── L'app, là où l'intro débouche ───────────── */
+.app {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--fond);
+}
+.js:not(.pret) .app { opacity: 0; }
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.intro .scene { position: absolute; }
+.app-cadre {
+  height: 100%;
+  padding: 0 clamp(16px, 3.4vw, 48px);
+}
+.app-haut {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 3.4vw, 44px);
+  height: 72px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-a {
+  display: block;
+  height: 25px;
+  aspect-ratio: 36 / 39;
+  overflow: visible;
+}
+.logo-a path {
+  fill: none;
+  stroke: url(#aurora-degrade);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.logo-nom {
+  display: block;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.03em;
+}
+.onglets {
+  display: flex;
+  gap: 24px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--gris);
+  white-space: nowrap;
+}
+.onglets .actif { position: relative; color: var(--encre); }
+.onglets .actif::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--indigo), var(--rose));
+}
+.app-outils {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.rond {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--verre-bord);
+  border-radius: 50%;
+  background: var(--verre);
+}
+.rond svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: var(--encre);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.avatar { border: 0; background: linear-gradient(135deg, var(--bleu), var(--violet) 55%, var(--rose)); }
+.app-corps {
+  display: grid;
+  gap: clamp(18px, 3.4vh, 30px);
+  padding-top: 4px;
+}
+
+/* La une : un ciel d'aurore boréale aux couleurs d'Aurora, en dégradés. */
+.une {
+  position: relative;
+  height: clamp(220px, 47vh, 440px);
+  overflow: hidden;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #0b1132 0%, #161039 48%, #22113a 76%, #120a1c 100%);
+  isolation: isolate;
+}
+.une-ciel {
+  position: absolute;
+  inset: -25% -10% 25% -10%;
+  background:
+    radial-gradient(34% 50% at 24% 62%, rgb(78 168 245 / .62), transparent 70%),
+    radial-gradient(30% 46% at 47% 46%, rgb(157 92 255 / .66), transparent 70%),
+    radial-gradient(26% 42% at 70% 56%, rgb(255 108 171 / .5), transparent 70%),
+    radial-gradient(24% 38% at 90% 36%, rgb(106 92 255 / .45), transparent 70%);
+  filter: blur(22px);
+  transform: skewY(-7deg);
+}
+.une-etoiles {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.3px 1.3px at 8% 14%, #fff, transparent),
+    radial-gradient(1px 1px at 19% 33%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 33% 9%, #fff, transparent),
+    radial-gradient(1px 1px at 52% 22%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 63% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 77% 18%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 88% 11%, #fff, transparent),
+    radial-gradient(1px 1px at 94% 29%, #fff, transparent),
+    radial-gradient(1px 1px at 41% 30%, #fff, transparent);
+  opacity: .7;
+}
+.une-monts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  background: #08070d;
+  clip-path: polygon(0 58%, 8% 40%, 15% 52%, 26% 20%, 35% 44%, 44% 32%, 53% 50%, 64% 16%, 74% 42%, 84% 28%, 93% 46%, 100% 36%, 100% 100%, 0 100%);
+}
+.une-monts.loin {
+  height: 52%;
+  background: #15112a;
+  clip-path: polygon(0 40%, 11% 24%, 21% 38%, 31% 14%, 42% 34%, 50% 22%, 60% 40%, 71% 10%, 82% 32%, 91% 20%, 100% 30%, 100% 100%, 0 100%);
+}
+.une::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(10 10 14 / .78), rgb(10 10 14 / .2) 58%, transparent);
+}
+.une-texte {
+  position: absolute;
+  left: clamp(20px, 4vw, 52px);
+  bottom: clamp(20px, 5vh, 48px);
+  z-index: 1;
+}
+.puce {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #cfc6ff;
+}
+.une h2 {
+  margin: 10px 0 8px;
+  font-size: clamp(34px, 5.2vw, 60px);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.une p { margin: 0 0 20px; font-size: 14px; color: #b9b5cc; }
+.une-boutons { display: flex; gap: 10px; }
+.btn-plein, .btn-verre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px 11px 15px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.btn-plein { background: var(--encre); color: var(--fond); }
+.btn-verre { border: 1px solid rgb(242 240 255 / .2); background: rgb(242 240 255 / .12); }
+.btn-plein svg, .btn-verre svg { width: 16px; height: 16px; }
+.btn-plein svg path { fill: currentColor; }
+.btn-verre svg path { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.rangee h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.cartes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(170px, 18.5vw, 250px);
+  gap: 14px;
+}
+.carte, .affiche {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background:
+    radial-gradient(90% 80% at 80% 10%, rgb(255 255 255 / .14), transparent 60%),
+    linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06);
+}
+.carte { aspect-ratio: 16 / 9; }
+.carte b { position: absolute; left: 12px; top: 10px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.carte .direct {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgb(10 10 14 / .45);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.carte .direct::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: #ff4d6d;
+  vertical-align: 1px;
+}
+.carte .prog { position: absolute; left: 12px; bottom: 20px; font-size: 12.5px; color: rgb(255 255 255 / .78); }
+.carte .progres { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 3px; border-radius: 3px; background: rgb(255 255 255 / .2); }
+.carte .progres i { display: block; height: 100%; border-radius: inherit; background: #fff; }
+.affiches { grid-auto-columns: clamp(118px, 12.5vw, 172px); }
+.affiche { aspect-ratio: 2 / 3; }
+.affiche span {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+@media (max-width: 760px) {
+  .onglets { display: none; }
+  .une-boutons .btn-verre { display: none; }
+}
+
+
+.fond { position: absolute; inset: 0; background: var(--fond); }
+.icone {
+  position: relative;
+  width: calc(var(--k) * 140px);
+  aspect-ratio: 36 / 39;
+  transform-origin: 0 0;
+}
+.ressort, .ressort svg { position: absolute; inset: 0; }
+#trace { stroke-dasharray: 1 2; }
+.brillance path { stroke: #fff; }
+.brillance {
+  -webkit-mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
+  mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
+  -webkit-mask-size: 320% 100%;
+  mask-size: 320% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 0;
+  mask-position: 100% 0;
+  opacity: .9;
+}
+.logo-nom { clip-path: inset(-20% 0 -20% 0); }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -207,18 +481,74 @@ body {
     </linearGradient>
   </defs>
 </svg>
-<canvas class="toile" id="toile" aria-hidden="true"></canvas>
-<div class="scene" aria-hidden="true">
-  <div class="marque" id="marque">
-    <div class="a-boite" id="boiteA">
-      <svg class="a" id="a" viewBox="14 13 36 39" aria-hidden="true"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg>
-    </div>
-    <div class="nom" id="nom">Aurora</div>
-    <div class="trait-boite" id="boiteTrait"><span class="trait" id="trait"></span></div>
-    <p class="sous" id="sous">Chaînes · Films · Séries</p>
+<div class="app" id="app" aria-hidden="true">
+  <div class="app-cadre" id="appCadre">
+    <header class="app-haut" id="appHaut">
+      <div class="logo">
+        <svg class="logo-a" id="logoA" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg>
+        <span class="logo-nom" id="logoNom">Aurora</span>
+      </div>
+      <nav class="onglets"><span class="actif">Accueil</span><span>Direct</span><span>Films</span><span>Séries</span><span>Ma liste</span></nav>
+      <div class="app-outils">
+        <span class="rond"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.2"/><path d="M13 13l3.6 3.6"/></svg></span>
+        <span class="rond avatar"></span>
+      </div>
+    </header>
+    <main class="app-corps">
+      <section class="une" id="une">
+        <div class="une-ciel"></div>
+        <div class="une-etoiles"></div>
+        <div class="une-monts loin"></div>
+        <div class="une-monts"></div>
+        <div class="une-texte">
+          <span class="puce">Nouveau · Film</span>
+          <h2>Nuit polaire</h2>
+          <p>Thriller · 2026 · 1 h 52</p>
+          <div class="une-boutons">
+            <span class="btn-plein"><svg viewBox="0 0 20 20"><path d="M6.5 4.5v11l9-5.5z"/></svg>Regarder</span>
+            <span class="btn-verre"><svg viewBox="0 0 20 20"><path d="M10 4.5v11M4.5 10h11"/></svg>Ma liste</span>
+          </div>
+        </div>
+      </section>
+      <section class="rangee" id="rangee1">
+        <h3>En direct</h3>
+        <div class="cartes">
+          <div class="carte" style="--c1:#1d3f8f;--c2:#0f1a3d"><b>Info 24</b><span class="direct">Direct</span><span class="prog">Le journal du soir</span><span class="progres"><i style="width:62%"></i></span></div>
+          <div class="carte" style="--c1:#0f6b4f;--c2:#0b2a26"><b>Stade</b><span class="direct">Direct</span><span class="prog">Finale · 2e mi-temps</span><span class="progres"><i style="width:78%"></i></span></div>
+          <div class="carte" style="--c1:#6a2a8f;--c2:#21123a"><b>Ciné Nuit</b><span class="direct">Direct</span><span class="prog">Classiques du soir</span><span class="progres"><i style="width:24%"></i></span></div>
+          <div class="carte" style="--c1:#8f4a1d;--c2:#2b160e"><b>Planète</b><span class="direct">Direct</span><span class="prog">Les grands fleuves</span><span class="progres"><i style="width:45%"></i></span></div>
+          <div class="carte" style="--c1:#8f1d4f;--c2:#2a0e1c"><b>Studio Live</b><span class="direct">Direct</span><span class="prog">Session acoustique</span><span class="progres"><i style="width:12%"></i></span></div>
+          <div class="carte" style="--c1:#1d7a8f;--c2:#0c2328"><b>Kids</b><span class="direct">Direct</span><span class="prog">Dessins animés</span><span class="progres"><i style="width:88%"></i></span></div>
+        </div>
+      </section>
+      <section class="rangee" id="rangee2">
+        <h3>Films populaires</h3>
+        <div class="cartes affiches">
+          <div class="affiche" style="--c1:#2b3f9e;--c2:#120b2a"><span>Le Dernier Phare</span></div>
+          <div class="affiche" style="--c1:#9e2b6a;--c2:#1c0b1f"><span>Orbite</span></div>
+          <div class="affiche" style="--c1:#2b9e86;--c2:#0b1f1c"><span>Marée haute</span></div>
+          <div class="affiche" style="--c1:#6a2b9e;--c2:#150b24"><span>Les Veilleurs</span></div>
+          <div class="affiche" style="--c1:#9e6a2b;--c2:#1f140b"><span>Cendres</span></div>
+          <div class="affiche" style="--c1:#2b6a9e;--c2:#0b141f"><span>Néon City</span></div>
+          <div class="affiche" style="--c1:#9e2b2b;--c2:#1f0b0b"><span>Fréquence</span></div>
+          <div class="affiche" style="--c1:#4f9e2b;--c2:#101f0b"><span>Lisière</span></div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
-<p class="etiquette"><b>Pulsation</b> · Canvas 2D, Web Audio + AnalyserNode</p>
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="fond" id="fond"></div>
+  <div class="scene">
+    <div class="icone" id="icone">
+      <div class="ressort" id="ressort">
+        <svg class="a" id="a" viewBox="14 13 36 39"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg>
+        <svg class="a brillance" id="brillance" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="etiquette"><b>Éclat</b> · SVG, FLIP, Web Animations, Web Audio</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -752,9 +1082,35 @@ void main() {
   const figerPiste = (a, t) => (estWaapi(a) ? (a.pause(), (a.currentTime = t * 1000)) : a.aller(t));
   const annulerPiste = (a) => (estWaapi(a) ? a.cancel() : a.annuler());
 
-  function lancer({ FIN, preparer, dessiner, animer, sons, sonFin, ambiant = false, volume = 1 }) {
+  /*
+   * Une piste écrite en temps absolus : suite(cible, [[0.2, {…}], [0.9, {…}, easing], …]). Une seule
+   * piste par élément et par propriété : sinon le remplissage de la seconde masque la première avant
+   * son départ. L'easing d'une étape vaut pour le segment qui la suit. role 'app' : piste de l'app,
+   * mise directement à son état final quand on passe l'intro.
+   */
+  function suite(cible, etapes, { role = 'intro', ease = 'linear', fill = 'both', pseudo } = {}) {
+    const t0 = etapes[0][0], d = Math.max(.001, etapes[etapes.length - 1][0] - t0);
+    const images = etapes.map(([t, props, e]) => ({ ...props, offset: clamp((t - t0) / d, 0, 1), easing: e || ease }));
+    return cible.animate(images, { delay: t0 * 1000, duration: d * 1000, fill, id: role, ...(pseudo ? { pseudoElement: pseudo } : {}) });
+  }
+  // Échantillonne une courbe f(u) (u de 0 à 1) en images-clés linéaires : pour les zooms en
+  // exponentielle et les trajectoires, qu'aucune courbe de Bézier ne rend juste.
+  // Une courbe cubic-bezier() de CSS, évaluée en JS (par dichotomie) pour échantillonner.
+  function bezierCSS(x1, y1, x2, y2) {
+    const f = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+    return (x) => {
+      if (x <= 0) return 0;
+      if (x >= 1) return 1;
+      let lo = 0, hi = 1, t = x;
+      for (let i = 0; i < 32; i++) { t = (lo + hi) / 2; if (f(x1, x2, t) < x) lo = t; else hi = t; }
+      return f(y1, y2, t);
+    };
+  }
+  const echantillons = (n, f) => Array.from({ length: n + 1 }, (_, i) => ({ ...f(i / n), offset: i / n }));
+
+  function lancer({ FIN, SORTIE = null, preparer, dessiner, animer, sons, sonFin, ambiant = false, volume = 1 }) {
     Sono.volume = volume;
-    let anims = [], t0 = 0, raf = 0, reduit = false;
+    let anims = [], fondus = [], t0 = 0, raf = 0, reduit = false, saute = false;
     let fige = params.has('t') ? Math.max(0, parseFloat(params.get('t')) || 0) : null;
     const maintenant = () => (document.timeline && document.timeline.currentTime) ?? performance.now();
     const temps = (now = maintenant()) => fige ?? Math.max(0, (now - t0) / 1000);
@@ -767,6 +1123,8 @@ void main() {
     }
     function jouer() {
       for (const a of anims) annulerPiste(a);
+      for (const a of fondus) a.cancel();
+      fondus = []; saute = false;
       Sono.couper(.05);
       reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
       majEchelle();
@@ -784,7 +1142,8 @@ void main() {
       if (!raf) raf = requestAnimationFrame(boucle);
     }
     function passer() {
-      if (fige != null || temps() >= FIN) return;
+      if (fige != null || saute || temps() >= (SORTIE ?? FIN)) return;
+      if (SORTIE != null) { entrerDansApp(); return; }
       const now = maintenant();
       t0 = now - FIN * 1000;
       // On saute à la fin par currentTime / finish() : changer startTime laisse parfois Chrome
@@ -800,6 +1159,27 @@ void main() {
       document.body.style.opacity = '.999';
       requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.opacity = ''; }));
       if (!raf) raf = requestAnimationFrame(boucle);
+    }
+
+    /*
+     * Passer une intro qui débouche sur l'app : l'app se met tout de suite en place, et l'intro
+     * s'efface en fondu enchaîné, sans s'arrêter net — ses animations continuent sous le fondu.
+     */
+    function entrerDansApp() {
+      saute = true;
+      for (const a of anims) {
+        if (!estWaapi(a) || a.id !== 'app') continue;
+        if (a.effect.getComputedTiming().endTime <= FIN * 1000) a.finish();
+        else { a.currentTime = FIN * 1000; a.play(); }
+      }
+      const intro = $('intro'), app = $('app'), cadre = $('appCadre');
+      const douceur = 'cubic-bezier(.2,.7,.2,1)';
+      // L'app passe-t-elle au-dessus de l'intro (Tracé) ou dessous (les autres) ?
+      if ((+getComputedStyle(app).zIndex || 0) > (+getComputedStyle(intro).zIndex || 0)) fondus.push(app.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: douceur }));
+      else fondus.push(intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: douceur, fill: 'forwards' }));
+      fondus.push(cadre.animate([{ transform: 'scale(.985)' }, { transform: 'none' }], { duration: 650, easing: 'cubic-bezier(.16,1,.3,1)' }));
+      Sono.couper(.3);
+      if (sonFin) Sono.jouer(sonFin);
     }
 
     if (sons) Sono.installer(jouer);
@@ -842,105 +1222,67 @@ void main() {
   }
 
 
-  const TEMPS = .5, DROP = 2.0, N = 96;
-  const el = elementsMarque();
-  const T = toile2D($('toile'));
-  let geo = null, donnees = null;
-  const kicks = [0, .5, 1, 1.5, DROP, DROP + .5].map((x) => x + .1);
+  const SORTIE = .78, VOL = .58, POSE = SORTIE + VOL, FIN = SORTIE + .92;
+  // La trajectoire : le Λ s'élève d'abord, puis glisse vers sa place — un arc, pas une ligne droite.
+  const enX = bezierCSS(.5, 0, .15, 1), enY = bezierCSS(.3, 0, .1, 1), enS = bezierCSS(.35, 0, .15, 1);
+  let G = null;
 
-  // Le spectre calculé sur la partition : kick dans le grave, charleston dans l'aigu, montée avant le drop.
-  function spectreCalcule(t, i) {
-    const f = i / N;
-    let kick = 0;
-    for (const k of kicks) if (t >= k) kick = Math.max(kick, Math.exp(-(t - k) * 9));
-    const charley = t < DROP ? Math.exp(-((t - .1) % .25) * 22) : 0;
-    const montee = lisse(1, DROP, t) * (1 - lisse(DROP, DROP + .1, t));
-    const bruit = .5 + .5 * Math.sin(i * 12.9898 + Math.floor(t * 20) * 78.233);
-    return clamp(kick * Math.exp(-f * 5) * 1.1 + charley * f * .6 * bruit + montee * (.25 + f * .6) * bruit + .05 * bruit, 0, 1);
-  }
-  function spectre(t) {
-    const an = Sono.analyseur(), v = new Array(N);
-    if (an) {
-      if (!donnees) donnees = new Uint8Array(an.frequencyBinCount);
-      an.getByteFrequencyData(donnees);
-      for (let i = 0; i < N; i++) { const j = Math.floor(Math.pow(i / N, 1.6) * donnees.length * .7); v[i] = donnees[j] / 255; }
-    } else for (let i = 0; i < N; i++) v[i] = spectreCalcule(t, i);
-    return v;
+  function preparer() {
+    const ri = $('icone').getBoundingClientRect(), rt = $('logoA').getBoundingClientRect();
+    G = { dx: rt.left - ri.left, dy: rt.top - ri.top, k: rt.width / ri.width };
   }
 
-  function preparer(reduit) {
-    $('toile').hidden = reduit;
-    if (!reduit) geo = geometrieA(el.boiteA);
+  function animer() {
+    const L = [], k = echelle();
+    const p = (cible, etapes, o) => L.push(suite(cible, etapes, o));
+    // Le trait d'un geste, l'icône qui arrive en ressort (amorti), puis le reflet qui la traverse.
+    p($('trace'), [[.04, { strokeDashoffset: 1.02 }, 'cubic-bezier(.5,0,.2,1)'], [.44, { strokeDashoffset: 0 }]]);
+    L.push($('ressort').animate(echantillons(30, (u) => {
+      const t = u * .75;
+      return { transform: `scale(${(1 - .2 * Math.exp(-t * 9) * Math.cos(t * 14)).toFixed(4)})`, opacity: Math.min(1, t / .16) };
+    }), { duration: 750, fill: 'both', id: 'intro' }));
+    p($('brillance'), [[.44, { maskPosition: '100% 0', webkitMaskPosition: '100% 0' }, 'cubic-bezier(.4,0,.2,1)'], [.76, { maskPosition: '0% 0', webkitMaskPosition: '0% 0' }]]);
+    p($('a'), [
+      [.4, { filter: 'drop-shadow(0 0 0px rgb(196 108 255 / 0))' }, 'ease-out'],
+      [.5, { filter: `drop-shadow(0 0 ${14 * k}px rgb(196 108 255 / .9))` }, 'ease-in-out'],
+      [SORTIE, { filter: `drop-shadow(0 0 ${5 * k}px rgb(157 92 255 / .4))` }, 'ease-in'],
+      [POSE, { filter: 'drop-shadow(0 0 0px rgb(157 92 255 / 0))' }],
+    ]);
+    // Le vol vers l'en-tête (FLIP, échantillonné en 36 images-clés), et la relève par le vrai logo.
+    L.push($('icone').animate(echantillons(36, (u) => {
+      const s = Math.exp(Math.log(G.k) * enS(u));
+      return { transform: `translate(${(G.dx * enX(u)).toFixed(2)}px, ${(G.dy * enY(u)).toFixed(2)}px) scale(${s.toFixed(5)})` };
+    }), { delay: SORTIE * 1000, duration: VOL * 1000, fill: 'both', id: 'intro' }));
+    p($('icone'), [[POSE - .001, { opacity: 1 }], [POSE, { opacity: 0 }]]);
+    p($('logoA'), [[POSE - .001, { opacity: 0 }], [POSE, { opacity: 1 }]], { role: 'app' });
+    p($('logoNom'), [[POSE - .04, { clipPath: 'inset(-20% 100% -20% 0)', transform: 'translateX(-10px)' }, 'cubic-bezier(.2,.8,.2,1)'], [POSE + .4, { clipPath: 'inset(-20% 0% -20% 0)', transform: 'none' }]], { role: 'app' });
+    // L'app arrive dessous : le fond s'efface, les rangées montent l'une après l'autre.
+    p($('fond'), [[SORTIE + .04, { opacity: 1 }, 'cubic-bezier(.3,0,.2,1)'], [SORTIE + .44, { opacity: 0 }]]);
+    p($('appHaut'), [[SORTIE + .12, { opacity: 0 }, 'ease-out'], [SORTIE + .5, { opacity: 1 }]], { role: 'app' });
+    ['une', 'rangee1', 'rangee2'].forEach((id, i) => p($(id), [
+      [SORTIE + .08 + i * .07, { opacity: 0, transform: `translateY(${28 * k}px) scale(.985)` }, 'cubic-bezier(.2,.8,.2,1)'],
+      [SORTIE + .78 + i * .07, { opacity: 1, transform: 'none' }],
+    ], { role: 'app' }));
+    return L;
   }
 
-  function dessiner(t) {
-    if ($('toile').hidden || !geo) return;
-    const { x } = T, { W, H } = T.cadre();
-    const k = echelle(), v = spectre(t), c = geo.centre;
-    let kick = 0;
-    for (const kt of kicks) if (t >= kt) kick = Math.max(kick, Math.exp(-(t - kt) * 7));
-    x.globalCompositeOperation = 'lighter';
-    // Les ondes de chaque kick.
-    for (const kt of kicks) {
-      const a = t - kt;
-      if (a < 0 || a > 1.2 || kt > DROP + .2) continue;
-      x.strokeStyle = `rgba(157,92,255,${.35 * (1 - a / 1.2)})`; x.lineWidth = 2;
-      x.beginPath(); x.arc(...c, (110 + a * 520) * k, 0, 6.283); x.stroke();
-    }
-    // Le cercle de barres, qui tourne de plus en plus vite pendant la montée, puis s'effondre au drop.
-    const effondre = lisse(DROP, DROP + .25, t), present = lisse(0, .3, t) * (1 - effondre);
-    if (present > 0) {
-      const R0 = (115 + kick * 14) * k * (1 - effondre), rot = t * .4 + lisse(1, DROP, t) * 2.5;
-      for (let i = 0; i < N; i++) {
-        const a = rot + i / N * 6.283, l = (8 + v[i] * 150) * k, col = teinteMarque(i / N).map((u) => Math.round(u * 255));
-        x.strokeStyle = `rgba(${col},${.85 * present})`; x.lineWidth = Math.max(2, 4.2 * k); x.lineCap = 'round';
-        x.beginPath(); x.moveTo(c[0] + Math.cos(a) * R0, c[1] + Math.sin(a) * R0); x.lineTo(c[0] + Math.cos(a) * (R0 + l), c[1] + Math.sin(a) * (R0 + l)); x.stroke();
-      }
-      const g = x.createRadialGradient(...c, 0, ...c, (70 + kick * 25) * k);
-      g.addColorStop(0, `rgba(255,255,255,${(.25 + kick * .5) * present})`); g.addColorStop(1, 'rgba(157,92,255,0)');
-      x.fillStyle = g; x.beginPath(); x.arc(...c, (95 + kick * 25) * k, 0, 6.283); x.fill();
-    }
-    // L'éclair du drop.
-    const flash = t > DROP ? Math.exp(-(t - DROP) * 6) : 0;
-    if (flash > .01) { const g = x.createRadialGradient(...c, 0, ...c, Math.max(W, H) * .6); g.addColorStop(0, `rgba(255,255,255,${.75 * flash})`); g.addColorStop(1, 'rgba(157,92,255,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
-    // L'égaliseur qui devient le trait.
-    const r = el.boiteTrait.getBoundingClientRect(), eq = lisse(DROP + .3, DROP + .45, t) * (1 - lisse(DROP + .95, DROP + 1.1, t));
-    if (eq > 0) {
-      const nb = 32, pas = r.width / nb, plat = lisse(DROP + .5, DROP + .95, t);
-      x.globalCompositeOperation = 'source-over';
-      for (let i = 0; i < nb; i++) {
-        const h = mix((4 + v[(i * 3) % N] * 46) * k, r.height, plat), col = teinteMarque(.15 + i / nb * .85).map((u) => Math.round(u * 255));
-        x.fillStyle = `rgba(${col},${eq})`;
-        x.fillRect(r.left + i * pas + (1 - plat) * pas * .15, r.top + r.height - h, pas * mix(.7, 1.02, plat), h);
-      }
-    }
-  }
-
+  // Le son : une montée d'air pendant le trait, trois clochettes avec le reflet, un glissé vers la
+  // gauche pendant le vol, et un petit déclic quand le logo se pose, sur l'accord d'Aurora.
   function sons(o, b) {
-    const t0 = b + .1;
-    for (let i = 0; i < 4; i++) { o.kick(t0 + i * TEMPS, .75); o.basse(t0 + i * TEMPS, 55, { duree: .3, crete: .16 }); }
-    for (let i = 0; i < 8; i++) o.charley(t0 + i * TEMPS / 2 + TEMPS / 2 * .5, .05);
-    for (let i = 0; i < 8; i++) o.caisse(t0 + 1.5 + i * TEMPS / 8, .04 + i * .015);
-    o.montee(t0 + 1, { duree: DROP - 1, crete: .12, f0: 200, f1: 7000 });
-    o.kick(t0 + DROP, 1); o.impact(t0 + DROP, { crete: .5, grave: 50, duree: 1.4 });
-    o.nappe(t0 + DROP, [110, 164.81, 220, 277.18, 329.63], { duree: 2, attaque: .01, crete: .07, filtre: 3200 });
-    o.kick(t0 + DROP + TEMPS, .5);
-    o.signature(t0 + DROP + .2, 'synthe');
+    o.souffle(b + .02, { duree: .42, f0: 400, f1: 3200, q: 1.2, crete: .05, attaque: .36, humide: .3 });
+    [659.25, 880, 1108.73].forEach((f, i) => o.cloche(b + .44 + i * .06, f * 2, { duree: 1.6, crete: .035, pan: -.3 + i * .3 }));
+    o.ton(b + .56, 220, { duree: 1.4, crete: .04, attaque: .02, humide: .5 });
+    o.ton(b + .56, 110, { duree: 1.2, crete: .06, attaque: .02, humide: .3 });
+    o.souffle(b + SORTIE, { duree: VOL, f0: 3000, f1: 900, q: 1.5, crete: .04, attaque: VOL * .4, humide: .3, pan0: .1, pan1: -.6 });
+    o.ton(b + POSE, 1760, { duree: .12, crete: .03, attaque: .002, type: 'triangle', humide: .4, pan: -.6 });
+    o.nappe(b + POSE, [110, 164.81, 220, 277.18, 329.63], { duree: 1.5, attaque: .04, crete: .035, filtre: 1100, type: 'sine' });
   }
+  const sonFin = (o, b) => {
+    o.ton(b + .05, 1760, { duree: .12, crete: .03, attaque: .002, type: 'triangle', humide: .4 });
+    o.nappe(b + .05, [110, 164.81, 220, 277.18, 329.63], { duree: 1.4, attaque: .04, crete: .035, filtre: 1100, type: 'sine' });
+  };
 
-  lancer({
-    FIN: 3.6,
-    sons,
-    sonFin: (o, b) => o.signature(b + .05, 'synthe', .8),
-    preparer,
-    dessiner,
-    animer() {
-      const L = revelerMarque(el, { nom: DROP + .2, sous: DROP + .9, style: 'monte' });
-      L.push(el.boiteA.animate([{ transform: 'scale(.2)', opacity: 0, filter: 'blur(6px)' }, { transform: 'scale(1.18)', opacity: 1, filter: 'blur(0px)', offset: .35 }, { transform: 'scale(1)', opacity: 1 }], { delay: (DROP + .1) * 1000, duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' }));
-      L.push(el.trait.animate([{ opacity: 0 }, { opacity: 1 }], { delay: (DROP + 1.0) * 1000, duration: 150, fill: 'both' }));
-      return L;
-    },
-  });
+  lancer({ FIN, SORTIE, sons, sonFin, volume: 1.9, preparer, animer });
 })();
 </script>
 </body>
