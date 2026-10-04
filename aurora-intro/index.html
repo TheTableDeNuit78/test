@@ -73,6 +73,7 @@ kbd {
 }
 @media (min-width: 1100px) { .grille { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .grille { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 960px) { .grille.trois { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .carte {
   position: relative;
   display: grid;
@@ -126,7 +127,8 @@ kbd {
 }
 .outils li.son { border-color: rgb(255 108 171 / .35); color: #ffb3d4; }
 
-.famille { display: grid; gap: 16px; margin-top: 44px; }
+.famille { display: grid; gap: 16px; margin-top: 8px; }
+.famille + .famille { margin-top: 48px; }
 .famille > h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gris); }
 .son { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px !important; color: #ffc4dd !important; }
 .son::before { content: '♪'; color: var(--rose); font-weight: 700; }
@@ -183,7 +185,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
   <header class="entete">
     <span class="marque"><svg viewBox="14 13 36 39" aria-hidden="true"><path d="M18 48L32 17l14 31"/></svg></span>
     <h1>Intros Aurora</h1>
-    <p class="chapo">Quatre intros courtes, un seul geste chacune, comme chez les grandes plateformes. Les trois nouvelles ne finissent pas sur un logo figé : elles débouchent directement sur l’app, sans coupure.</p>
+    <p class="chapo">Le logo devient le nom : le Λ prend la place du A et « Aurora » se forme autour de lui. Six façons de le faire, toutes sans son, toutes courtes, et toutes finissent dans l’app, sans coupure. Plus bas, les premières pistes.</p>
     <ul class="touches">
       <li><kbd>clic</kbd> ou une touche : passer (fondu enchaîné vers l’app)</li>
       <li><kbd>R</kbd> rejouer</li>
@@ -192,9 +194,71 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
     </ul>
   </header>
 
+  <section class="famille" aria-labelledby="f-nom">
+    <h2 id="f-nom">Le Λ devient le nom</h2>
+    <div class="grille trois">
+    <a class="carte" href="glissement.html">
+      <div class="vignette"><img src="apercus/glissement.webp" alt="Le Λ posé en A, les lettres qui sortent de derrière lui" width="800" height="500"><span class="duree">2,6 s</span></div>
+      <div class="corps">
+        <h3>Glissement</h3>
+        <p>Le grand Λ se trace, puis glisse à la place du A ; les autres lettres sortent de derrière lui. On plonge ensuite dans le A, qui s’ouvre sur l’app.</p>
+        <p class="inspi">Sortie : la caméra traverse le A.</p>
+        <ul class="outils"><li>SVG</li><li>FLIP</li><li>clip-path</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="recul.html">
+      <div class="vignette"><img src="apercus/recul.webp" alt="Le Λ géant et flou, avec le début du nom" width="800" height="500"><span class="duree">2,6 s</span></div>
+      <div class="corps">
+        <h3>Recul</h3>
+        <p>On part tout contre le Λ, qui remplit l’écran, flou. La caméra recule et l’on découvre qu’il est le A d’« Aurora ». Puis le nom va se ranger dans l’en-tête.</p>
+        <p class="inspi">Un seul mouvement de caméra, du début à la fin.</p>
+        <ul class="outils"><li>CSS</li><li>FLIP</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="trait.html">
+      <div class="vignette"><img src="apercus/trait.webp" alt="Le nom qui s’écrit au-dessus d’une ligne lumineuse" width="800" height="500"><span class="duree">2,9 s</span></div>
+      <div class="corps">
+        <h3>Trait</h3>
+        <p>Le Λ se pose en A ; sa plume repart du pied droit et file sous le mot, et chaque lettre se lève quand elle passe. Puis l’écran s’ouvre en deux à cette ligne.</p>
+        <p class="inspi">Sortie de la famille d’Aube.</p>
+        <ul class="outils"><li>SVG</li><li>clip-path</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="depliage.html">
+      <div class="vignette"><img src="apercus/depliage.webp" alt="Les lettres qui se déplient en 3D à côté du Λ" width="800" height="500" loading="lazy"><span class="duree">2,7 s</span></div>
+      <div class="corps">
+        <h3>Dépliage</h3>
+        <p>Le Λ arrive en ressort et se pose en A ; les lettres se déplient de derrière lui en 3D, comme un accordéon, en s’éclairant. Puis le nom va dans l’en-tête.</p>
+        <p class="inspi">Chaque lettre pivote sur le bord de la précédente.</p>
+        <ul class="outils"><li>CSS 3D</li><li>FLIP</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="rebond.html">
+      <div class="vignette"><img src="apercus/rebond.webp" alt="Les lettres qui tombent à côté du Λ" width="800" height="500" loading="lazy"><span class="duree">2,7 s</span></div>
+      <div class="corps">
+        <h3>Rebond</h3>
+        <p>La plus joueuse : le Λ tombe du haut de l’écran et rebondit, se pose en A, puis les lettres tombent une à une. L’écran remonte comme un rideau sur l’app.</p>
+        <p class="inspi">De vraies chutes, avec gravité et rebonds.</p>
+        <ul class="outils"><li>CSS</li><li>FLIP</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="rouleaux.html">
+      <div class="vignette"><img src="apercus/rouleaux.webp" alt="Les lettres qui défilent comme des rouleaux" width="800" height="500" loading="lazy"><span class="duree">2,7 s</span></div>
+      <div class="corps">
+        <h3>Rouleaux</h3>
+        <p>Un clin d’œil au zapping : à côté du A, cinq rouleaux font défiler lettres et numéros de chaîne et s’arrêtent un par un sur « urora ». Puis le nom va dans l’en-tête.</p>
+        <p class="inspi">Chaque rouleau s’arrête avec un petit rebond.</p>
+        <ul class="outils"><li>SVG</li><li>FLIP</li></ul>
+      </div>
+    </a>
+    </div>
+  </section>
+
+  <section class="famille" aria-labelledby="f-pistes">
+    <h2 id="f-pistes">Premières pistes</h2>
   <div class="grille">
     <a class="carte" href="eclat.html">
-      <div class="vignette"><img src="apercus/eclat.webp" alt="Le Λ qui s’envole vers l’en-tête de l’app" width="800" height="500"><span class="badge">Conseillée</span><span class="duree">1,7 s</span></div>
+      <div class="vignette"><img src="apercus/eclat.webp" alt="Le Λ qui s’envole vers l’en-tête de l’app" width="800" height="500" loading="lazy"><span class="duree">1,7 s</span></div>
       <div class="corps">
         <h3>Éclat</h3>
         <p>Le Λ se trace d’un coup, rebondit, un reflet le traverse, puis il s’envole vers l’en-tête et devient le logo de l’app, au pixel près. L’app arrive dessous pendant le vol.</p>
@@ -234,6 +298,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
       </div>
     </a>
   </div>
+  </section>
 
   <section class="recherche" aria-labelledby="r-titre">
     <h2 id="r-titre">Ce que font les grandes plateformes</h2>
@@ -260,7 +325,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
 
   <footer class="pied">
     <p>Le son est activé par défaut. Si le navigateur l’empêche avant un clic, le bouton « Activer le son » s’allume en bas à droite ; dans l’app, rien ne le bloque.</p>
-    <p>Chaque page est autonome, police comprise. Néon charge anime.js depuis jsDelivr ; les trois autres n’ont besoin de rien. Avec « réduire les animations », l’app s’affiche directement.</p>
+    <p>Chaque page est autonome, police comprise. Néon charge anime.js depuis jsDelivr ; les autres n’ont besoin de rien. Les six intros « Le Λ devient le nom » et Aube sont pensées sans son. Avec « réduire les animations », l’app s’affiche directement.</p>
   </footer>
 </main>
 </body>

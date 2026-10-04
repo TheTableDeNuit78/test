@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0a0e">
-<title>Aurora — Éclat</title>
+<title>Aurora — Dépliage</title>
 <script>document.documentElement.classList.add('js')</script>
 <style>
 /*
- * Intro « Éclat » (1,7 s), la plus courte, faite selon les règles d'Android : une icône animée de
- * moins d'une seconde, puis l'app. Le Λ se trace d'un coup, rebondit, un reflet le traverse ; puis
- * il s'envole vers l'en-tête et devient le logo de l'app, au pixel près, pendant que l'app arrive
- * dessous. La même icône du début à la fin : pas de relais visible.
+ * Intro « Dépliage » (2,6 s) : le grand Λ arrive en ressort et se trace, puis se pose en A ; les
+ * lettres se déplient de derrière lui comme un accordéon, chacune pivotant sur le bord de la
+ * précédente, en 3D, et s'éclairant en se mettant face à nous. Puis le nom va se ranger dans
+ * l'en-tête de l'app, qui arrive dessous. Sans son.
  */
 :root {
   color-scheme: dark;
@@ -481,28 +481,12 @@ body {
 .logo-grand svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
 
-.fond { position: absolute; inset: 0; background: var(--fond); }
-.icone {
-  position: relative;
-  width: calc(var(--k) * 140px);
-  aspect-ratio: 36 / 39;
-  transform-origin: 0 0;
-}
-.ressort, .ressort svg { position: absolute; inset: 0; }
+.scene > * { grid-area: 1 / 1; }
+.plan { transform-origin: 0 0; }
 #trace { stroke-dasharray: 1 2; }
-.brillance path { stroke: #fff; }
-.brillance {
-  -webkit-mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
-  mask-image: linear-gradient(110deg, transparent 40%, #000 50%, transparent 60%);
-  -webkit-mask-size: 320% 100%;
-  mask-size: 320% 100%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: 100% 0;
-  mask-position: 100% 0;
-  opacity: .9;
-}
-.logo-nom { clip-path: inset(-20% 0 -20% 0); }
+.ressort { width: 100%; height: 100%; }
+#mot { perspective: 5em; }
+#mot .l { transform-origin: 0 50%; backface-visibility: hidden; }
 </style>
 <style>
 /* La police est embarquée : l'intro reste identique hors ligne (Familjen Grotesk, variable 400–700). */
@@ -528,10 +512,7 @@ body {
 <div class="app" id="app" aria-hidden="true">
   <div class="app-cadre" id="appCadre">
     <header class="app-haut" id="appHaut">
-      <div class="logo">
-        <svg class="logo-a" id="logoA" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg>
-        <span class="logo-nom" id="logoNom">Aurora</span>
-      </div>
+      <div class="logo"><span class="mot logo-mot" id="logoMot" aria-label="Aurora"><svg class="lettre-a" viewBox="14 13 36 39" aria-hidden="true"><path d="M18 48L32 17l14 31"/></svg><span class="l">u</span><span class="l">r</span><span class="l">o</span><span class="l">r</span><span class="l">a</span></span></div>
       <nav class="onglets"><span class="actif">Accueil</span><span>Direct</span><span>Films</span><span>Séries</span><span>Ma liste</span></nav>
       <div class="app-outils">
         <span class="rond"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.2"/><path d="M13 13l3.6 3.6"/></svg></span>
@@ -584,15 +565,11 @@ body {
 <div class="intro" id="intro" aria-hidden="true">
   <div class="fond" id="fond"></div>
   <div class="scene">
-    <div class="icone" id="icone">
-      <div class="ressort" id="ressort">
-        <svg class="a" id="a" viewBox="14 13 36 39"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg>
-        <svg class="a brillance" id="brillance" viewBox="14 13 36 39"><path d="M18 48L32 17l14 31"/></svg>
-      </div>
-    </div>
+    <div class="plan" id="plan"><span class="mot grand-mot" id="mot" aria-label="Aurora"><svg class="lettre-a" id="lettreA" viewBox="14 13 36 39" aria-hidden="true"><path d="M18 48L32 17l14 31"/></svg><span class="l">u</span><span class="l">r</span><span class="l">o</span><span class="l">r</span><span class="l">a</span></span></div>
+    <div class="logo-grand" id="grand"><div class="ressort" id="ressort"><svg class="a" viewBox="14 13 36 39"><path id="trace" pathLength="1" d="M18 48L32 17l14 31"/></svg></div></div>
   </div>
 </div>
-<p class="etiquette"><b>Éclat</b> · SVG, FLIP, Web Animations, Web Audio</p>
+<p class="etiquette"><b>Dépliage</b> · CSS 3D, FLIP, Web Animations</p>
 <div class="commandes" id="commandes">
   <a class="bouton" href="index.html" title="Toutes les intros" aria-label="Toutes les intros">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4.5L6.5 10l5.5 5.5"/></svg>
@@ -1323,67 +1300,54 @@ void main() {
   }
 
 
-  const SORTIE = .78, VOL = .58, POSE = SORTIE + VOL, FIN = SORTIE + .92;
-  // La trajectoire : le Λ s'élève d'abord, puis glisse vers sa place — un arc, pas une ligne droite.
-  const enX = bezierCSS(.5, 0, .15, 1), enY = bezierCSS(.3, 0, .1, 1), enS = bezierCSS(.35, 0, .15, 1);
+  const PLACE = bezierCSS(.6, 0, .25, 1);
+  const DESSIN = [.06, .44], VOL = [.5, .9], DEPLI = .74, PAS = .08, PLI = .52;
+  const SORTIE = 1.78, VOL_TETE = .6, POSE = SORTIE + VOL_TETE, FIN = SORTIE + .96;
+  const lettres = [...$('mot').querySelectorAll('.l')];
   let G = null;
 
-  function preparer() {
-    const ri = $('icone').getBoundingClientRect(), rt = $('logoA').getBoundingClientRect();
-    G = { dx: rt.left - ri.left, dy: rt.top - ri.top, k: rt.width / ri.width };
+  function preparer(reduit, redim) {
+    if (redim && G) return;
+    G = {
+      vers: vol($('grand').getBoundingClientRect(), $('lettreA').getBoundingClientRect(), { enX: PLACE, enY: PLACE, enS: PLACE }),
+      versEnTete: vol($('mot').getBoundingClientRect(), $('logoMot').getBoundingClientRect()),
+    };
   }
 
   function animer() {
     const L = [], k = echelle();
     const p = (cible, etapes, o) => L.push(suite(cible, etapes, o));
-    // Le trait d'un geste, l'icône qui arrive en ressort (amorti), puis le reflet qui la traverse.
-    p($('trace'), [[.04, { strokeDashoffset: 1.02 }, 'cubic-bezier(.5,0,.2,1)'], [.44, { strokeDashoffset: 0 }]]);
+    // Le logo arrive en ressort (amorti) pendant qu'il se trace.
     L.push($('ressort').animate(echantillons(30, (u) => {
-      const t = u * .75;
-      return { transform: `scale(${(1 - .2 * Math.exp(-t * 9) * Math.cos(t * 14)).toFixed(4)})`, opacity: Math.min(1, t / .16) };
-    }), { duration: 750, fill: 'both', id: 'intro' }));
-    p($('brillance'), [[.44, { maskPosition: '100% 0', webkitMaskPosition: '100% 0' }, 'cubic-bezier(.4,0,.2,1)'], [.76, { maskPosition: '0% 0', webkitMaskPosition: '0% 0' }]]);
-    p($('a'), [
-      [.4, { filter: 'drop-shadow(0 0 0px rgb(196 108 255 / 0))' }, 'ease-out'],
-      [.5, { filter: `drop-shadow(0 0 ${14 * k}px rgb(196 108 255 / .9))` }, 'ease-in-out'],
-      [SORTIE, { filter: `drop-shadow(0 0 ${5 * k}px rgb(157 92 255 / .4))` }, 'ease-in'],
-      [POSE, { filter: 'drop-shadow(0 0 0px rgb(157 92 255 / 0))' }],
-    ]);
-    // Le vol vers l'en-tête (FLIP, échantillonné en 36 images-clés), et la relève par le vrai logo.
-    L.push($('icone').animate(echantillons(36, (u) => {
-      const s = Math.exp(Math.log(G.k) * enS(u));
-      return { transform: `translate(${(G.dx * enX(u)).toFixed(2)}px, ${(G.dy * enY(u)).toFixed(2)}px) scale(${s.toFixed(5)})` };
-    }), { delay: SORTIE * 1000, duration: VOL * 1000, fill: 'both', id: 'intro' }));
-    p($('icone'), [[POSE - .001, { opacity: 1 }], [POSE, { opacity: 0 }]]);
-    p($('logoA'), [[POSE - .001, { opacity: 0 }], [POSE, { opacity: 1 }]], { role: 'app' });
-    p($('logoNom'), [[POSE - .04, { clipPath: 'inset(-20% 100% -20% 0)', transform: 'translateX(-10px)' }, 'cubic-bezier(.2,.8,.2,1)'], [POSE + .4, { clipPath: 'inset(-20% 0% -20% 0)', transform: 'none' }]], { role: 'app' });
-    // L'app arrive dessous : le fond s'efface, les rangées montent l'une après l'autre.
+      const t = u * .7;
+      return { transform: `scale(${(1 - .25 * Math.exp(-t * 9) * Math.cos(t * 13)).toFixed(4)})`, opacity: Math.min(1, t / .14) };
+    }), { duration: 700, fill: 'both', id: 'intro' }));
+    p($('trace'), [[DESSIN[0], { strokeDashoffset: 1.02 }, 'cubic-bezier(.5,0,.2,1)'], [DESSIN[1], { strokeDashoffset: 0 }]]);
+    // Il se pose en A, en prenant la graisse des lettres ; le vrai A prend le relais.
+    const tVol = { delay: VOL[0] * 1000, duration: (VOL[1] - VOL[0]) * 1000, fill: 'both', id: 'intro' };
+    L.push($('grand').animate(echantillons(30, G.vers), tVol));
+    L.push($('trace').animate(echantillons(16, (u) => ({ strokeWidth: `${(5 + 3 * PLACE(u)).toFixed(3)}px` })), tVol));
+    p($('grand'), [[VOL[1] - .001, { opacity: 1 }], [VOL[1], { opacity: 0 }]]);
+    p($('lettreA'), [[VOL[1] - .001, { opacity: 0 }], [VOL[1], { opacity: 1 }]]);
+    // L'accordéon : chaque lettre pivote sur son bord gauche, dépasse un peu, revient, et s'éclaire.
+    lettres.forEach((n, i) => {
+      const t = DEPLI + i * PAS;
+      p(n, [
+        [t, { transform: 'rotateY(-105deg)', filter: 'brightness(.25)' }, 'cubic-bezier(.3,.7,.4,1)'],
+        [t + PLI * .62, { transform: 'rotateY(9deg)', filter: 'brightness(1.15)' }, 'cubic-bezier(.4,0,.3,1)'],
+        [t + PLI, { transform: 'rotateY(0deg)', filter: 'brightness(1)' }],
+      ]);
+    });
+    // Le nom va se ranger dans l'en-tête ; le vrai logo prend le relais. L'app arrive dessous.
+    L.push($('plan').animate(echantillons(36, G.versEnTete), { delay: SORTIE * 1000, duration: VOL_TETE * 1000, fill: 'both', id: 'intro' }));
+    p($('plan'), [[POSE - .001, { opacity: 1 }], [POSE, { opacity: 0 }]]);
+    p($('logoMot'), [[POSE - .001, { opacity: 0 }], [POSE, { opacity: 1 }]], { role: 'app' });
     p($('fond'), [[SORTIE + .04, { opacity: 1 }, 'cubic-bezier(.3,0,.2,1)'], [SORTIE + .44, { opacity: 0 }]]);
-    p($('appHaut'), [[SORTIE + .12, { opacity: 0 }, 'ease-out'], [SORTIE + .5, { opacity: 1 }]], { role: 'app' });
-    ['une', 'rangee1', 'rangee2'].forEach((id, i) => p($(id), [
-      [SORTIE + .08 + i * .07, { opacity: 0, transform: `translateY(${28 * k}px) scale(.985)` }, 'cubic-bezier(.2,.8,.2,1)'],
-      [SORTIE + .78 + i * .07, { opacity: 1, transform: 'none' }],
-    ], { role: 'app' }));
+    arriveeApp(p, SORTIE, k);
     return L;
   }
 
-  // Le son : une montée d'air pendant le trait, trois clochettes avec le reflet, un glissé vers la
-  // gauche pendant le vol, et un petit déclic quand le logo se pose, sur l'accord d'Aurora.
-  function sons(o, b) {
-    o.souffle(b + .02, { duree: .42, f0: 400, f1: 3200, q: 1.2, crete: .05, attaque: .36, humide: .3 });
-    [659.25, 880, 1108.73].forEach((f, i) => o.cloche(b + .44 + i * .06, f * 2, { duree: 1.6, crete: .035, pan: -.3 + i * .3 }));
-    o.ton(b + .56, 220, { duree: 1.4, crete: .04, attaque: .02, humide: .5 });
-    o.ton(b + .56, 110, { duree: 1.2, crete: .06, attaque: .02, humide: .3 });
-    o.souffle(b + SORTIE, { duree: VOL, f0: 3000, f1: 900, q: 1.5, crete: .04, attaque: VOL * .4, humide: .3, pan0: .1, pan1: -.6 });
-    o.ton(b + POSE, 1760, { duree: .12, crete: .03, attaque: .002, type: 'triangle', humide: .4, pan: -.6 });
-    o.nappe(b + POSE, [110, 164.81, 220, 277.18, 329.63], { duree: 1.5, attaque: .04, crete: .035, filtre: 1100, type: 'sine' });
-  }
-  const sonFin = (o, b) => {
-    o.ton(b + .05, 1760, { duree: .12, crete: .03, attaque: .002, type: 'triangle', humide: .4 });
-    o.nappe(b + .05, [110, 164.81, 220, 277.18, 329.63], { duree: 1.4, attaque: .04, crete: .035, filtre: 1100, type: 'sine' });
-  };
-
-  lancer({ FIN, SORTIE, sons, sonFin, volume: 1.9, preparer, animer });
+  lancer({ FIN, SORTIE, preparer, animer });
 })();
 </script>
 </body>
