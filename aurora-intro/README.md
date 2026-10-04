@@ -1,8 +1,27 @@
 # Intros Aurora
 
-Des intros courtes pour le lancement d’Aurora. Ouvrez `index.html` : c’est la galerie, avec une vignette réelle de chaque intro et ce que font les grandes plateformes.
+Des intros courtes pour le lancement d’Aurora, et de nouvelles pistes de logo. Ouvrez `index.html` : c’est la galerie, avec une vignette réelle de chaque intro et ce que font les grandes plateformes.
 
-## Le Λ devient le nom (sans son)
+## Nouveau logo : une intro par logo (sans son)
+
+Le Λ ne collait pas au nom : un fil fin aux bouts ronds à côté de lettres pleines, et sans barre on lisait un λ ou un « ^ ». Les nouvelles pistes partent du nom (Aurora, c’est l’aube et l’aurore boréale), elles ont été construites et testées comme le fait un designer (16 px, une couleur, fond clair et sombre, flou, à côté du nom), et chacune a son intro, qui finit dans l’app avec ce logo dans l’en-tête.
+
+| Fichier | Intro | Logo | Durée | Ce qui se passe | Sortie vers l’app |
+|---|---|---|---|---|---|
+| `boreale.html` | **Boréale** | Strates (conseillé) | 3 s | les trois traits du A se tracent, on plonge dedans, ils deviennent une aurore boréale | l’aurore s’élève et se dissipe |
+| `aurore.html` | **Aurore** | Point du jour | 2,7 s | le A se dresse en montagne, le soleil se lève sur sa barre | l’écran s’ouvre en deux à l’horizon |
+| `allumage.html` | **Allumage** | Écran | 2,6 s | l’écran se dessine, le jour se lève dedans | l’écran grandit et devient l’app |
+| `ressac.html` | **Ressac** | Vague | 2,7 s | une vague traverse l’écran, le A apparaît dans son sillage | une grande vague découvre l’app |
+
+Les logos sont dans `logos/` : pour chacune des huit pistes, la version en couleurs, en blanc, en noir, et l’icône d’app sur fond sombre et sur fond clair (`<piste>-couleur.svg`, `-blanc`, `-noir`, `-tuile`, `-tuile-claire`). `logos/symboles.py` les dessine tous. Ce sont des fichiers d’exploration : une fois le logo choisi, il faudra vectoriser les contours (traits en formes pleines) pour le fichier maître.
+
+## Comment trouver un logo qui a un lien avec l’app et le nom
+
+1. **Croiser deux listes** : tout ce qu’évoque le nom (aube, jour qui se lève, aurore boréale, voiles de lumière, la lettre A, bleu-violet-rose) et tout ce que fait l’app (écran, chaînes en direct, ondes, lecture, films du soir). Les bons signes touchent aux deux.
+2. **Un logo identifie, il n’explique pas** : le N de Netflix ne montre pas de télé. Le lien avec l’app, c’est l’intro et l’interface qui le racontent.
+3. **Tester** chaque piste : reconnaissable à 16 px, en une couleur, en blanc sur noir, floutée, à côté du nom, au milieu d’autres icônes. Puis choisir.
+
+## Ancien Λ : le Λ devient le nom (sans son)
 
 Le logo devient le nom : le Λ prend la place du A et « Aurora » se forme autour de lui. Le Λ y est dessiné à la hauteur, à la largeur et à la graisse du A de Familjen Grotesk (capitales de 0,657 em, fût de 0,142 em) : un trait de 8 au lieu de 5, dans le même cadre. L’en-tête de l’app affiche le même mot.
 
@@ -15,7 +34,7 @@ Le logo devient le nom : le Λ prend la place du A et « Aurora » se forme auto
 | `rebond.html` | **Rebond** | 2,7 s | il tombe et rebondit, puis les lettres tombent une à une | l’écran remonte comme un rideau |
 | `rouleaux.html` | **Rouleaux** | 2,7 s | les lettres défilent comme des rouleaux de machine à sous et s’arrêtent une par une | le nom se range dans l’en-tête |
 
-## Premières pistes
+## Ancien Λ : premières pistes
 
 | Fichier | Intro | Durée | Idée | Son |
 |---|---|---|---|---|

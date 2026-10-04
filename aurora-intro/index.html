@@ -183,9 +183,9 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
 </svg>
 <main class="page">
   <header class="entete">
-    <span class="marque"><svg viewBox="14 13 36 39" aria-hidden="true"><path d="M18 48L32 17l14 31"/></svg></span>
+    <span class="marque"><svg viewBox="36 18 184 224" aria-hidden="true" style="width: 30px; aspect-ratio: 184 / 224"><path d="M64 214 L128 46" style="stroke: #4ea8f5; stroke-width: 46"/><path d="M192 214 L128 46" style="stroke: #ff6cab; stroke-width: 46; mix-blend-mode: screen"/><path d="M86 160 H170" style="stroke: #9d5cff; stroke-width: 36; mix-blend-mode: screen"/></svg></span>
     <h1>Intros Aurora</h1>
-    <p class="chapo">Le logo devient le nom : le Λ prend la place du A et « Aurora » se forme autour de lui. Six façons de le faire, toutes sans son, toutes courtes, et toutes finissent dans l’app, sans coupure. Plus bas, les premières pistes.</p>
+    <p class="chapo">Un nouveau logo, et une intro pensée pour chacun. Quatre pistes de logo tirées du nom (Aurora, c’est l’aube et l’aurore boréale), chacune avec son intro, sans son, qui finit dans l’app avec ce logo dans l’en-tête. Plus bas, les intros faites avec l’ancien Λ.</p>
     <ul class="touches">
       <li><kbd>clic</kbd> ou une touche : passer (fondu enchaîné vers l’app)</li>
       <li><kbd>R</kbd> rejouer</li>
@@ -194,11 +194,57 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
     </ul>
   </header>
 
+  <section class="famille" aria-labelledby="f-logos">
+    <h2 id="f-logos">Nouveau logo : une intro par logo</h2>
+    <div class="grille">
+    <a class="carte" href="boreale.html">
+      <div class="vignette"><img src="apercus/boreale.webp" alt="Le A dans des rideaux d’aurore boréale" width="800" height="500"><span class="duree">3 s</span></div>
+      <div class="corps">
+        <h3>Boréale</h3>
+        <p class="inspi">Logo : Strates, le A en trois couches de lumière</p>
+        <p>L’intro « à la Netflix », sans la copier : les trois traits du A se tracent, on plonge dans le A, ses traits sont faits de rayons, qui se libèrent et deviennent une aurore boréale.</p>
+        <p class="inspi">Sortie : l’aurore s’élève et se dissipe sur l’app.</p>
+        <ul class="outils"><li>WebGL2</li><li>shader</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="aurore.html">
+      <div class="vignette"><img src="apercus/aurore.webp" alt="Le A avec le soleil levant sur sa barre" width="800" height="500"><span class="duree">2,7 s</span></div>
+      <div class="corps">
+        <h3>Aurore</h3>
+        <p class="inspi">Logo : Point du jour, l’aube dans le A</p>
+        <p>Le A se dresse comme une montagne, sa barre s’étire comme l’horizon, le soleil se lève dessus et l’aube éclaire le ciel.</p>
+        <p class="inspi">Sortie : l’écran s’ouvre en deux à l’horizon.</p>
+        <ul class="outils"><li>SVG</li><li>Web Animations</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="allumage.html">
+      <div class="vignette"><img src="apercus/allumage.webp" alt="L’écran du logo qui montre l’app en miniature" width="800" height="500"><span class="duree">2,6 s</span></div>
+      <div class="corps">
+        <h3>Allumage</h3>
+        <p class="inspi">Logo : Écran, le jour qui se lève dans un écran</p>
+        <p>Le cadre de l’écran se dessine, le jour se lève dedans. Puis l’écran s’allume : l’app y apparaît en miniature, et l’écran grandit jusqu’à devenir l’app.</p>
+        <p class="inspi">Sortie : le logo devient la fenêtre de l’app.</p>
+        <ul class="outils"><li>SVG</li><li>clip-path</li><li>FLIP</li></ul>
+      </div>
+    </a>
+    <a class="carte" href="ressac.html">
+      <div class="vignette"><img src="apercus/ressac.webp" alt="La vague d’aurore qui traverse le A" width="800" height="500"><span class="duree">2,7 s</span></div>
+      <div class="corps">
+        <h3>Ressac</h3>
+        <p class="inspi">Logo : Vague, le A traversé par une vague d’aurore</p>
+        <p>Une longue vague traverse l’écran et le A apparaît dans son sillage, puis la vague se replie jusqu’à n’être plus que la barre du A.</p>
+        <p class="inspi">Sortie : une grande vague monte et laisse l’app derrière elle.</p>
+        <ul class="outils"><li>SVG</li><li>clip-path</li></ul>
+      </div>
+    </a>
+    </div>
+  </section>
+
   <section class="famille" aria-labelledby="f-nom">
-    <h2 id="f-nom">Le Λ devient le nom</h2>
+    <h2 id="f-nom">Ancien Λ : le Λ devient le nom</h2>
     <div class="grille trois">
     <a class="carte" href="glissement.html">
-      <div class="vignette"><img src="apercus/glissement.webp" alt="Le Λ posé en A, les lettres qui sortent de derrière lui" width="800" height="500"><span class="duree">2,6 s</span></div>
+      <div class="vignette"><img loading="lazy" src="apercus/glissement.webp" alt="Le Λ posé en A, les lettres qui sortent de derrière lui" width="800" height="500"><span class="duree">2,6 s</span></div>
       <div class="corps">
         <h3>Glissement</h3>
         <p>Le grand Λ se trace, puis glisse à la place du A ; les autres lettres sortent de derrière lui. On plonge ensuite dans le A, qui s’ouvre sur l’app.</p>
@@ -207,7 +253,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
       </div>
     </a>
     <a class="carte" href="recul.html">
-      <div class="vignette"><img src="apercus/recul.webp" alt="Le Λ géant et flou, avec le début du nom" width="800" height="500"><span class="duree">2,6 s</span></div>
+      <div class="vignette"><img loading="lazy" src="apercus/recul.webp" alt="Le Λ géant et flou, avec le début du nom" width="800" height="500"><span class="duree">2,6 s</span></div>
       <div class="corps">
         <h3>Recul</h3>
         <p>On part tout contre le Λ, qui remplit l’écran, flou. La caméra recule et l’on découvre qu’il est le A d’« Aurora ». Puis le nom va se ranger dans l’en-tête.</p>
@@ -216,7 +262,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
       </div>
     </a>
     <a class="carte" href="trait.html">
-      <div class="vignette"><img src="apercus/trait.webp" alt="Le nom qui s’écrit au-dessus d’une ligne lumineuse" width="800" height="500"><span class="duree">2,9 s</span></div>
+      <div class="vignette"><img loading="lazy" src="apercus/trait.webp" alt="Le nom qui s’écrit au-dessus d’une ligne lumineuse" width="800" height="500"><span class="duree">2,9 s</span></div>
       <div class="corps">
         <h3>Trait</h3>
         <p>Le Λ se pose en A ; sa plume repart du pied droit et file sous le mot, et chaque lettre se lève quand elle passe. Puis l’écran s’ouvre en deux à cette ligne.</p>
@@ -255,7 +301,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
   </section>
 
   <section class="famille" aria-labelledby="f-pistes">
-    <h2 id="f-pistes">Premières pistes</h2>
+    <h2 id="f-pistes">Ancien Λ : premières pistes</h2>
   <div class="grille">
     <a class="carte" href="eclat.html">
       <div class="vignette"><img src="apercus/eclat.webp" alt="Le Λ qui s’envole vers l’en-tête de l’app" width="800" height="500" loading="lazy"><span class="duree">1,7 s</span></div>
@@ -325,7 +371,7 @@ td a { color: var(--encre-2); text-decoration-color: rgb(157 92 255 / .6); text-
 
   <footer class="pied">
     <p>Le son est activé par défaut. Si le navigateur l’empêche avant un clic, le bouton « Activer le son » s’allume en bas à droite ; dans l’app, rien ne le bloque.</p>
-    <p>Chaque page est autonome, police comprise. Néon charge anime.js depuis jsDelivr ; les autres n’ont besoin de rien. Les six intros « Le Λ devient le nom » et Aube sont pensées sans son. Avec « réduire les animations », l’app s’affiche directement.</p>
+    <p>Chaque page est autonome, police comprise. Néon charge anime.js depuis jsDelivr ; les autres n’ont besoin de rien. Les intros du nouveau logo, celles où le Λ devient le nom, et Aube sont pensées sans son. Boréale demande WebGL2 ; sans lui, l’app s’affiche directement. Avec « réduire les animations », l’app s’affiche directement.</p>
   </footer>
 </main>
 </body>
