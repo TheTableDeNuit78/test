@@ -10,7 +10,7 @@
  * Variante 2 — « Le mur d'affiches ».
  * À droite, ce qu'on vient chercher : des films et des séries. Sept colonnes d'affiches défilent
  * lentement, en sens alternés, inclinées comme une étagère qu'on regarde de biais. Le mur passe
- * sous la barre du haut (son flou le laisse deviner) et s'efface vers le texte par un fondu net —
+ * jusqu'en haut de l'écran et s'efface vers le texte par un fondu net —
  * aucune lueur peinte : la couleur vient des affiches.
  */
 .mur {
@@ -53,7 +53,7 @@
 
 .page {
   position: absolute;
-  inset: 90px 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   padding: 24px var(--gouttiere) 48px;
@@ -67,7 +67,6 @@
 </head>
 <body>
 <div class="mur" aria-hidden="true"><div class="plan" id="plan"></div></div>
-<div id="barre"></div>
 
 <main class="page">
   <section class="colonne entre">
@@ -89,9 +88,8 @@
 <script>
 'use strict';
 (() => {
-  const { barre, icone, TITRES, affiche, hasard } = Aurora;
+  const { icone, TITRES, affiche, hasard } = Aurora;
   const $ = (id) => document.getElementById(id);
-  $('barre').outerHTML = barre();
   $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
 
   // Sept colonnes, chacune doublée pour que la boucle ne se voie pas.

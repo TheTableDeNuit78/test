@@ -23,7 +23,7 @@
 }
 .page {
   position: absolute;
-  inset: 90px 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   padding: 24px var(--gouttiere) 48px;
@@ -60,7 +60,6 @@
 </head>
 <body>
 <canvas id="ondes" aria-hidden="true"></canvas>
-<div id="barre"></div>
 
 <main class="page">
   <section class="colonne entre">
@@ -83,9 +82,8 @@
 <script>
 'use strict';
 (() => {
-  const { barre, icone, hasard } = Aurora;
+  const { icone, hasard } = Aurora;
   const $ = (id) => document.getElementById(id);
-  $('barre').outerHTML = barre();
   $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
 
   const toile = $('ondes'), cx = toile.getContext('2d');

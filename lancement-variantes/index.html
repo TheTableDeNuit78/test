@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Variantes du lancement</title>
 <style>
-/* Galerie : l'écran actuel puis cinq variantes, pour la bienvenue et pour le chargement.
+/* Galerie : l'écran actuel puis quinze variantes, pour le premier lancement et pour le chargement.
    Délibérément sombre seulement : c'est le monde de l'app qu'on regarde. */
 @font-face {
   font-family: 'Familjen Grotesk';
@@ -32,8 +32,7 @@
   --texte-2: #9494a4;
   --texte-3: #75757f;
   --iris: #7c5cff;
-  --ok: #38d18a;
-  --cours: #4ea8f5;
+  --iris-doux: rgba(124, 92, 255, 0.16);
   --prisme: linear-gradient(45deg, #4ea8f5, #9d5cff 50%, #ff6cab);
   --police: 'Familjen Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -48,7 +47,7 @@ body {
   font: 15px/1.55 var(--police);
   -webkit-font-smoothing: antialiased;
 }
-main { max-width: 1320px; margin: 0 auto; }
+main { max-width: 1440px; margin: 0 auto; }
 .lambda {
   display: inline-block; width: 24px; height: 24px; flex: none; background: var(--prisme);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='14 14.5 36 36'%3E%3Cpath d='M18 48L32 17l14 31' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -56,33 +55,49 @@ main { max-width: 1320px; margin: 0 auto; }
 }
 .marque { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: var(--texte-2); }
 h1 { margin: 22px 0 12px; font-size: clamp(32px, 4.4vw, 56px); line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
-.chapeau { margin: 0; max-width: 68ch; color: var(--texte-2); font-size: 16px; }
+.chapeau { margin: 0; max-width: 72ch; color: var(--texte-2); font-size: 16px; }
 .chapeau b { color: var(--texte); font-weight: 600; }
 
-section { margin-top: 56px; }
+/* Les filtres : une rangée, au-dessus de tout ce qu'ils filtrent. */
+.filtres { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; flex-wrap: wrap; gap: 6px; margin: 30px 0 0; padding: 12px 0; background: var(--fond); }
+.filtre {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px;
+  border: 1px solid var(--trait); background: var(--carte); color: var(--texte-2);
+  font: 500 13.5px/1 var(--police); cursor: pointer;
+}
+.filtre:hover { color: var(--texte); border-color: var(--trait-fort); }
+.filtre[aria-pressed="true"] { background: var(--iris-doux); border-color: color-mix(in srgb, var(--iris) 55%, transparent); color: var(--texte); font-weight: 600; }
+.filtre:focus-visible { outline: 2px solid var(--iris); outline-offset: 2px; }
+.filtre span { font-size: 12px; color: var(--texte-3); font-variant-numeric: tabular-nums; }
+
+section { margin-top: 40px; }
 .tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; padding-bottom: 14px; border-bottom: 1px solid var(--trait); }
 h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
 .tete p { margin: 0; color: var(--texte-3); font-size: 14px; }
 
-.grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 20px; margin-top: 22px; }
+.grille { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px 18px; margin-top: 22px; }
 .carte {
-  display: grid; gap: 10px; align-content: start; min-width: 0;
+  display: grid; gap: 9px; align-content: start; min-width: 0;
   padding: 0; border: 0; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer;
 }
-.vue { position: relative; display: block; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 12px; background: #000; box-shadow: 0 0 0 1px var(--trait); transition: box-shadow 160ms; }
+.carte[hidden] { display: none; }
+.vue { position: relative; display: block; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 11px; background: #000; box-shadow: 0 0 0 1px var(--trait); transition: box-shadow 160ms; }
 .vue img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 500ms cubic-bezier(.2,.7,.3,1); }
 .carte:hover .vue, .carte:focus-visible .vue { box-shadow: 0 0 0 2px var(--iris); }
 .carte:hover .vue img { transform: scale(1.015); }
 .carte:focus-visible { outline: none; }
 .num {
-  position: absolute; left: 10px; top: 10px;
-  padding: 3px 10px; border-radius: 999px;
-  background: rgba(14, 14, 18, 0.78); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  position: absolute; left: 9px; top: 9px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(14, 14, 18, 0.8); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
-.actuelle .num { color: var(--texte-2); }
-.carte b { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-.carte small { margin-top: -6px; font-size: 13.5px; line-height: 1.5; color: var(--texte-2); }
+.nouveau .num::after { content: ' · nouveau'; font-weight: 500; color: #b9a6ff; }
+.carte b { font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+.carte small { margin-top: -5px; font-size: 13px; line-height: 1.5; color: var(--texte-2); }
+.carte .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -2px; }
+.tag { padding: 2px 8px; border-radius: 999px; background: var(--carte-2); box-shadow: inset 0 0 0 1px var(--trait); font-size: 11.5px; color: var(--texte-2); }
+.tag.paire { background: none; box-shadow: none; padding-left: 0; color: var(--texte-3); }
 .actuelle .vue { opacity: 0.82; }
 .actuelle b { color: var(--texte-2); }
 
@@ -95,11 +110,7 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 /* La visionneuse : l'écran vivant, à 1440 × 900, réduit pour tenir. */
 .visio { position: fixed; inset: 0; z-index: 50; display: grid; grid-template-rows: auto 1fr; background: rgba(6, 6, 9, 0.96); }
 .visio[hidden] { display: none; }
-.barre {
-  display: flex; align-items: center; gap: 10px;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
-  border-bottom: 1px solid var(--trait);
-}
+.barre { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; border-bottom: 1px solid var(--trait); }
 .barre .titre { min-width: 0; flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .barre .titre span { color: var(--texte-3); }
 .bt {
@@ -111,12 +122,13 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 .bt[hidden] { display: none; }
 .bt:focus-visible { outline: 2px solid var(--iris); outline-offset: 2px; }
 .bt svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.scene { position: relative; overflow: hidden; display: grid; place-items: center; }
+.scene { position: relative; overflow: hidden; }
 .cadre { position: absolute; left: 50%; top: 50%; width: 1440px; height: 900px; transform-origin: 50% 50%; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px var(--trait), 0 30px 90px rgba(0, 0, 0, 0.6); background: #0e0e12; }
 .cadre iframe, .cadre img { display: block; width: 1440px; height: 900px; border: 0; }
 
-@media (max-width: 1000px) { .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) {
+@media (max-width: 1180px) { .grille { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
   .grille { grid-template-columns: 1fr; }
   .regles { grid-template-columns: 1fr; }
   .bt .txt { display: none; }
@@ -127,35 +139,37 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 <body>
 <main>
   <span class="marque"><span class="lambda"></span>Aurora · le lancement</span>
-  <h1>Dix variantes pour le lancement</h1>
-  <p class="chapeau">Cinq pistes pour <b>le premier lancement</b> et cinq pour <b>le chargement</b>, chacune comparée à l’écran actuel. Aucune ne garde la lueur floue de l’arrière-plan : la couleur vient du contenu (affiches, logos, guide) ou du Λ lui-même. Touche une vignette pour voir l’écran vivant, à sa taille réelle de 1440 × 900.</p>
+  <h1>Trente écrans pour le lancement</h1>
+  <p class="chapeau">Quinze pistes pour <b>le premier lancement</b> et quinze pour <b>le chargement</b>, chacune à côté de l’écran actuel. Elles vont du plus sobre au plus osé : contenu de l’app, marque, éditorial, rétro, ludique, technique, et deux en thème clair. Aucune ne garde la lueur floue de l’arrière-plan. Touche une vignette pour voir l’écran vivant, à sa taille réelle de 1440 × 900.</p>
+
+  <div class="filtres" role="toolbar" aria-label="Filtrer par style" id="filtres"></div>
 
   <section aria-labelledby="h-bienvenue">
-    <div class="tete"><h2 id="h-bienvenue">Premier lancement</h2><p>Le vide de droite, rempli de cinq façons.</p></div>
+    <div class="tete"><h2 id="h-bienvenue">Premier lancement</h2><p>Sans la barre du haut, comme dans l’app corrigée.</p></div>
     <div class="grille" id="bienvenue"></div>
   </section>
 
   <section aria-labelledby="h-chargement">
-    <div class="tete"><h2 id="h-chargement">Pendant que tout arrive</h2><p>Le chargement s’y déroule en boucle, en 11 secondes environ.</p></div>
+    <div class="tete"><h2 id="h-chargement">Pendant que tout arrive</h2><p>Le chargement s’y déroule en boucle, en 12 secondes environ.</p></div>
     <div class="grille" id="chargement"></div>
   </section>
 
   <div class="regles">
-    <h2>Ce qui vaut pour les dix</h2>
-    <p><b>Le logo est le Λ</b>, le trait d’un seul geste tranché le 20 septembre. La tuile « A » de l’écran actuel disparaît.</p>
-    <p><b>Une couleur = un état</b> : bleu pour ce qui est en cours, vert pour ce qui est terminé. L’iris reste à ce qui est actif.</p>
-    <p><b>Les tokens de l’app</b> : fond <code>#0e0e12</code>, Familjen Grotesk, la barre du haut aux mesures de la maquette C2, le bouton blanc de la bienvenue.</p>
-    <p><b>Les chiffres de « Mon abonnement »</b>, ceux de l’écran Comptes : 99 123 films, 24 936 séries, 21 576 chaînes.</p>
-    <p><b>Pour les captures</b> : <code>?p=0.4</code> fige un chargement à 40 %, <code>?fige</code> arrête les animations d’ambiance.</p>
-    <p><b>Le mouvement</b> s’arrête quand le système demande moins d’animations.</p>
+    <h2>Ce qui vaut pour les trente</h2>
+    <p><b>Le logo est le Λ</b>, le trait d’un seul geste tranché le 20 septembre. La tuile « A » de l’écran actuel disparaît partout.</p>
+    <p><b>Une couleur = un état</b> : bleu pour ce qui est en cours, vert pour ce qui est terminé, ambre pour ce qui attend. L’iris reste à ce qui est actif.</p>
+    <p><b>Les chiffres de « Mon abonnement »</b>, ceux de l’écran Comptes : 99 123 films, 24 936 séries, 21 576 chaînes, avec 312 catégories et 7 jours de guide.</p>
+    <p><b>Les polices</b> : Familjen Grotesk partout ; les variantes de style ajoutent Instrument Serif, Anton, JetBrains Mono, VT323 ou Unbounded (toutes libres, dans <code>polices/</code>).</p>
+    <p><b>Les paires</b> : certaines bienvenues ont leur chargement assorti (générique, terminal, papier, télé rétro), pour garder le même monde de bout en bout.</p>
+    <p><b>Pour les captures</b> : <code>?p=0.4</code> fige un chargement à 40 %, <code>?fige</code> arrête les animations d’ambiance. Le mouvement s’arrête quand le système demande moins d’animations.</p>
   </div>
 </main>
 
 <div class="visio" id="visio" role="dialog" aria-modal="true" aria-labelledby="visioTitre" hidden>
   <div class="barre">
     <span class="titre" id="visioTitre"></span>
-    <button class="bt" type="button" id="prec" aria-label="Variante précédente"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
-    <button class="bt" type="button" id="suiv" aria-label="Variante suivante"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+    <button class="bt" type="button" id="prec" aria-label="Écran précédent"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="bt" type="button" id="suiv" aria-label="Écran suivant"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
     <a class="bt" id="seule" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg><span class="txt">Ouvrir seule</span></a>
     <button class="bt" type="button" id="fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg><span class="txt">Fermer</span></button>
   </div>
@@ -165,37 +179,80 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
 <script>
 'use strict';
 (() => {
+  // [numéro, nom, phrase, fichier, style, paire]
+  const B = [
+    ['1', 'La vitrine', 'Six tuiles vivantes montrent ce que dit la phrase : reprendre, enregistrer, télécharger, multi-écran, favoris, guide.', '1-vitrine', 'Contenu'],
+    ['2', 'Le mur d’affiches', 'Sept colonnes d’affiches défilent lentement, de biais. Le côté cinéma, sans lueur peinte.', '2-affiches', 'Contenu'],
+    ['3', 'Le guide en toile de fond', 'La grille du Guide TV en perspective, qui avance sous la ligne « maintenant ».', '3-guide', 'Contenu'],
+    ['4', 'Le Λ qui émet', 'Le Λ de l’intro en grand, qui émet des ondes nettes dans son dégradé.', '4-ondes', 'Marque', 'Chargement 1'],
+    ['5', 'Tout de suite', 'Le formulaire Xtream / M3U est déjà là, adresse vérifiée pendant la frappe. Un écran de moins.', '5-connexion', 'Sobre'],
+    ['6', 'Le générique', 'Bandes noires, grain de pellicule, titre en capitales condensées ; la phrase rassurante en sous-titre.', '6-generique', 'Éditorial', 'Chargement 13'],
+    ['7', 'Le magazine télé', 'Une couverture : titre de une en dégradé, affiches en sujet, sommaire avec numéros de page, code-barres.', '7-magazine', 'Éditorial'],
+    ['8', 'Le télétexte', 'Page P100, 40 colonnes, le Λ en mosaïque, et les quatre touches de couleur pour les quatre actions.', '8-teletexte', 'Rétro', 'Chargement 9'],
+    ['9', 'La télécommande', 'Une télécommande Aurora dessinée en CSS ; ses touches de couleur portent les actions de l’écran.', '9-telecommande', 'Ludique'],
+    ['10', 'L’affiche suisse', 'Grille visible, texte calé à gauche, aucun arrondi, un Λ iris géant que le titre inverse.', '10-suisse', 'Éditorial'],
+    ['11', 'Papier', 'En thème clair : le Λ en papier découpé, sept bandes empilées qui suivent la souris.', '11-papier', 'Clair', 'Chargement 11'],
+    ['12', 'Le paysage', 'Une aurore boréale en gravure : traits d’un pixel, montagnes en aplats, et le sommet du milieu est le Λ.', '12-paysage', 'Marque'],
+    ['13', 'Le terminal', 'Une session de ligne de commande : flèches, Entrée, Espace, et le Λ en art ASCII.', '13-terminal', 'Technique', 'Chargement 8'],
+    ['14', 'Pop', 'Fond iris tramé, ombres dures, Λ chromé, et des autocollants qu’on peut déplacer.', '14-pop', 'Ludique'],
+    ['15', 'Les trois panneaux', 'Chaînes, Films, Séries : trois panneaux qui s’élargissent au survol, chacun avec un vrai morceau de l’app.', '15-panneaux', 'Contenu'],
+  ];
+  const C = [
+    ['1', 'Le Λ qui se remplit', 'Le logo devient la barre : le dégradé monte le long du trait et passe cinq repères nommés.', '1-lambda', 'Marque', 'Bienvenue 4'],
+    ['2', 'L’accueil qui se construit', 'L’Accueil s’ouvre en squelette et se remplit à chaque étape ; une capsule garde le bouton.', '2-accueil', 'Contenu'],
+    ['3', 'Les cinq compteurs', 'Cinq colonnes, cinq compteurs en très grand, une ligne de progression d’un bord à l’autre.', '3-compteurs', 'Éditorial'],
+    ['4', 'Le journal', 'Le catalogue arrive catégorie par catégorie, avec ses affiches et ses logos.', '4-journal', 'Technique'],
+    ['5', 'La mosaïque', 'Les affiches et les chaînes s’allument depuis le centre ; à 100 %, l’écran est plein.', '5-mosaique', 'Contenu'],
+    ['6', 'Le tableau des arrivées', 'Un tableau à palettes de gare : ATTENDU, EN APPROCHE, ARRIVÉ, et les caractères qui basculent.', '6-tableau', 'Rétro'],
+    ['7', 'Les VU-mètres', 'Une façade d’ampli : cinq galvanomètres, des afficheurs à LED, une rampe de segments.', '7-vumetres', 'Rétro'],
+    ['8', 'Le terminal', '« aurora sync » : barres en caractères, et le journal des requêtes au serveur Xtream.', '8-terminal', 'Technique', 'Bienvenue 13'],
+    ['9', 'La recherche des chaînes', 'Le menu bleu des vieilles télés ; la neige s’éclaircit et le Λ se cale.', '9-recherche', 'Rétro', 'Bienvenue 8'],
+    ['10', 'Le sablier', 'Un V sur un Λ : le sable coule et se dépose en strates, une couleur par étape.', '10-sablier', 'Marque'],
+    ['11', 'Le ticket', 'En thème clair : une imprimante sort le relevé du catalogue, ligne par ligne.', '11-ticket', 'Clair', 'Bienvenue 11'],
+    ['12', 'L’orbite', 'Un planétaire : chaque étape fait un tour autour du Λ et laisse sa trace.', '12-orbite', 'Marque'],
+    ['13', 'Le générique de fin', 'Le catalogue défile comme un générique, section par section, jusqu’à « Fin ».', '13-generique-fin', 'Éditorial', 'Bienvenue 6'],
+    ['14', 'Les blocs', 'Des pièces tombent et s’empilent jusqu’à former le Λ ; score, niveau, pièce suivante.', '14-blocs', 'Ludique'],
+    ['15', 'Le tableau de bord', 'Débit en direct, composition du catalogue, état des serveurs : la version Moniteur.', '15-tableau-de-bord', 'Technique'],
+  ];
+  const groupe = (cle, l) => l.map(([n, nom, txt, f, style, paire]) => ({ n, nom, txt, style, paire, groupe: cle, page: `${cle}/${f}.html`, mini: `captures/mini/${cle}-${f}.webp`, img: `captures/${cle}-${f}.png`, nouveau: +n > 5 }));
   const ECRANS = {
-    bienvenue: [
-      { n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Le texte à gauche, une lueur floue à droite, et beaucoup de vide.', img: 'actuel/bienvenue.png' },
-      { n: '1', nom: 'La vitrine', txt: 'Six tuiles vivantes montrent ce que dit la phrase : reprendre, enregistrer, télécharger, multi-écran, favoris, guide.', page: 'bienvenue/1-vitrine.html', img: 'captures/bienvenue-1-vitrine.png' },
-      { n: '2', nom: 'Le mur d’affiches', txt: 'Sept colonnes d’affiches défilent lentement, de biais. Le côté cinéma d’Aurora, sans aucune lueur peinte.', page: 'bienvenue/2-affiches.html', img: 'captures/bienvenue-2-affiches.png' },
-      { n: '3', nom: 'Le guide en toile de fond', txt: 'La grille du Guide TV en perspective, qui avance en temps réel sous la ligne « maintenant ».', page: 'bienvenue/3-guide.html', img: 'captures/bienvenue-3-guide.png' },
-      { n: '4', nom: 'Le Λ qui émet', txt: 'Le Λ de l’intro en grand, qui émet des ondes nettes dans son dégradé. La suite directe de l’intro.', page: 'bienvenue/4-ondes.html', img: 'captures/bienvenue-4-ondes.png' },
-      { n: '5', nom: 'Tout de suite', txt: 'Le formulaire est déjà là, onglets Xtream et M3U, adresse vérifiée pendant la frappe. Un écran de moins.', page: 'bienvenue/5-connexion.html', img: 'captures/bienvenue-5-connexion.png' },
-    ],
-    chargement: [
-      { n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Une carte au centre, posée sur deux halos flous, violet et vert.', img: 'actuel/chargement.png' },
-      { n: '1', nom: 'Le Λ qui se remplit', txt: 'Le logo devient la barre : le dégradé monte le long du trait et passe cinq repères nommés.', page: 'chargement/1-lambda.html', img: 'captures/chargement-1-lambda.png' },
-      { n: '2', nom: 'L’accueil qui se construit', txt: 'L’Accueil s’ouvre en squelette et se remplit à chaque étape ; une capsule garde le pourcentage et le bouton.', page: 'chargement/2-accueil.html', img: 'captures/chargement-2-accueil.png' },
-      { n: '3', nom: 'Les cinq compteurs', txt: 'Cinq colonnes, cinq compteurs en très grand, une ligne de progression d’un bord à l’autre.', page: 'chargement/3-compteurs.html', img: 'captures/chargement-3-compteurs.png' },
-      { n: '4', nom: 'Le journal', txt: 'À droite, le catalogue arrive catégorie par catégorie, avec ses affiches et ses logos.', page: 'chargement/4-journal.html', img: 'captures/chargement-4-journal.png' },
-      { n: '5', nom: 'La mosaïque', txt: 'Les affiches et les chaînes s’allument depuis le centre ; à 100 %, l’écran est plein.', page: 'chargement/5-mosaique.html', img: 'captures/chargement-5-mosaique.png' },
-    ],
+    bienvenue: [{ n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Le texte à gauche, une lueur floue à droite, et beaucoup de vide.', groupe: 'bienvenue', style: 'Actuel', mini: 'captures/mini/actuel-bienvenue.webp', img: 'actuel/bienvenue.png' }, ...groupe('bienvenue', B)],
+    chargement: [{ n: 'Actuel', nom: 'L’écran d’aujourd’hui', txt: 'Une carte au centre, posée sur deux halos flous, violet et vert.', groupe: 'chargement', style: 'Actuel', mini: 'captures/mini/actuel-chargement.webp', img: 'actuel/chargement.png' }, ...groupe('chargement', C)],
   };
   const TITRES = { bienvenue: 'Premier lancement', chargement: 'Chargement' };
+  const STYLES = ['Contenu', 'Marque', 'Éditorial', 'Rétro', 'Ludique', 'Technique', 'Clair', 'Sobre'];
   const $ = (id) => document.getElementById(id);
   const tous = [];
 
   for (const [cle, liste] of Object.entries(ECRANS)) {
-    $(cle).innerHTML = liste.map((e, i) => {
-      tous.push({ ...e, groupe: cle });
-      return `<button class="carte${e.page ? '' : ' actuelle'}" type="button" data-i="${tous.length - 1}">
-        <span class="vue"><img src="${e.img}" alt="${TITRES[cle]}, ${e.n === 'Actuel' ? 'écran actuel' : `variante ${e.n}`} : ${e.nom}" loading="lazy" width="1440" height="900"><span class="num">${e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`}</span></span>
-        <b>${e.nom}</b><small>${e.txt}</small></button>`;
+    $(cle).innerHTML = liste.map((e) => {
+      tous.push(e);
+      const i = tous.length - 1;
+      const etiquette = e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`;
+      return `<button class="carte${e.page ? '' : ' actuelle'}${e.nouveau ? ' nouveau' : ''}" type="button" data-i="${i}" data-style="${e.style}">
+        <span class="vue"><img src="${e.mini}" alt="${TITRES[cle]}, ${etiquette} : ${e.nom}" loading="lazy" width="720" height="450"><span class="num">${etiquette}</span></span>
+        <b>${e.nom}</b><small>${e.txt}</small>
+        ${e.page ? `<span class="meta"><span class="tag">${e.style}</span>${e.paire ? `<span class="tag paire">va avec : ${e.paire}</span>` : ''}</span>` : ''}</button>`;
     }).join('');
   }
 
+  // ───── Les filtres ─────
+  let filtre = 'Tous';
+  const compte = (s) => tous.filter((e) => e.page && (s === 'Tous' || e.style === s)).length;
+  $('filtres').innerHTML = ['Tous', ...STYLES].map((s) => `<button class="filtre" type="button" data-s="${s}" aria-pressed="${s === filtre}">${s}<span>${compte(s)}</span></button>`).join('');
+  const cartes = [...document.querySelectorAll('.carte')];
+  const visibles = () => cartes.filter((c) => !c.hidden).map((c) => +c.dataset.i);
+  $('filtres').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.filtre'); if (!b) return;
+    filtre = b.dataset.s;
+    $('filtres').querySelectorAll('.filtre').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    // L'écran actuel reste toujours visible : c'est la référence.
+    cartes.forEach((c) => { c.hidden = filtre !== 'Tous' && c.dataset.style !== 'Actuel' && c.dataset.style !== filtre; });
+    try { localStorage.setItem('aurora-filtre', filtre); } catch (e) { /* stockage indisponible */ }
+  });
+  try { const f = localStorage.getItem('aurora-filtre'); if (f && f !== 'Tous') $('filtres').querySelector(`[data-s="${f}"]`)?.click(); } catch (e) { /* stockage indisponible */ }
+
+  // ───── La visionneuse ─────
   const visio = $('visio'), cadre = $('cadre'), scene = $('scene');
   let courant = -1, retour = null;
   function ajuster() {
@@ -204,33 +261,29 @@ code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; color: 
     cadre.style.transform = `translate(-50%, -50%) scale(${k})`;
   }
   function ouvrir(i) {
-    courant = (i + tous.length) % tous.length;
-    const e = tous[courant];
-    $('visioTitre').innerHTML = `${TITRES[e.groupe]} · ${e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`} — ${e.nom} <span>${courant + 1} / ${tous.length}</span>`;
-    cadre.innerHTML = e.page
-      ? `<iframe src="${e.page}" title="${e.nom}" loading="eager"></iframe>`
-      : `<img src="${e.img}" alt="${e.nom}">`;
+    courant = i;
+    const e = tous[i];
+    const liste = visibles(), pos = liste.indexOf(i);
+    $('visioTitre').innerHTML = `${TITRES[e.groupe]} · ${e.n === 'Actuel' ? 'Actuel' : `Variante ${e.n}`} — ${e.nom} <span>${pos + 1} / ${liste.length}</span>`;
+    cadre.innerHTML = e.page ? `<iframe src="${e.page}" title="${e.nom}"></iframe>` : `<img src="${e.img}" alt="${e.nom}">`;
     $('seule').hidden = !e.page;
     if (e.page) $('seule').href = e.page;
     if (visio.hidden) { retour = document.activeElement; visio.hidden = false; document.body.style.overflow = 'hidden'; $('fermer').focus(); }
     ajuster();
   }
-  function fermer() {
-    visio.hidden = true; cadre.innerHTML = ''; document.body.style.overflow = '';
-    if (retour) retour.focus();
-  }
-  document.querySelectorAll('.carte').forEach((b) => b.addEventListener('click', () => ouvrir(+b.dataset.i)));
+  const voisin = (d) => { const l = visibles(); const p = l.indexOf(courant); ouvrir(l[(p + d + l.length) % l.length]); };
+  function fermer() { visio.hidden = true; cadre.innerHTML = ''; document.body.style.overflow = ''; if (retour) retour.focus(); }
+  cartes.forEach((b) => b.addEventListener('click', () => ouvrir(+b.dataset.i)));
   $('fermer').addEventListener('click', fermer);
-  $('prec').addEventListener('click', () => ouvrir(courant - 1));
-  $('suiv').addEventListener('click', () => ouvrir(courant + 1));
+  $('prec').addEventListener('click', () => voisin(-1));
+  $('suiv').addEventListener('click', () => voisin(1));
   addEventListener('resize', () => { if (!visio.hidden) ajuster(); });
   addEventListener('keydown', (ev) => {
     if (visio.hidden) return;
     if (ev.key === 'Escape') fermer();
-    else if (ev.key === 'ArrowRight') ouvrir(courant + 1);
-    else if (ev.key === 'ArrowLeft') ouvrir(courant - 1);
+    else if (ev.key === 'ArrowRight') voisin(1);
+    else if (ev.key === 'ArrowLeft') voisin(-1);
     else if (ev.key === 'Tab') {
-      // La visionneuse garde le focus pour elle.
       const f = [...visio.querySelectorAll('button, a:not([hidden])')];
       const i = f.indexOf(document.activeElement);
       if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); }

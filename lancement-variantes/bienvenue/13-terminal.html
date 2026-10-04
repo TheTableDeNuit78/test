@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Terminal</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 13 — « Le terminal ».
+ * Pour qui configure son IPTV comme on configure un serveur : le premier lancement est une
+ * session de terminal. La commande se tape, la réponse défile, et le choix se fait comme dans
+ * les assistants en ligne de commande : flèches, Entrée, Espace pour la case. À droite, le Λ
+ * en art ASCII, ombré avec les caractères « .:-=+*#%@ » et teinté au dégradé du logo.
+ */
+body { background: #0a0a0e; font-family: var(--mono-jb); }
+.term { position: fixed; inset: 0 0 34px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; padding: 34px var(--gouttiere) 20px; font-size: clamp(13px, 1.2vw, 17px); line-height: 1.6; }
+.sortie { margin: 0; white-space: pre-wrap; min-width: 0; color: #c9c9d6; }
+.sortie .p { color: #38d18a; } .sortie .cmd { color: #fff; }
+.sortie .titreT { color: #fff; font-weight: 700; font-size: 1.9em; line-height: 1.15; letter-spacing: -0.02em; display: inline-block; margin: 6px 0 4px; }
+.sortie .dim { color: #75757f; } .sortie .q { color: #4ea8f5; font-weight: 700; } .sortie .ok { color: #38d18a; }
+.choix { display: grid; margin: 4px 0; }
+.choix button { all: unset; display: grid; grid-template-columns: 2ch 26ch 1fr; cursor: pointer; padding: 1px 0; border-radius: 4px; }
+.choix button:focus-visible { outline: 1px solid #7c5cff; }
+.choix button .fl { color: transparent; }
+.choix button[aria-current="true"] { color: #fff; }
+.choix button[aria-current="true"] .fl { color: #7c5cff; }
+.choix button[aria-current="true"] .nom { color: #b9a6ff; font-weight: 700; }
+.choix button .det { color: #75757f; }
+.case { all: unset; cursor: pointer; color: #fff; }
+.case:focus-visible { outline: 1px solid #7c5cff; }
+.curseur { display: inline-block; width: 0.6em; height: 1.15em; vertical-align: -0.2em; background: #eeeef2; animation: clignote 1s steps(1) infinite; }
+@keyframes clignote { 50% { opacity: 0; } }
+.ascii { margin: 0; align-self: center; font-size: clamp(8px, 0.95vw, 14px); line-height: 1.0; letter-spacing: 0; white-space: pre; user-select: none; }
+.statut {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 34px;
+  display: flex; align-items: center; gap: 0; font: 12.5px/1 var(--mono-jb); background: #15151c; color: #9494a4;
+}
+.statut span { padding: 0 14px; height: 100%; display: flex; align-items: center; }
+.statut .s1 { background: #7c5cff; color: #fff; font-weight: 700; }
+.statut .s2 { background: #24242e; color: #eeeef2; }
+.statut .droite { margin-left: auto; }
+</style>
+</head>
+<body>
+<main class="term">
+  <div class="sortie" id="sortie" aria-live="polite"></div>
+  <pre class="ascii" id="ascii" aria-hidden="true"></pre>
+</main>
+<footer class="statut"><span class="s1">AURORA</span><span class="s2">premier-lancement</span><span>~/aurora</span><span class="droite" id="heure">21:34</span><span class="s2">0.9.0 · windows</span></footer>
+<span class="etiquette" style="bottom:46px">Variante 13 · Le terminal — ↑ ↓ Entrée, Espace</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const sortie = $('sortie');
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches || Aurora.FIGE;
+
+  // ───── Le Λ en art ASCII, ombré et teinté ─────
+  (function ascii() {
+    const C = 64, R = 34, RAMPE = ' .:-=+*#%@';
+    const L = [8, 32], S = [32, 2], Rr = [56, 32];
+    const dist = (p, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy))); return Math.hypot(p[0] - a[0] - vx * t, (p[1] - a[1] - vy * t) * 2); };
+    const PR = [[78, 168, 245], [157, 92, 255], [255, 108, 171]];
+    const couleur = (k) => { const i = k < 0.5 ? 0 : 1, u = (k - i * 0.5) * 2; return `rgb(${PR[i].map((c, j) => Math.round(c + (PR[i + 1][j] - c) * u)).join(',')})`; };
+    let html = '';
+    for (let y = 0; y < R; y++) {
+      for (let x = 0; x < C; x++) {
+        const d = Math.min(dist([x, y], L, S), dist([x, y], S, Rr));
+        const v = Math.max(0, 1 - d / 7.5);
+        const ch = RAMPE[Math.min(RAMPE.length - 1, Math.floor(Math.pow(v, 1.3) * RAMPE.length * 1.25))];
+        html += ch === ' ' ? ' ' : `<span style="color:${couleur(Math.max(0, Math.min(1, (x / C) * 0.8 + (1 - y / R) * 0.35)))}">${ch}</span>`;
+      }
+      html += '\n';
+    }
+    $('ascii').innerHTML = html;
+  })();
+
+  // ───── La session ─────
+  const OPTIONS = [
+    ['Compte Xtream', 'serveur, identifiant, mot de passe'],
+    ['Playlist M3U', 'une adresse ou un fichier .m3u'],
+    ['Reprendre une sauvegarde', 'fichier .aurora : comptes, réglages, favoris, historique'],
+  ];
+  let choix = 0, fr = false, fini = false;
+  const LIGNES = [
+    '<span class="p">hugo@pc</span> <span class="dim">~</span> <span class="p">$</span> <span class="cmd" data-tape>aurora --premier-lancement</span>',
+    '',
+    '<span class="dim">Aurora 0.9.0 — chaînes · films · séries</span>',
+    '<span class="titreT">Ton abonnement, enfin rangé.</span>',
+    'Guide TV, téléchargements, enregistrements, favoris.',
+    'Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs. <span class="ok">✔ chiffrement local</span>',
+    '',
+    '<span class="q">?</span> <b>Quel abonnement ajoutes-tu ?</b> <span class="dim">(↑ ↓ pour choisir, Entrée pour valider)</span>',
+    '<div class="choix" id="choix" role="listbox" aria-label="Type d’abonnement"></div>',
+    '<span class="q">?</span> <b>N’afficher que le français ?</b> <button class="case" id="fr" type="button" role="switch" aria-checked="false">(o/N)</button> <span class="dim">— Espace pour basculer</span>',
+    '<span class="dim">  cache ce qui porte « EN - », « AR - »… Ce qui n’a aucune étiquette reste.</span>',
+    '<span class="dim">  Réglages ▸ Catalogue pour défaire.</span>',
+    '',
+    '<span id="suite"><span class="curseur"></span></span>',
+  ];
+
+  function rendreChoix() {
+    $('choix').innerHTML = OPTIONS.map(([n, d], i) => `<button type="button" role="option" aria-current="${i === choix}" aria-selected="${i === choix}" data-i="${i}"><span class="fl">❯</span><span class="nom">${n}</span><span class="det">${d}</span></button>`).join('');
+    $('choix').querySelectorAll('button').forEach((b) => {
+      b.addEventListener('mouseenter', () => { choix = +b.dataset.i; rendreChoix(); });
+      b.addEventListener('click', () => { choix = +b.dataset.i; valider(); });
+    });
+  }
+  function basculer() { fr = !fr; $('fr').textContent = fr ? '(O/n) oui' : '(o/N)'; $('fr').setAttribute('aria-checked', String(fr)); }
+  function valider() {
+    if (fini) return; fini = true;
+    const suites = [
+      ['Adresse du serveur', 'http://fournisseur.example:8080'],
+      ['Adresse de la playlist', 'http://…/get.php?…&type=m3u_plus'],
+      ['Fichier de sauvegarde', '~/Documents/aurora-2026-09-30.aurora'],
+    ];
+    const [q, ex] = suites[choix];
+    $('suite').innerHTML = `<span class="ok">✔</span> ${OPTIONS[choix][0]}\n<span class="q">?</span> <b>${q} :</b> <span class="dim">${ex}</span> <span class="curseur"></span>`;
+  }
+
+  // La commande se tape, puis la réponse arrive ligne à ligne.
+  async function jouer() {
+    const attendre = (ms) => new Promise((r) => setTimeout(r, reduit ? 0 : ms));
+    for (let i = 0; i < LIGNES.length; i++) {
+      const div = document.createElement('div');
+      div.innerHTML = LIGNES[i] || '&nbsp;';
+      sortie.append(div);
+      const tape = div.querySelector('[data-tape]');
+      if (tape && !reduit) {
+        const txt = tape.textContent; tape.textContent = '';
+        for (const c of txt) { tape.textContent += c; await attendre(38); }
+        await attendre(260);
+      } else await attendre(i < 3 ? 120 : 70);
+      if (div.querySelector('#choix')) rendreChoix();
+      if (div.querySelector('#fr')) $('fr').addEventListener('click', basculer);
+    }
+  }
+  addEventListener('keydown', (e) => {
+    if (!$('choix') || fini) return;
+    if (e.key === 'ArrowDown') { choix = (choix + 1) % OPTIONS.length; rendreChoix(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { choix = (choix + OPTIONS.length - 1) % OPTIONS.length; rendreChoix(); e.preventDefault(); }
+    else if (e.key === 'Enter' && document.activeElement === document.body) { valider(); }
+    else if (e.key === ' ' && document.activeElement === document.body) { basculer(); e.preventDefault(); }
+  });
+  jouer();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Tableau</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 6 — « Le tableau des arrivées ».
+ * Le catalogue arrive comme des trains en gare : un tableau à palettes (le Solari des halls),
+ * où chaque caractère bascule quand sa valeur change. Une ligne par étape, son nombre qui monte
+ * en faisant claquer les palettes, et son état aux couleurs de l'app : ATTENDU en ambre (« en
+ * attente »), EN APPROCHE en bleu (« en cours »), ARRIVÉ en vert (« terminé »).
+ */
+:root { --cw: min(30px, calc((100vw - 2 * var(--gouttiere) - 3 * 26px - 33 * 4px) / 34)); }
+body { background: #0b0b0d; }
+.ecran { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; padding: 34px var(--gouttiere) 30px; }
+.tete { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; }
+.tete h1 { margin: 0; display: flex; align-items: center; gap: 16px; font-size: clamp(34px, 3.6vw, 64px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.tete h1 .lambda { width: 0.8em; height: 0.8em; }
+.tete p { margin: 10px 0 0; color: var(--text-dim); font-size: 15px; }
+.panneau { align-self: center; padding: 26px 26px 30px; border-radius: 14px; background: #121215; box-shadow: inset 0 0 0 1px #1e1e24, 0 30px 80px rgba(0, 0, 0, 0.5); }
+.entetes, .rang { display: grid; grid-template-columns: calc(2 * var(--cw) + 4px) calc(14 * var(--cw) + 13 * 4px) calc(7 * var(--cw) + 6 * 4px) calc(11 * var(--cw) + 10 * 4px); gap: 26px; }
+.entetes { margin-bottom: 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
+.rang { margin-top: 12px; }
+.cases { display: flex; gap: 4px; }
+.case {
+  position: relative; display: grid; place-items: center; width: var(--cw); height: calc(var(--cw) * 1.85); border-radius: 4px;
+  background: linear-gradient(180deg, #222227 0 49.5%, #1b1b1f 50.5%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 3px rgba(0, 0, 0, 0.6);
+  font-size: calc(var(--cw) * 1.08); font-weight: 700; line-height: 1; color: #f1f1f4; text-transform: uppercase;
+  perspective: 120px;
+}
+.case::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; margin-top: -0.5px; background: #050506; }
+.case.bascule { animation: bascule 70ms linear; }
+@keyframes bascule { 0% { transform: rotateX(0); } 50% { transform: rotateX(70deg); filter: brightness(0.6); } 100% { transform: rotateX(0); } }
+.fait .etat .case { color: var(--ok); }
+.encours .etat .case { color: var(--etat-cours); }
+.attente .etat .case { color: var(--warn); }
+.attente .nom .case, .attente .nb .case { color: #8a8a96; }
+.horloge .case { --cw: 26px; }
+.bas { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 28px; }
+.progression { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
+.progression .case { --cw: 34px; }
+.defilant { position: relative; overflow: hidden; height: 40px; border-radius: 8px; background: #121215; box-shadow: inset 0 0 0 1px #1e1e24; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.defilant span { position: absolute; top: 0; left: 0; line-height: 40px; white-space: nowrap; font-size: 14px; color: #f5c84a; animation: defile 26s linear infinite; padding-left: 100%; }
+.defilant strong { color: #fff; }
+@keyframes defile { to { transform: translateX(-100%); } }
+.pret .bas .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="ecran">
+  <header class="tete">
+    <div><h1><span class="lambda"></span>Arrivées</h1><p>Ton catalogue arrive en entier, pour que rien ne rame ensuite.</p></div>
+    <div class="cases horloge" id="horloge" aria-hidden="true"></div>
+  </header>
+
+  <main class="panneau" role="table" aria-label="Chargement du catalogue">
+    <div class="entetes" role="row"><span>N°</span><span>Provenance</span><span>Nombre</span><span>État</span></div>
+    <div id="rangs"></div>
+  </main>
+
+  <footer class="bas">
+    <div class="progression" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100" id="prog"><span>Progression</span><span class="cases" id="pct"></span></div>
+    <div class="defilant"><span id="defilant">L’app peut s’ouvrir tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.  ·  Serveur fournisseur.example · Mon abonnement</span></div>
+    <button class="go fantome" type="button" id="continuer">Continuer sans attendre</button>
+  </footer>
+</div>
+<span class="etiquette" style="bottom:auto;top:12px">Chargement · Variante 6 · Le tableau des arrivées</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const NOMS = ['CATÉGORIES', 'FILMS', 'SÉRIES', 'CHAÎNES DIRECT', 'GUIDE TV'];
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+  // Une rangée de palettes : quand un caractère change, il bascule trois fois au hasard avant de se poser.
+  function palettes(el, n) { el.innerHTML = '<span class="case"></span>'.repeat(n); return [...el.children].map((c) => ({ c, v: ' ', file: [] })); }
+  function ecrire(cases, texte, aligne = 'g') {
+    const t = [...texte.toUpperCase()];
+    const pad = cases.length - t.length;
+    const full = aligne === 'd' ? [...' '.repeat(Math.max(0, pad)), ...t] : [...t, ...' '.repeat(Math.max(0, pad))];
+    cases.forEach((k, i) => {
+      const v = full[i] || ' ';
+      if (v === k.v) return;
+      k.v = v;
+      k.file = Aurora.FIGE ? [v] : [ALPHA[(Math.random() * 36) | 0], ALPHA[(Math.random() * 36) | 0], v];
+    });
+  }
+  function tic() {
+    for (const k of toutes) {
+      if (!k.file.length) continue;
+      k.c.textContent = k.file.shift().replace(' ', ' ');
+      k.c.classList.remove('bascule'); void k.c.offsetWidth; k.c.classList.add('bascule');
+    }
+  }
+
+  const rangs = ETAPES.map((e, i) => {
+    const div = document.createElement('div');
+    div.className = 'rang'; div.setAttribute('role', 'row');
+    div.innerHTML = '<span class="cases num"></span><span class="cases nom"></span><span class="cases nb"></span><span class="cases etat"></span>';
+    $('rangs').append(div);
+    const [a, b, c, d] = div.children;
+    return { div, num: palettes(a, 2), nom: palettes(b, 14), nb: palettes(c, 7), etat: palettes(d, 11) };
+  });
+  const horloge = palettes($('horloge'), 8);
+  const pct = palettes($('pct'), 5);
+  const toutes = [...rangs.flatMap((r) => [...r.num, ...r.nom, ...r.nb, ...r.etat]), ...horloge, ...pct];
+  rangs.forEach((r, i) => { ecrire(r.num, String(i + 1).padStart(2, '0')); ecrire(r.nom, NOMS[i]); });
+
+  let dernier = 0;
+  chargement({
+    rendu(etat, { fige }) {
+      etat.etapes.forEach((e, i) => {
+        const r = rangs[i];
+        r.div.className = `rang ${e.etat}`;
+        ecrire(r.nb, e.etat === 'attente' ? '' : fmt(e.n).replace(/ /g, ' '), 'd');
+        ecrire(r.etat, e.etat === 'fait' ? 'ARRIVÉ' : e.etat === 'encours' ? 'EN APPROCHE' : 'ATTENDU');
+      });
+      const p = Math.round(etat.p * 100);
+      ecrire(pct, `${String(p).padStart(3, '0')} %`);
+      $('prog').setAttribute('aria-valuenow', p);
+      const s = 7 + Math.floor(etat.t);
+      ecrire(horloge, `21:34:${String(s % 60).padStart(2, '0')}`);
+      document.body.classList.toggle('pret', etat.fini);
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+      const now = performance.now();
+      if (fige) { for (let n = 0; n < 4; n++) tic(); } else if (now - dernier > 55) { dernier = now; tic(); }
+    },
+  });
+})();
+</script>
+</body>
+</html>

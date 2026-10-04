@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Sablier</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 10 — « Le sablier ».
+ * Un V posé sur un Λ, pointe contre pointe : c'est un sablier, et sa moitié basse est le logo.
+ * Le sable du haut est le catalogue encore chez le fournisseur ; il coule, grain par grain, et
+ * se dépose en bas en strates, une couleur par étape (celles des rangées de l'Accueil). Chaque
+ * strate porte son nom et son nombre. À 100 %, le Λ est plein.
+ */
+.ecran { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: center; padding: 0 var(--gouttiere); }
+.gauche { max-width: 480px; }
+.gauche .marque { margin-bottom: 40px; }
+.pct { font-size: clamp(72px, 9vw, 150px); font-weight: 700; line-height: 0.88; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.pct small { font-size: 0.36em; color: var(--text-dim); margin-left: 6px; letter-spacing: 0; }
+.etat { margin: 14px 0 0; font-size: 15px; color: var(--text-dim); }
+.etat b { color: var(--text); font-weight: 600; }
+.etat em { font-style: normal; color: var(--etat-cours); font-variant-numeric: tabular-nums; }
+.gauche .go { margin-top: 32px; }
+.avis { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-faint); max-width: 46ch; }
+.avis strong { color: var(--text-dim); }
+.pret .gauche .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+#sablier { width: 100%; height: 100vh; display: block; }
+</style>
+</head>
+<body>
+<main class="ecran">
+  <section class="gauche">
+    <span class="marque"><span class="lambda"></span>Aurora</span>
+    <div class="pct" id="pct" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100">0<small>%</small></div>
+    <p class="etat" id="etat">Le catalogue est chargé en entier, pour que rien ne rame ensuite.</p>
+    <button class="go fantome" type="button" id="continuer">Continuer sans attendre</button>
+    <p class="avis" id="avis">L’app s’ouvrira tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+  </section>
+  <canvas id="sablier" aria-hidden="true"></canvas>
+</main>
+<span class="etiquette">Chargement · Variante 10 · Le sablier</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, TOTAL, chargement, fmt, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const TEINTES = ['#f5a524', '#f57ab8', '#b18cff', '#4ea8f5', '#2fd0c8'];
+  const NOMS = ['Catégories', 'Films', 'Séries', 'Chaînes', 'Guide'];
+  const toile = $('sablier'), cx = toile.getContext('2d');
+  const TAN = 14 / 31;
+  let W, H, dpr, g, grain;
+
+  function mesurer() {
+    dpr = Math.min(2, devicePixelRatio || 1);
+    const r = toile.getBoundingClientRect();
+    W = r.width; H = r.height;
+    toile.width = W * dpr; toile.height = H * dpr;
+    const h = Math.min(H * 0.38, W * 0.62);
+    g = { x: W * 0.36, y: H * 0.5, h, w: h * TAN * 1.18 };
+    // La texture du sable : des points clairs et sombres, tirés une fois.
+    grain = document.createElement('canvas'); grain.width = grain.height = 64;
+    const gx = grain.getContext('2d'), a = hasard(4);
+    for (let i = 0; i < 520; i++) { gx.fillStyle = a() < 0.5 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.28)'; gx.fillRect(a() * 64, a() * 64, 1.2, 1.2); }
+  }
+
+  // Demi-largeur intérieure à la distance d de la pointe.
+  const demi = (d) => g.w * d / g.h;
+  // Hauteur remplie depuis la base pour une fraction d'aire f du triangle du bas.
+  const niveauBas = (f) => g.h * (1 - Math.sqrt(Math.max(0, 1 - f)));
+
+  function trapezeBas(u0, u1) { // de la hauteur u0 à u1 au-dessus de la base
+    const y0 = g.y + g.h - u0, y1 = g.y + g.h - u1;
+    const d0 = g.h - u0, d1 = g.h - u1;
+    cx.beginPath();
+    cx.moveTo(g.x - demi(d0), y0); cx.lineTo(g.x + demi(d0), y0);
+    cx.lineTo(g.x + demi(d1), y1); cx.lineTo(g.x - demi(d1), y1); cx.closePath();
+  }
+  function remplir(couleur) {
+    cx.fillStyle = couleur; cx.fill();
+    cx.save(); cx.clip(); cx.globalCompositeOperation = 'source-atop';
+    cx.fillStyle = cx.createPattern(grain, 'repeat'); cx.fillRect(0, 0, W, H); cx.restore();
+  }
+
+  const chute = Array.from({ length: 70 }, (_, i) => ({ y: Math.random(), x: (Math.random() - 0.5) * 3, v: 0.7 + Math.random() * 0.6 }));
+  let tPrec = performance.now();
+
+  function dessiner(etat, now) {
+    const dt = Math.min(0.05, (now - tPrec) / 1000); tPrec = now;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, W, H);
+    // Le haut : ce qui reste chez le fournisseur, tassé contre le goulot.
+    const reste = 1 - etat.p;
+    if (reste > 0.001) {
+      const v = g.h * Math.sqrt(reste);
+      cx.beginPath();
+      cx.moveTo(g.x, g.y - 2); cx.lineTo(g.x - demi(v), g.y - v); cx.lineTo(g.x + demi(v), g.y - v); cx.closePath();
+      remplir('#cbc6e2');
+    }
+    // Le bas : les strates, une par étape, dans l'ordre d'arrivée.
+    let f = 0, u = 0;
+    const strates = [];
+    etat.etapes.forEach((e, i) => {
+      const part = (e.duree / TOTAL) * e.k;
+      if (part <= 0) return;
+      const u1 = niveauBas(f + part);
+      trapezeBas(u, u1); remplir(TEINTES[i]);
+      strates.push({ i, u0: u, u1, e });
+      f += part; u = u1;
+    });
+    // Le filet de sable qui tombe, du goulot jusqu'au sommet du tas.
+    if (!etat.fini && etat.t > Aurora.ATTENTE) {
+      const haut = g.y + 2, bas = g.y + g.h - u;
+      const c = TEINTES[etat.courante] || '#cbc6e2';
+      cx.fillStyle = c;
+      for (const p of chute) {
+        p.y += p.v * dt * 1.6; if (p.y > 1) { p.y -= 1; p.x = (Math.random() - 0.5) * 3; }
+        cx.fillRect(g.x + p.x - 0.8, haut + (bas - haut) * p.y, 1.6, 1.6);
+      }
+    }
+    // Le verre : un V en haut, et en bas le Λ du logo, au dégradé.
+    cx.lineJoin = 'round'; cx.lineCap = 'round';
+    cx.beginPath(); cx.moveTo(g.x - g.w - 6, g.y - g.h - 6); cx.lineTo(g.x - 5, g.y); cx.moveTo(g.x + 5, g.y); cx.lineTo(g.x + g.w + 6, g.y - g.h - 6);
+    cx.strokeStyle = 'rgba(238,238,242,0.35)'; cx.lineWidth = 2; cx.stroke();
+    const gr = cx.createLinearGradient(g.x - g.w, g.y + g.h, g.x + g.w, g.y);
+    gr.addColorStop(0, '#4ea8f5'); gr.addColorStop(0.5, '#9d5cff'); gr.addColorStop(1, '#ff6cab');
+    cx.beginPath(); cx.moveTo(g.x - g.w - 8, g.y + g.h + 6); cx.lineTo(g.x, g.y - 4); cx.lineTo(g.x + g.w + 8, g.y + g.h + 6);
+    cx.strokeStyle = gr; cx.lineWidth = 7; cx.stroke();
+    // Les montants et les plateaux.
+    cx.fillStyle = '#24242e';
+    const pl = (y) => { cx.beginPath(); cx.roundRect(g.x - g.w - 40, y - 7, (g.w + 40) * 2, 14, 7); cx.fill(); };
+    pl(g.y - g.h - 14); pl(g.y + g.h + 14);
+    cx.fillStyle = '#1b1b23';
+    cx.fillRect(g.x - g.w - 30, g.y - g.h - 7, 6, g.h * 2 + 14); cx.fillRect(g.x + g.w + 24, g.y - g.h - 7, 6, g.h * 2 + 14);
+    // Les étiquettes des strates, à droite.
+    cx.font = '600 14px "Familjen Grotesk", sans-serif'; cx.textBaseline = 'middle';
+    let yPrec = Infinity;
+    for (const s of strates) {
+      let y = g.y + g.h - (s.u0 + s.u1) / 2;
+      y = Math.min(y, yPrec - 34); yPrec = y;
+      const xd = g.x + g.w + 60;
+      cx.strokeStyle = 'rgba(238,238,242,0.18)'; cx.lineWidth = 1;
+      cx.beginPath(); cx.moveTo(g.x + demi(g.h - (s.u0 + s.u1) / 2) + 6, g.y + g.h - (s.u0 + s.u1) / 2); cx.lineTo(xd - 10, y); cx.stroke();
+      cx.fillStyle = TEINTES[s.i]; cx.fillRect(xd, y - 5, 10, 10);
+      cx.fillStyle = '#eeeef2'; cx.fillText(NOMS[s.i], xd + 20, y - 8);
+      cx.fillStyle = s.e.etat === 'fait' ? '#38d18a' : '#4ea8f5';
+      cx.font = '500 13px "Familjen Grotesk", sans-serif';
+      cx.fillText(`${fmt(s.e.n)} ${s.e.unite[1]}${s.e.etat === 'encours' ? '…' : ''}`, xd + 20, y + 10);
+      cx.font = '600 14px "Familjen Grotesk", sans-serif';
+    }
+  }
+
+  mesurer();
+  addEventListener('resize', mesurer);
+  chargement({
+    rendu(etat) {
+      dessiner(etat, performance.now());
+      const p = Math.round(etat.p * 100);
+      $('pct').innerHTML = `${p}<small>%</small>`;
+      $('pct').setAttribute('aria-valuenow', p);
+      const c = etat.etapes[etat.courante];
+      $('etat').innerHTML = etat.fini ? '<b>Tout est là.</b> Les écrans s’ouvriront d’un coup.'
+        : etat.t < Aurora.ATTENTE ? 'On se connecte à ton serveur…'
+        : `<b>${c.nom}</b> — <em>${fmt(c.n)}</em> sur ${fmt(c.cible)} · encore ${Math.max(1, Math.round(etat.reste))} s`;
+      document.body.classList.toggle('pret', etat.fini);
+      $('avis').hidden = etat.fini;
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+    },
+  });
+})();
+</script>
+</body>
+</html>

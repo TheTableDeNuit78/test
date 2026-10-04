@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Recherche</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 9 — « La recherche des chaînes ».
+ * Tout le monde a réglé une télé : le menu bleu, « Recherche automatique », la fréquence qui
+ * défile, le compteur de chaînes trouvées. Ici, c'est le catalogue qu'on cherche. Derrière le
+ * menu, la neige de l'antenne s'éclaircit à mesure que le chargement avance, et le Λ apparaît
+ * comme une image qui se cale. À 100 %, l'image est nette.
+ */
+body { background: #000; }
+#neige { position: fixed; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.osd {
+  position: fixed; left: 7vw; top: 50%; transform: translateY(-50%);
+  width: min(620px, 86vw);
+  font-family: var(--crt); font-size: clamp(22px, 2.15vw, 32px); line-height: 1.12; color: #fff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 40, 0.8);
+}
+.boite { padding: 14px 20px 16px; background: rgba(14, 40, 190, 0.9); border: 3px solid #e8ecff; box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5); }
+.boite + .boite { margin-top: 10px; }
+.titreOsd { display: flex; justify-content: space-between; margin: -14px -20px 12px; padding: 6px 20px; background: #e8ecff; color: #0e28be; text-shadow: none; letter-spacing: 0.04em; }
+.ligne { display: flex; justify-content: space-between; gap: 20px; }
+.ligne .v { color: #ffe94a; }
+.blocs { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; height: 22px; margin: 12px 0 4px; }
+.blocs i { background: rgba(255, 255, 255, 0.15); }
+.blocs i.on { background: #ffe94a; }
+.pret .blocs i.on { background: #6dff8f; }
+.etapes { margin: 0; padding: 0; list-style: none; }
+.etapes li { display: grid; grid-template-columns: 1.2em 1fr auto; gap: 10px; padding: 1px 6px; margin: 0 -6px; }
+.etapes li.encours { background: #ffe94a; color: #0e28be; text-shadow: none; }
+.etapes li.fait .n { color: #6dff8f; }
+.etapes li.attente { color: rgba(255, 255, 255, 0.5); }
+.touches { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 0.82em; }
+.touches button { all: unset; cursor: pointer; }
+.touches button:focus-visible { outline: 2px solid #ffe94a; }
+.touches kbd { font: inherit; padding: 0 6px; margin-right: 6px; background: #e8ecff; color: #0e28be; text-shadow: none; }
+.avis { margin: 8px 0 0; font-size: 0.72em; line-height: 1.15; color: rgba(255, 255, 255, 0.78); }
+.canal { position: fixed; right: 6vw; top: 6vh; font-family: var(--crt); font-size: clamp(40px, 5vw, 76px); color: #6dff8f; text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6); }
+.balayage { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.25) 2px 3px); }
+</style>
+</head>
+<body>
+<canvas id="neige" aria-hidden="true"></canvas>
+<div class="canal" id="canal" aria-hidden="true">CH 01</div>
+<div class="osd">
+  <div class="boite" role="status" aria-live="polite">
+    <div class="titreOsd"><span>RECHERCHE AUTOMATIQUE</span><span id="pct">0 %</span></div>
+    <div class="ligne"><span>Source</span><span class="v">fournisseur.example</span></div>
+    <div class="ligne"><span>Fréquence</span><span class="v" id="freq">474.00 MHz</span></div>
+    <div class="ligne"><span>Trouvés</span><span class="v" id="trouves">0</span></div>
+    <div class="blocs" id="blocs"></div>
+    <ul class="etapes" id="etapes"></ul>
+  </div>
+  <div class="boite">
+    <div class="touches"><button type="button" id="continuer"><kbd>MENU</kbd>Continuer sans attendre</button><span><kbd>OK</kbd>Ouvrir à la fin</span></div>
+    <p class="avis" id="avis">L’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+  </div>
+</div>
+<div class="balayage" aria-hidden="true"></div>
+<span class="etiquette">Chargement · Variante 9 · La recherche des chaînes</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const NOMS = ['Catégories', 'Films', 'Séries', 'Chaînes', 'Guide TV'];
+  $('blocs').innerHTML = '<i></i>'.repeat(30);
+  $('etapes').innerHTML = ETAPES.map((e, i) => `<li id="e${i}"><span class="m"></span><span>${NOMS[i]}</span><span class="n"></span></li>`).join('');
+  const blocs = [...$('blocs').children];
+
+  // La neige : du bruit gris, et dessous l'image qui se cale (le Λ sur un fond sombre).
+  const toile = $('neige'), cx = toile.getContext('2d');
+  const LW = 320, LH = 200;
+  toile.width = LW; toile.height = LH;
+  const image = document.createElement('canvas'); image.width = LW; image.height = LH;
+  (function dessinerImage() {
+    const x = image.getContext('2d');
+    const fond = x.createLinearGradient(0, 0, 0, LH); fond.addColorStop(0, '#0d0b18'); fond.addColorStop(1, '#16112a');
+    x.fillStyle = fond; x.fillRect(0, 0, LW, LH);
+    const g = x.createLinearGradient(LW * 0.55, LH * 0.82, LW * 0.85, LH * 0.25);
+    g.addColorStop(0, '#4ea8f5'); g.addColorStop(0.5, '#9d5cff'); g.addColorStop(1, '#ff6cab');
+    x.strokeStyle = g; x.lineWidth = 14; x.lineCap = 'round'; x.lineJoin = 'round';
+    const sx = LW * 0.7, sy = LH * 0.22, h = LH * 0.58, dx = h * 14 / 31;
+    x.beginPath(); x.moveTo(sx - dx, sy + h); x.lineTo(sx, sy); x.lineTo(sx + dx, sy + h); x.stroke();
+  })();
+  const bruit = cx.createImageData(LW, LH);
+  function neige(p, t) {
+    const d = bruit.data, net = Math.pow(p, 1.4);
+    for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+    cx.putImageData(bruit, 0, 0);
+    // L'image se cale : elle flotte et se dédouble moins à mesure que le signal monte.
+    const roule = (1 - net) * 18 * Math.sin(t * 0.004), dbl = (1 - net) * 10;
+    cx.globalAlpha = 0.25 + 0.75 * net;
+    cx.drawImage(image, 0, roule);
+    cx.globalAlpha = 0.25 * (1 - net); cx.drawImage(image, dbl, roule);
+    cx.globalAlpha = 1;
+  }
+
+  let derniere = 0;
+  chargement({
+    rendu(etat, { fige }) {
+      const now = performance.now();
+      const p = etat.p;
+      if (fige || now - derniere > 1000 / 24) { derniere = now; neige(p, now); }
+      const c = etat.etapes[etat.courante];
+      $('pct').textContent = `${Math.round(p * 100)} %`;
+      $('freq').textContent = etat.fini ? '— verrouillé' : `${(474 + ((now / 7) % 386)).toFixed(2)} MHz`;
+      $('trouves').textContent = c && !etat.fini ? `${fmt(c.n)} ${c.unite[1]}` : `${fmt(ETAPES.reduce((s, e) => s + e.cible, 0))} éléments`;
+      $('canal').textContent = `CH ${String(etat.finies + 1 > 5 ? 5 : etat.finies + 1).padStart(2, '0')}`;
+      blocs.forEach((b, i) => b.classList.toggle('on', i < Math.round(p * 30)));
+      etat.etapes.forEach((e, i) => {
+        const li = $(`e${i}`); li.className = e.etat;
+        li.firstChild.textContent = e.etat === 'fait' ? '✓' : e.etat === 'encours' ? '▶' : '';
+        li.lastChild.textContent = e.etat === 'attente' ? '…' : fmt(e.n);
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('avis').textContent = etat.fini ? 'Recherche terminée : tout est là. Les écrans s’ouvriront d’un coup.' : 'L’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.';
+    },
+  });
+})();
+</script>
+</body>
+</html>

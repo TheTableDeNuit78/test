@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · VU-mètres</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 7 — « Les VU-mètres ».
+ * Une façade d'ampli hi-fi : cinq galvanomètres rétroéclairés, un par étape. L'aiguille de
+ * l'étape en cours s'agite avec le débit (avec l'inertie et le rebond d'une vraie aiguille),
+ * celles des étapes finies retombent et leur voyant passe au vert. En dessous, des afficheurs
+ * à LED comptent, et une rampe de segments donne le total.
+ */
+body { background: #0a0a0c; }
+.facade {
+  position: fixed; left: var(--gouttiere); right: var(--gouttiere); top: 50%; transform: translateY(-50%);
+  display: grid; grid-template-rows: auto auto auto auto; gap: 4.2vh;
+  padding: 3.6vh 3vw 3.4vh;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #1c1c21, #121215 60%, #0f0f12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.7), 0 40px 90px rgba(0, 0, 0, 0.6);
+}
+.plaque { display: flex; align-items: center; justify-content: space-between; gap: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: #8d8d99; }
+.plaque .marque { font-size: 16px; letter-spacing: 0.22em; color: #e9e9ee; text-transform: uppercase; }
+.plaque .lambda { width: 22px; height: 22px; }
+.voyantMarche { display: inline-flex; align-items: center; gap: 10px; }
+.voyantMarche i { width: 9px; height: 9px; border-radius: 50%; background: #ff5d67; box-shadow: 0 0 10px #ff5d67; }
+.compteurs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.4vw; align-items: end; padding-top: 1vh; }
+.voie { display: grid; gap: 14px; justify-items: center; }
+.cadran { position: relative; width: 100%; aspect-ratio: 1.45; border-radius: 10px; padding: 8px; background: #050506; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06); }
+.cadran svg { display: block; width: 100%; height: 100%; border-radius: 6px; }
+.verre { position: absolute; inset: 8px; border-radius: 6px; background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%); pointer-events: none; }
+.nomVoie { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #a5a5b1; }
+.lampe { width: 10px; height: 10px; border-radius: 50%; background: #2a2a30; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8); transition: background-color 300ms, box-shadow 300ms; }
+.fait .lampe { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.encours .lampe { background: var(--etat-cours); box-shadow: 0 0 10px var(--etat-cours); }
+.led {
+  min-width: 8.5ch; padding: 6px 12px; border-radius: 6px; background: #0b0603; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9);
+  font: 700 clamp(16px, 1.6vw, 24px)/1 var(--mono-jb); letter-spacing: 0.06em; text-align: right; font-variant-numeric: tabular-nums;
+  color: #ffb347; text-shadow: 0 0 8px rgba(255, 150, 40, 0.6);
+}
+.attente .led { color: #3a2410; text-shadow: none; }
+.rampe { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #8d8d99; }
+.segments { display: grid; grid-template-columns: repeat(60, 1fr); gap: 3px; height: 16px; }
+.segments i { border-radius: 2px; background: #1d1d22; }
+.segments i.on { background: var(--etat-cours); box-shadow: 0 0 8px color-mix(in srgb, var(--etat-cours) 60%, transparent); }
+.pret .segments i.on { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 60%, transparent); }
+.rampe .pct { font: 700 20px/1 var(--mono-jb); color: #e9e9ee; letter-spacing: 0; min-width: 5ch; text-align: right; }
+.commandes { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; }
+.commandes p { margin: 0; font-size: 12.5px; line-height: 1.55; color: #7a7a86; max-width: 72ch; }
+.commandes p strong { color: #b3b3be; }
+.poussoir {
+  padding: 14px 24px; border: 0; border-radius: 10px; cursor: pointer;
+  background: linear-gradient(180deg, #34343c, #26262c); color: #e9e9ee;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 3px 0 #0b0b0d, 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+.poussoir:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 0 #0b0b0d; }
+</style>
+</head>
+<body>
+<div class="facade" id="facade">
+  <div class="plaque"><span class="marque"><span class="lambda"></span>Aurora</span><span>Chargement du catalogue · Mon abonnement</span><span class="voyantMarche"><i></i>En marche</span></div>
+  <div class="compteurs" id="compteurs"></div>
+  <div class="rampe" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100" id="rampe"><span>Total</span><div class="segments" id="segments"></div><span class="pct" id="pct">0 %</span></div>
+  <div class="commandes">
+    <p id="avis">Le catalogue est chargé en entier, pour que rien ne rame ensuite. L’app peut s’ouvrir tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+    <button class="poussoir" type="button" id="continuer">Continuer sans attendre</button>
+  </div>
+</div>
+<span class="etiquette">Chargement · Variante 7 · Les VU-mètres</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, chargement, fmt } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const NOMS = ['Catégories', 'Films', 'Séries', 'Chaînes', 'Guide'];
+  const A0 = -48, A1 = 48; // course de l'aiguille, en degrés
+
+  // Le cadran : arc gradué, zone rouge en fin de course, sigle, pivot.
+  function cadran(n) {
+    const cx = 100, cy = 118, r = 86;
+    const pt = (a, rr) => [cx + rr * Math.sin(a * Math.PI / 180), cy - rr * Math.cos(a * Math.PI / 180)];
+    let ticks = '';
+    for (let i = 0; i <= 20; i++) {
+      const a = A0 + (A1 - A0) * i / 20, long = i % 5 === 0;
+      const [x1, y1] = pt(a, r), [x2, y2] = pt(a, r - (long ? 12 : 7));
+      ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${i > 16 ? '#b3261e' : '#2b2010'}" stroke-width="${long ? 1.6 : 1}"/>`;
+      if (long) { const [tx, ty] = pt(a, r - 22); ticks += `<text x="${tx}" y="${ty + 3}" font-size="9" text-anchor="middle" fill="#2b2010" font-family="Familjen Grotesk" font-weight="700">${i * 5}</text>`; }
+    }
+    const [ax, ay] = pt(A0, r);
+    const [rx0, ry0] = pt(A0 + (A1 - A0) * 0.8, r), [rx1, ry1] = pt(A1, r);
+    return `<svg viewBox="0 0 200 138" aria-hidden="true">
+      <defs><radialGradient id="face${n}" cx="50%" cy="85%" r="90%"><stop offset="0" stop-color="#ffe6ad"/><stop offset=".7" stop-color="#e9c47a"/><stop offset="1" stop-color="#b68d45"/></radialGradient></defs>
+      <rect width="200" height="138" fill="url(#face${n})"/>
+      <path d="M${ax} ${ay} A ${r} ${r} 0 0 1 ${rx0} ${ry0}" fill="none" stroke="#2b2010" stroke-width="1.4"/>
+      <path d="M${rx0} ${ry0} A ${r} ${r} 0 0 1 ${rx1} ${ry1}" fill="none" stroke="#b3261e" stroke-width="3"/>
+      ${ticks}
+      <text x="100" y="92" font-size="11" text-anchor="middle" fill="#2b2010" font-family="Familjen Grotesk" font-weight="700" letter-spacing="2">DÉBIT</text>
+      <text x="100" y="104" font-size="7" text-anchor="middle" fill="#5a4626" font-family="Familjen Grotesk" letter-spacing="1">ÉLÉMENTS / S</text>
+      <g class="aiguille"><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r - 4}" stroke="#141010" stroke-width="1.4"/></g>
+      <rect x="0" y="122" width="200" height="16" fill="#1a140b"/>
+      <circle cx="${cx}" cy="${cy}" r="7" fill="#1a140b"/>
+    </svg>`;
+  }
+  $('compteurs').innerHTML = ETAPES.map((e, i) => `<div class="voie attente" id="v${i}"><div class="cadran">${cadran(i)}<span class="verre"></span></div><div class="nomVoie"><span class="lampe"></span>${NOMS[i]}</div><div class="led" id="led${i}">—</div></div>`).join('');
+  $('segments').innerHTML = '<i></i>'.repeat(60);
+  const segs = [...$('segments').children];
+  const aiguilles = ETAPES.map((_, i) => ({ el: $(`v${i}`).querySelector('.aiguille'), a: A0, v: 0 }));
+
+  // L'aiguille : un ressort amorti vers sa cible, comme un galvanomètre.
+  let prec = performance.now();
+  chargement({
+    rendu(etat, { fige }) {
+      const now = performance.now(), dt = Math.min(0.05, (now - prec) / 1000); prec = now;
+      etat.etapes.forEach((e, i) => {
+        $(`v${i}`).className = `voie ${e.etat}`;
+        $(`led${i}`).textContent = e.etat === 'attente' ? '—' : fmt(e.n);
+        const g = aiguilles[i];
+        const bruit = Math.sin(now * 0.011 + i) * 0.08 + Math.sin(now * 0.027 + i * 3) * 0.06 + Math.sin(now * 0.053) * 0.03;
+        const cible = e.etat === 'encours' ? A0 + (A1 - A0) * Math.min(1, 0.62 + bruit + (i === 1 ? 0.12 : 0)) : A0;
+        if (fige) { g.a = cible; } else { g.v += ((cible - g.a) * 140 - g.v * 14) * dt; g.a += g.v * dt; }
+        g.el.setAttribute('transform', `rotate(${g.a.toFixed(2)} 100 118)`);
+      });
+      const p = Math.round(etat.p * 100);
+      segs.forEach((s, i) => s.classList.toggle('on', i < Math.round(etat.p * 60)));
+      $('pct').textContent = `${p} %`;
+      $('rampe').setAttribute('aria-valuenow', p);
+      document.body.classList.toggle('pret', etat.fini);
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+      $('avis').innerHTML = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.'
+        : 'Le catalogue est chargé en entier, pour que rien ne rame ensuite. L’app peut s’ouvrir tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.';
+    },
+  });
+})();
+</script>
+</body>
+</html>

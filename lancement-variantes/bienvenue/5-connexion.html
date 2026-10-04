@@ -15,7 +15,7 @@
  */
 .page {
   position: absolute;
-  inset: 90px 0 0;
+  inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 620px) minmax(420px, 540px);
   justify-content: center;
@@ -104,7 +104,6 @@
 </style>
 </head>
 <body>
-<div id="barre"></div>
 
 <main class="page">
   <section class="colonne entre">
@@ -164,9 +163,8 @@
 <script>
 'use strict';
 (() => {
-  const { barre, icone } = Aurora;
+  const { icone } = Aurora;
   const $ = (id) => document.getElementById(id);
-  $('barre').outerHTML = barre();
   $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
   $('tXtream').innerHTML = `${icone('server')}Compte Xtream`;
   $('tM3u').innerHTML = `${icone('listPlay')}Playlist M3U`;

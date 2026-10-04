@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Terminal</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 8 — « Le terminal » (la suite de la bienvenue 13).
+ * Le chargement comme une commande de synchronisation : des barres en caractères, un compteur
+ * par étape, la durée de chacune, et à droite le journal des requêtes envoyées au serveur
+ * Xtream (les vraies routes `player_api.php`). Touche C pour continuer sans attendre.
+ */
+body { background: #0a0a0e; font-family: var(--mono-jb); }
+.term { position: fixed; inset: 0 0 34px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 0; font-size: clamp(12px, 1.12vw, 16px); line-height: 1.65; }
+.gauche { padding: 34px 40px 20px var(--gouttiere); white-space: pre; overflow: hidden; color: #c9c9d6; }
+.droite { position: relative; padding: 34px var(--gouttiere) 20px 30px; border-left: 1px solid #1d1d24; overflow: hidden; font-size: 0.8em; line-height: 1.75; color: #6f6f7c; }
+.droite h2 { margin: 0 0 10px; font-size: 1em; font-weight: 700; color: #9494a4; letter-spacing: 0.04em; }
+.journal { position: absolute; left: 30px; right: var(--gouttiere); bottom: 20px; top: 64px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; white-space: pre; -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%); mask-image: linear-gradient(180deg, transparent, #000 30%); }
+.journal .m { color: #4ea8f5; } .journal .s { color: #38d18a; } .journal .t { color: #9494a4; }
+.p { color: #38d18a; } .cmd { color: #fff; } .dim { color: #6f6f7c; } .ok { color: #38d18a; } .cours { color: #4ea8f5; } .att { color: #f2b34a; } .w { color: #fff; font-weight: 700; }
+.gros { font-size: 2.6em; line-height: 1.2; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+.gros small { font-size: 0.42em; color: #9494a4; font-weight: 400; letter-spacing: 0; }
+button.lien { all: unset; cursor: pointer; color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+button.lien:focus-visible { outline: 1px solid #7c5cff; }
+.statut { position: fixed; left: 0; right: 0; bottom: 0; height: 34px; display: flex; align-items: center; font: 12.5px/1 var(--mono-jb); background: #15151c; color: #9494a4; }
+.statut span { padding: 0 14px; height: 100%; display: flex; align-items: center; }
+.statut .s1 { background: #4ea8f5; color: #06121f; font-weight: 700; }
+.pret .statut .s1 { background: #38d18a; }
+.statut .s2 { background: #24242e; color: #eeeef2; }
+.statut .droiteS { margin-left: auto; }
+</style>
+</head>
+<body>
+<main class="term">
+  <div class="gauche" id="gauche" aria-live="polite"></div>
+  <div class="droite" aria-hidden="true"><h2>requêtes · fournisseur.example:8080</h2><div class="journal" id="journal"></div></div>
+</main>
+<footer class="statut"><span class="s1" id="mode">SYNC</span><span class="s2">aurora sync</span><span>Mon abonnement</span><span class="droiteS" id="reste"></span><span class="s2">0.9.0 · windows</span></footer>
+<span class="etiquette" style="bottom:46px">Chargement · Variante 8 · Le terminal — touche C</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, CATEGORIES, TITRES, CHAINES, chargement, fmt, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const L = 30;
+  const NOMS = ['catégories', 'films', 'séries', 'chaînes', 'guide'];
+  const ACTIONS = ['get_live_categories', 'get_vod_streams', 'get_series', 'get_live_streams', 'xmltv.php'];
+  const SPIN = '|/-\\';
+  const pad = (s, n, d) => (d ? String(s).padStart(n) : String(s).padEnd(n));
+  const barre = (k, cl) => `<span class="${cl}">${'#'.repeat(Math.round(k * L))}</span><span class="dim">${'·'.repeat(L - Math.round(k * L))}</span>`;
+
+  function sortie(etat, now) {
+    const lignes = [];
+    lignes.push('<span class="p">hugo@pc</span> <span class="dim">~</span> <span class="p">$</span> <span class="cmd">aurora sync --compte "Mon abonnement"</span>');
+    lignes.push('');
+    lignes.push('<span class="cours">→</span> connexion à fournisseur.example:8080 … <span class="ok">ok</span> <span class="dim">(48 ms)</span>');
+    lignes.push('<span class="cours">→</span> abonnement actif jusqu’au 15/01/2027 · connexions 0/1');
+    lignes.push('<span class="cours">→</span> le catalogue est chargé en entier, pour que rien ne rame ensuite');
+    lignes.push('');
+    let debut = Aurora.ATTENTE;
+    etat.etapes.forEach((e, i) => {
+      const cl = e.etat === 'fait' ? 'ok' : e.etat === 'encours' ? 'cours' : 'dim';
+      const marque = e.etat === 'fait' ? '<span class="ok">✓</span>' : e.etat === 'encours' ? `<span class="cours">${SPIN[Math.floor(now / 90) % 4]}</span>` : '<span class="dim">·</span>';
+      const n = e.etat === 'attente' ? '—' : fmt(e.n).replace(/ /g, ' ');
+      const d = e.etat === 'fait' ? `${e.duree.toFixed(1).replace('.', ',')} s` : e.etat === 'encours' ? `${(etat.t - debut).toFixed(1).replace('.', ',')} s` : 'en attente';
+      lignes.push(`${marque} ${pad(NOMS[i], 11)} [${barre(e.k, cl)}] ${pad(Math.round(e.k * 100), 3, true)} %  <span class="${e.etat === 'attente' ? 'dim' : 'w'}">${pad(n, 8, true)}</span>  <span class="${e.etat === 'attente' ? 'att' : 'dim'}">${d}</span>`);
+      debut += e.duree;
+    });
+    lignes.push('');
+    lignes.push(`<span class="gros">${Math.round(etat.p * 100)} %<small>  ${etat.fini ? 'tout est là' : `${etat.finies}/5 étapes · encore ${Math.max(1, Math.round(etat.reste))} s`}</small></span>`);
+    lignes.push(`  total       [${barre(etat.p, etat.fini ? 'ok' : 'cours')}]`);
+    lignes.push('');
+    if (etat.fini) {
+      lignes.push('<span class="ok">✓ synchronisé.</span> les écrans s’ouvriront d’un coup.');
+      lignes.push('<span class="dim">$</span> <span class="cmd">aurora</span> <span class="dim">█</span>');
+    } else {
+      lignes.push('<span class="dim">[c]</span> <button class="lien" type="button" id="continuer">continuer sans attendre</button>');
+      lignes.push('<span class="dim">    l’app s’ouvre tout de suite, mais elle peut ramer le temps que le reste</span>');
+      lignes.push('<span class="dim">    arrive : chaque écran chargera ce qui lui manque à son ouverture.</span>');
+    }
+    return lignes.join('\n');
+  }
+
+  // Le journal des requêtes : une ligne par page reçue, au rythme de l'étape en cours.
+  const alea = hasard(12);
+  const journal = $('journal');
+  let derniereReq = 0;
+  function requete(etat, now) {
+    const c = etat.etapes[etat.courante];
+    if (!c || etat.fini) return;
+    const i = etat.courante;
+    const cat = CATEGORIES[Math.floor(alea() * CATEGORIES.length)];
+    const ms = 40 + Math.floor(alea() * 220), ko = (40 + alea() * 900).toFixed(0);
+    const route = i === 4 ? `/xmltv.php?jour=${1 + Math.floor(alea() * 7)}` : `/player_api.php?action=${ACTIONS[i]}${i ? `&category_id=${10 + Math.floor(alea() * 90)}` : ''}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<span class="m">GET</span> ${route}\n    <span class="s">200</span> <span class="t">${ko} Ko · ${ms} ms${i && i < 4 ? ` · ${cat.nom}` : ''}</span>`;
+    journal.append(div);
+    while (journal.children.length > 40) journal.firstChild.remove();
+  }
+
+  let affiche = '';
+  addEventListener('keydown', (e) => { if (e.key === 'c' || e.key === 'C') $('continuer')?.focus(); });
+  chargement({
+    rendu(etat, { fige, recommence }) {
+      const now = performance.now();
+      if (recommence) journal.innerHTML = '';
+      const html = sortie(etat, now);
+      if (html !== affiche) { affiche = html; $('gauche').innerHTML = html; }
+      if (fige) { for (let n = 0; n < 22; n++) requete(etat, now); }
+      else if (now - derniereReq > 140) { derniereReq = now; requete(etat, now); }
+      $('reste').textContent = etat.fini ? 'terminé' : `encore ${Math.max(1, Math.round(etat.reste))} s`;
+      $('mode').textContent = etat.fini ? 'PRÊT' : 'SYNC';
+      document.body.classList.toggle('pret', etat.fini);
+    },
+  });
+})();
+</script>
+</body>
+</html>

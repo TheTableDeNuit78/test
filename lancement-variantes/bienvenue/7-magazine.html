@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Magazine</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 7 — « Le magazine télé ».
+ * L'écran prend les codes d'une couverture de magazine télé : un titre de une démesuré en dégradé,
+ * trois affiches qui passent devant comme le sujet d'une couverture, des « sommaires » avec leur
+ * numéro de page (ce sont les fonctions d'Aurora), un code-barres en bas. La une, c'est la phrase
+ * de l'écran, composée en italique.
+ */
+body { background: #120f1c; }
+.couv { position: fixed; inset: 0; overflow: hidden; padding: 26px var(--gouttiere) 30px; }
+.bandeauHaut {
+  position: relative; z-index: 4;
+  display: flex; justify-content: space-between; gap: 20px;
+  padding-bottom: 8px; border-bottom: 2px solid #f4f2ff;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.bandeauHaut span:nth-child(2) { color: var(--text-dim); font-weight: 500; }
+.titreUne {
+  position: relative; z-index: 1;
+  margin: -0.06em 0 0 -0.04em;
+  font-size: clamp(120px, 17vw, 360px); font-weight: 700; line-height: 0.86; letter-spacing: -0.07em;
+  background: linear-gradient(100deg, #4ea8f5 0%, #9d5cff 45%, #ff6cab 85%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.titreUne sup { font-size: 0.11em; letter-spacing: 0; vertical-align: 5.6em; margin-left: 0.4em; color: #f4f2ff; -webkit-text-fill-color: #f4f2ff; font-weight: 600; }
+
+.sujet { position: absolute; z-index: 2; right: calc(var(--gouttiere) - 20px); top: 15vh; width: min(47vw, 700px); height: 78vh; }
+.sujet .affiche { position: absolute; width: 50%; --taille-titre: clamp(22px, 2.2vw, 38px); box-shadow: 0 40px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.08); border-radius: 6px; }
+.sujet .a1 { left: 0; top: 16%; transform: rotate(-7deg); }
+.sujet .a2 { left: 25%; top: 2%; transform: rotate(2deg); z-index: 2; width: 54%; }
+.sujet .a3 { right: 0; top: 22%; transform: rotate(8deg); }
+.pastille {
+  position: absolute; z-index: 3; left: 4%; bottom: 14%;
+  display: grid; place-items: center; width: 150px; height: 150px; border-radius: 50%;
+  background: #f5c84a; color: #1b1407; text-align: center;
+  font-weight: 800; font-size: 15px; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase;
+  transform: rotate(-12deg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  animation: tamponne 700ms 900ms var(--ease-back) backwards;
+}
+.pastille b { display: block; font-size: 34px; letter-spacing: -0.04em; }
+@keyframes tamponne { from { transform: rotate(-30deg) scale(1.6); opacity: 0; } }
+
+.une { position: relative; z-index: 3; width: min(44vw, 620px); margin-top: 1vh; }
+.une h1 { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 400; font-size: clamp(40px, 4.3vw, 84px); line-height: 0.95; letter-spacing: -0.02em; }
+.une .chapo { margin: 10px 0 0; font-size: 16px; line-height: 1.5; color: var(--text-dim); max-width: 42ch; }
+.sommaire { display: grid; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; max-width: 520px; }
+.sommaire li { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: baseline; padding: 6px 0; border-top: 1px solid rgba(244, 242, 255, 0.14); }
+.sommaire b { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.sommaire span { color: var(--text-dim); font-size: 14px; }
+.sommaire i { font-family: var(--serif); font-size: 20px; color: #f5c84a; }
+.une .boutons { margin-top: 18px; }
+
+.pied {
+  position: absolute; z-index: 4; left: var(--gouttiere); right: var(--gouttiere); bottom: 22px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 28px;
+}
+.pied .langue, .pied .reprise { max-width: 420px; font-size: 12.5px; }
+.pied .options { display: grid; gap: 8px; }
+.codeBarre { display: flex; align-items: flex-end; gap: 10px; padding: 8px 10px 6px; background: #fff; color: #000; border-radius: 2px; }
+.codeBarre .barres { display: flex; align-items: stretch; height: 46px; gap: 0; }
+.codeBarre .barres i { display: block; background: #000; }
+.codeBarre small { display: grid; font: 600 10px/1.2 var(--mono-jb); }
+.codeBarre small b { font-size: 16px; font-family: var(--font); }
+</style>
+</head>
+<body>
+<div class="couv">
+  <div class="bandeauHaut"><span>L’hebdo de ton abonnement</span><span>Semaine du 4 au 10 octobre 2026</span><span>N° 1 · Premier lancement</span></div>
+  <div class="titreUne" aria-label="Aurora">Aurora<sup>TV</sup></div>
+
+  <div class="sujet" id="sujet" aria-hidden="true">
+    <span class="pastille"><span>Nouveau<b>7 jours</b>de guide</span></span>
+  </div>
+
+  <section class="une entre">
+    <h1>Ton abonnement, enfin rangé.</h1>
+    <p class="chapo">Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</p>
+    <ul class="sommaire">
+      <li><span><b>Guide TV</b> — 7 jours, chaîne par chaîne</span><i>p. 4</i></li>
+      <li><span><b>Téléchargements</b> — tes films hors ligne</span><i>p. 12</i></li>
+      <li><span><b>Enregistrements</b> — le match, même sans toi</span><i>p. 18</i></li>
+      <li><span><b>Favoris</b> — une étoile, et c’est en tête</span><i>p. 24</i></li>
+    </ul>
+    <div class="boutons">
+      <button class="go primaire" type="button">Compte Xtream</button>
+      <button class="go" type="button">Playlist M3U</button>
+    </div>
+  </section>
+
+  <footer class="pied">
+    <div class="options">
+      <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte une autre langue (« EN&nbsp;- », « AR&nbsp;- »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages&nbsp;▸&nbsp;Catalogue.</span></span></label>
+      <p class="reprise">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button> <span class="muted small">— le fichier <code>.aurora</code> rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+    </div>
+    <div class="codeBarre" aria-hidden="true"><span class="barres" id="barres"></span><small>3 770 012 <b>0,00 €</b></small></div>
+  </footer>
+</div>
+
+<span class="etiquette" style="right:auto;left:50%;transform:translateX(-50%);z-index:6">Variante 7 · Le magazine télé</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { TITRES, affiche, icone, hasard } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
+  const t = (n) => TITRES.find((x) => x.titre === n);
+  $('sujet').insertAdjacentHTML('afterbegin',
+    affiche(t('The Bear'), { classe: 'a1' }) + affiche(t('Dune : Deuxième partie'), { classe: 'a2' }) + affiche(t('Shōgun'), { classe: 'a3' }));
+  // Un code-barres EAN dessiné : des barres de 1 à 3 unités.
+  const alea = hasard(3);
+  $('barres').innerHTML = Array.from({ length: 46 }, (_, i) => `<i style="width:${1 + Math.floor(alea() * 3)}px;margin-right:${1 + Math.floor(alea() * 2)}px${i % 23 === 0 ? ';margin-bottom:-6px' : ''}"></i>`).join('');
+})();
+</script>
+</body>
+</html>

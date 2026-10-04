@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chargement · Tableau de bord</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 15 — « Le tableau de bord ».
+ * Pour qui aime savoir ce qui se passe : le chargement vu comme l'écran Moniteur de l'app.
+ * Un chiffre de tête (le pourcentage), trois tuiles, le débit en direct sur une seule courbe
+ * avec les cinq étapes en bandes, la composition du catalogue en barres, et l'état des serveurs
+ * (celui de l'écran Comptes). Survoler la courbe donne le débit à chaque instant.
+ */
+.ecran { position: fixed; inset: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 16px; padding: 26px var(--gouttiere) 24px; }
+.tete { display: flex; align-items: center; gap: 16px; }
+.tete h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.tete .compte { font-size: 13px; color: var(--text-faint); }
+.tete .go { margin-left: auto; padding: 11px 20px; font-size: 14px; }
+.pret .tete .go { background: #f4f4f6; color: #0e0e12; border-color: transparent; font-weight: 600; }
+.carte { min-width: 0; padding: 16px 18px; border-radius: var(--r-md); background: var(--bg-elev); box-shadow: inset 0 1px 0 var(--surface-line); }
+.carte h2 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 10px; font-size: 13.5px; font-weight: 600; color: var(--text-dim); }
+.carte h2 small { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--text-faint); }
+.tuiles { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1fr; gap: 14px; }
+.tuile .lib { font-size: 13px; color: var(--text-dim); }
+.tuile .val { margin-top: 6px; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
+.tuile .val small { font-size: 15px; font-weight: 500; color: var(--text-faint); margin-left: 4px; }
+.tuile .sous { margin-top: 8px; font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.tuile.heros .val { font-size: 56px; }
+.jauge { height: 6px; margin-top: 10px; border-radius: 3px; background: color-mix(in srgb, var(--etat-cours) 18%, transparent); overflow: hidden; }
+.jauge i { display: block; height: 100%; border-radius: 3px; background: var(--etat-cours); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.pret .jauge { background: color-mix(in srgb, var(--ok) 18%, transparent); }
+.pret .jauge i { background: var(--ok); }
+.milieu { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; min-height: 0; }
+.courbe { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+#debit { width: 100%; height: 100%; display: block; overflow: visible; }
+.axe { font: 500 11.5px var(--font); fill: var(--text-faint); font-variant-numeric: tabular-nums; }
+.grille { stroke: #22222b; stroke-width: 1; }
+.bande { fill: rgba(255, 255, 255, 0.018); }
+.bande.cours { fill: color-mix(in srgb, var(--etat-cours) 7%, transparent); }
+.nomBande { font: 600 11.5px var(--font); fill: var(--text-dim); }
+.aire { fill: color-mix(in srgb, var(--accent) 12%, transparent); }
+.ligne { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.bout { fill: var(--accent); stroke: var(--bg-elev); stroke-width: 2; }
+.reticule { stroke: var(--text-faint); stroke-width: 1; }
+.bulle { position: absolute; pointer-events: none; padding: 8px 10px; border-radius: 9px; background: #23232d; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); font-size: 12px; color: var(--text-dim); white-space: nowrap; transform: translate(-50%, -110%); }
+.bulle b { display: block; font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+.etapes { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.etapes li { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid #1f1f28; font-size: 13.5px; }
+.etapes li:last-child { border-bottom: 0; }
+.etapes .ico { width: 16px; height: 16px; }
+.etapes .n { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+.etapes .d { min-width: 4.5ch; text-align: right; font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.etapes .fait .ico { color: var(--ok); }
+.etapes .encours .ico { color: var(--etat-cours); animation: tourne 0.9s linear infinite; }
+.etapes .attente { color: var(--text-faint); }
+.etapes .attente .n { color: var(--text-faint); font-weight: 400; }
+.etapes .etiq { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; margin-left: 8px; }
+.etapes .fait .etiq { background: var(--ok-soft); color: var(--ok); }
+.etapes .encours .etiq { background: var(--etat-cours-soft); color: var(--etat-cours); }
+@keyframes tourne { to { transform: rotate(1turn); } }
+.bas { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; }
+.barres { display: grid; gap: 8px; }
+.barre { display: grid; grid-template-columns: 110px 1fr 90px; gap: 12px; align-items: center; font-size: 13px; }
+.barre .piste { height: 14px; }
+.barre .piste i { display: block; height: 100%; max-width: 100%; width: calc(var(--k, 0) * 100%); border-radius: 0 4px 4px 0; background: var(--accent); transition: width 200ms linear; }
+.barre .v { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.barre:hover .piste i { filter: brightness(1.25); }
+.serveurs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12.5px; }
+.serveurs li { display: grid; grid-template-columns: 8px 1fr auto auto; gap: 10px; align-items: center; }
+.serveurs i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.serveurs code { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.serveurs .e { color: var(--c); }
+.serveurs .ms { min-width: 5ch; text-align: right; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.avis { margin: 0; font-size: 12.5px; color: var(--text-faint); }
+.avis strong { color: var(--text-dim); }
+</style>
+</head>
+<body>
+<main class="ecran">
+  <header class="tete"><span class="lambda"></span><h1>Chargement du catalogue</h1><span class="compte">Mon abonnement · fournisseur.example</span><button class="go fantome" type="button" id="continuer">Continuer sans attendre</button></header>
+
+  <section class="tuiles">
+    <div class="carte tuile heros" role="progressbar" aria-label="Chargement du catalogue" aria-valuemin="0" aria-valuemax="100" id="tuilePct"><div class="lib">Progression</div><div class="val" id="pct">0 %</div><div class="jauge"><i id="jauge"></i></div></div>
+    <div class="carte tuile"><div class="lib">Éléments reçus</div><div class="val" id="recus">0</div><div class="sous" id="recus2"></div></div>
+    <div class="carte tuile"><div class="lib">Débit actuel</div><div class="val" id="debitVal">0<small>/s</small></div><div class="sous" id="debit2"></div></div>
+    <div class="carte tuile"><div class="lib">Temps restant</div><div class="val" id="reste">—</div><div class="sous" id="reste2"></div></div>
+  </section>
+
+  <section class="milieu">
+    <div class="carte courbe"><h2>Débit en éléments par seconde <small>une mesure toutes les 0,1 s</small></h2><svg id="debit" aria-label="Débit du chargement dans le temps"></svg><div class="bulle" id="bulle" hidden></div></div>
+    <div class="carte"><h2>Étapes</h2><ul class="etapes" id="etapes"></ul></div>
+  </section>
+
+  <section class="bas">
+    <div class="carte"><h2>Composition du catalogue <small>ce qui est déjà arrivé</small></h2><div class="barres" id="barres"></div></div>
+    <div class="carte"><h2>Serveurs <small>Aurora bascule sur le suivant si l’un tombe</small></h2>
+      <ul class="serveurs">
+        <li style="--c:var(--ok)"><i></i><code>fournisseur.example:8080</code><span class="e">répond</span><span class="ms" id="ping">48 ms</span></li>
+        <li style="--c:var(--accent)"><i></i><code>miroir.fournisseur.example:8000</code><span class="e">de secours</span><span class="ms">112 ms</span></li>
+        <li style="--c:var(--danger)"><i></i><code>secours.fournisseur.example:2082</code><span class="e">ne répond pas</span><span class="ms">—</span></li>
+      </ul>
+      <p class="avis" id="avis" style="margin-top:12px">L’app peut s’ouvrir tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.</p>
+    </div>
+  </section>
+</main>
+<span class="etiquette">Chargement · Variante 15 · Le tableau de bord</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { ETAPES, TOTAL, ATTENTE, etatA, chargement, fmt, icone } = Aurora;
+  const $ = (id) => document.getElementById(id);
+  const FIN = TOTAL + ATTENTE;
+  const PAS = 0.1, LISSAGE = 5;
+  const total = (t) => etatA(t).etapes.reduce((s, e) => s + e.n, 0);
+  // Le débit sur toute la durée, lissé sur une demi-seconde : calculé une fois, lu ensuite.
+  const brut = [];
+  for (let t = 0; t <= FIN + 1e-9; t += PAS) brut.push((total(t + PAS) - total(t)) / PAS);
+  const debit = brut.map((_, i) => { let s = 0, n = 0; for (let j = Math.max(0, i - LISSAGE); j <= Math.min(brut.length - 1, i + LISSAGE); j++) { s += brut[j]; n++; } return s / n; });
+  const MAX = Math.ceil(Math.max(...debit) / 20000) * 20000;
+  const compact = (v) => (v >= 1000 ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: v >= 10000 ? 0 : 1 })} k` : String(Math.round(v)));
+
+  $('etapes').innerHTML = ETAPES.map((e, i) => `<li id="e${i}"><span class="i"></span><span class="nom">${e.nom}</span><span class="n"></span><span class="d"></span></li>`).join('');
+  const TYPES = [['Films', 1], ['Séries', 2], ['Chaînes', 3], ['Programmes', 4], ['Catégories', 0]];
+  $('barres').innerHTML = TYPES.map(([n, i]) => `<div class="barre" title="${n}"><span>${n}</span><span class="piste"><i id="b${i}"></i></span><span class="v" id="bv${i}">—</span></div>`).join('');
+  const MAXB = Math.max(...ETAPES.map((e) => e.cible));
+
+  // ───── La courbe ─────
+  const svg = $('debit');
+  let G = null, tCourant = 0, survol = null;
+  function cadre() {
+    const r = svg.getBoundingClientRect();
+    const W = r.width, H = r.height, m = { g: 44, d: 8, h: 26, b: 22 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    G = { W, H, m, x: (t) => m.g + (t / FIN) * (W - m.g - m.d), y: (v) => m.h + (1 - v / MAX) * (H - m.h - m.b) };
+  }
+  function tracer(etat) {
+    if (!G) cadre();
+    const { W, H, m, x, y } = G;
+    const n = Math.min(debit.length, Math.floor(etat.t / PAS) + 1);
+    let bandes = '', t0 = ATTENTE;
+    ETAPES.forEach((e, i) => {
+      const c = etat.etapes[i].etat === 'encours' ? ' cours' : '';
+      bandes += `<rect class="bande${c}" x="${x(t0)}" y="${m.h}" width="${x(t0 + e.duree) - x(t0) - 2}" height="${H - m.h - m.b}"/>`;
+      bandes += `<text class="nomBande" x="${x(t0) + 6}" y="${m.h - 8}">${['Catég.', 'Films', 'Séries', 'Chaînes', 'Guide'][i]}</text>`;
+      t0 += e.duree;
+    });
+    let grille = '';
+    for (let v = 0; v <= MAX; v += MAX / 4) grille += `<line class="grille" x1="${m.g}" x2="${W - m.d}" y1="${y(v)}" y2="${y(v)}"/><text class="axe" x="${m.g - 8}" y="${y(v) + 4}" text-anchor="end">${compact(v)}</text>`;
+    for (let s = 0; s <= FIN; s += 2) grille += `<text class="axe" x="${x(s)}" y="${H - 4}" text-anchor="middle">${s} s</text>`;
+    let ligne = '', aire = '';
+    if (n > 1) {
+      const pts = debit.slice(0, n).map((v, i) => `${x(i * PAS).toFixed(1)},${y(v).toFixed(1)}`);
+      ligne = `<polyline class="ligne" points="${pts.join(' ')}"/>`;
+      aire = `<polygon class="aire" points="${x(0)},${y(0)} ${pts.join(' ')} ${x((n - 1) * PAS)},${y(0)}"/>`;
+      const [bx, by] = pts[pts.length - 1].split(',');
+      ligne += `<circle class="bout" cx="${bx}" cy="${by}" r="4.5"/>`;
+    }
+    let ret = '';
+    if (survol !== null && survol < n) ret = `<line class="reticule" x1="${x(survol * PAS)}" x2="${x(survol * PAS)}" y1="${m.h}" y2="${H - m.b}"/><circle class="bout" cx="${x(survol * PAS)}" cy="${y(debit[survol])}" r="4.5"/>`;
+    svg.innerHTML = bandes + grille + aire + ligne + ret + `<rect x="${m.g}" y="${m.h}" width="${W - m.g - m.d}" height="${H - m.h - m.b}" fill="transparent" id="zone"/>`;
+  }
+  svg.addEventListener('pointermove', (ev) => {
+    if (!G) return;
+    const r = svg.getBoundingClientRect();
+    const t = ((ev.clientX - r.left - G.m.g) / (G.W - G.m.g - G.m.d)) * FIN;
+    const i = Math.round(t / PAS);
+    if (i < 0 || i * PAS > tCourant) { survol = null; $('bulle').hidden = true; return; }
+    survol = i;
+    const b = $('bulle');
+    b.hidden = false;
+    b.style.left = `${G.x(i * PAS) + svg.offsetLeft}px`; b.style.top = `${G.y(debit[i]) + svg.offsetTop - 8}px`;
+    const et = etatA(i * PAS).etapes.find((e) => e.etat === 'encours');
+    b.innerHTML = ''; const v = document.createElement('b'); v.textContent = `${fmt(debit[i])} éléments/s`; b.append(v, document.createTextNode(`à ${(i * PAS).toFixed(1).replace('.', ',')} s · ${et ? et.nom : '—'}`));
+  });
+  svg.addEventListener('pointerleave', () => { survol = null; $('bulle').hidden = true; });
+  addEventListener('resize', () => { G = null; });
+
+  chargement({
+    rendu(etat) {
+      tCourant = etat.t;
+      tracer(etat);
+      const p = Math.round(etat.p * 100);
+      $('pct').textContent = `${p} %`;
+      $('tuilePct').setAttribute('aria-valuenow', p);
+      $('jauge').style.setProperty('--p', etat.p.toFixed(4));
+      const recus = etat.etapes.reduce((s, e) => s + e.n, 0), tous = ETAPES.reduce((s, e) => s + e.cible, 0);
+      $('recus').textContent = fmt(recus);
+      $('recus2').textContent = `sur ${fmt(tous)}`;
+      const i = Math.min(debit.length - 1, Math.floor(etat.t / PAS));
+      const actuel = etat.fini ? 0 : debit[i];
+      $('debitVal').innerHTML = `${compact(actuel)}<small>/s</small>`;
+      $('debit2').textContent = `pointe ${compact(Math.max(...debit.slice(0, i + 1)))}/s`;
+      $('reste').textContent = etat.fini ? 'Terminé' : `${Math.max(1, Math.round(etat.reste))} s`;
+      $('reste2').textContent = `${etat.finies} ${etat.finies > 1 ? 'étapes' : 'étape'} sur 5`;
+      etat.etapes.forEach((e, k) => {
+        const li = $(`e${k}`); li.className = e.etat;
+        li.children[0].innerHTML = icone(e.etat === 'fait' ? 'check' : e.etat === 'encours' ? 'loader' : e.icone);
+        li.children[1].innerHTML = `${e.nom}${e.etat !== 'attente' ? `<span class="etiq">${e.etat === 'fait' ? 'terminé' : 'en cours'}</span>` : ''}`;
+        li.children[2].textContent = e.etat === 'attente' ? 'en attente' : fmt(e.n);
+        li.children[3].textContent = e.etat === 'fait' ? `${e.duree.toFixed(1).replace('.', ',')} s` : '';
+        $(`b${k}`).style.setProperty('--k', (e.n / MAXB).toFixed(4));
+        $(`bv${k}`).textContent = e.n ? fmt(e.n) : '—';
+      });
+      document.body.classList.toggle('pret', etat.fini);
+      $('continuer').textContent = etat.fini ? 'Ouvrir Aurora' : 'Continuer sans attendre';
+      $('avis').innerHTML = etat.fini ? 'Tout est là. Les écrans s’ouvriront d’un coup.' : 'L’app peut s’ouvrir tout de suite, mais elle <strong>peut ramer</strong> le temps que le reste arrive : chaque écran chargera ce qui lui manque à son ouverture.';
+    },
+  });
+})();
+</script>
+</body>
+</html>

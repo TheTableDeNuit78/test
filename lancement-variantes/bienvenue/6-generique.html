@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Générique</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 6 — « Le générique ».
+ * Le premier lancement comme l'ouverture d'un film : bandes noires au format 2,39:1, grain de
+ * pellicule, titre en capitales condensées qui se resserre, et la phrase rassurante posée en
+ * sous-titre. Les bandes ne sont pas perdues : celle du haut porte la marque, celle du bas les
+ * deux boutons et les options, comme une console de projection.
+ */
+:root { --noir: #000; --bande: calc((100vh - 100vw / 2.39) / 2); }
+body { background: var(--noir); }
+.bande {
+  position: fixed; left: 0; right: 0; z-index: 3;
+  height: max(var(--bande), 110px);
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 var(--gouttiere);
+  background: var(--noir);
+}
+.bande.haut { top: 0; justify-content: space-between; font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--text-faint); }
+.bande.haut .marque { letter-spacing: 0.32em; font-size: 12px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; }
+.bande.haut .marque .lambda { width: 18px; height: 18px; }
+.bande.bas { bottom: 0; justify-content: space-between; }
+.bande.bas .boutons { margin: 0; flex: none; }
+.bande.bas .go { padding: 13px 26px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; font-size: 13px; }
+.bande.bas .langue { max-width: 380px; font-size: 12.5px; }
+.bande.bas .reprise { max-width: 340px; font-size: 12.5px; line-height: 1.6; text-align: right; }
+
+.ecran {
+  position: fixed; left: 0; right: 0; top: max(var(--bande), 110px); bottom: max(var(--bande), 110px);
+  overflow: hidden;
+  display: grid; place-items: center; text-align: center;
+  background:
+    radial-gradient(120% 90% at 50% 50%, #15131d 0%, #09080d 70%);
+}
+#grain { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.11; mix-blend-mode: screen; image-rendering: pixelated; pointer-events: none; }
+.flare {
+  position: absolute; left: -10%; right: -10%; top: 50%; height: 2px; margin-top: -1px;
+  background: linear-gradient(90deg, transparent, rgba(78, 168, 245, 0.0) 10%, rgba(78, 168, 245, 0.55) 46%, #dff0ff 50%, rgba(78, 168, 245, 0.55) 54%, rgba(78, 168, 245, 0) 90%, transparent);
+  opacity: 0; animation: flare 5.5s 1.4s var(--ease-out) infinite;
+}
+@keyframes flare { 0% { opacity: 0; transform: scaleX(0.3); } 12% { opacity: 1; transform: scaleX(1); } 40%, 100% { opacity: 0; transform: scaleX(1.05); } }
+.titre-film {
+  position: relative; margin: 0;
+  font-family: var(--affiche-font); font-weight: 400;
+  font-size: clamp(56px, 9.4vw, 190px); line-height: 1;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: #f4f2ff;
+  animation: resserre 2.6s var(--ease-out) backwards;
+}
+.titre-film span { display: block; }
+.titre-film .deux { padding-top: 0.32em; margin-top: -0.32em; background: linear-gradient(90deg, #4ea8f5, #9d5cff 50%, #ff6cab); -webkit-background-clip: text; background-clip: text; color: transparent; }
+@keyframes resserre { from { letter-spacing: 0.32em; opacity: 0; } 40% { opacity: 1; } }
+.credits {
+  position: relative; margin: 26px 0 0;
+  font-size: 12.5px; letter-spacing: 0.42em; text-transform: uppercase; color: var(--text-dim);
+  animation: entre 900ms 1.2s var(--ease-out) backwards;
+}
+.sous-titre {
+  position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+  max-width: 64ch; margin: 0;
+  font-size: clamp(15px, 1.35vw, 21px); line-height: 1.4; color: #fff;
+  text-shadow: 0 0 2px #000, 0 2px 6px rgba(0, 0, 0, 0.9);
+  animation: entre 600ms 2.2s ease backwards;
+}
+.minutage { position: absolute; right: 18px; top: 14px; font: 11px/1 var(--mono-jb); letter-spacing: 0.1em; color: rgba(238, 238, 242, 0.32); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header class="bande haut">
+  <span class="marque"><span class="lambda"></span>Aurora présente</span>
+  <span>Premier lancement</span>
+  <span>Version 0.9.0 · Windows</span>
+</header>
+
+<main class="ecran">
+  <canvas id="grain" aria-hidden="true"></canvas>
+  <span class="flare" aria-hidden="true"></span>
+  <span class="minutage" id="minutage" aria-hidden="true">00:00:00:00</span>
+  <div>
+    <h1 class="titre-film"><span>Ton abonnement,</span><span class="deux">enfin rangé.</span></h1>
+    <p class="credits">Guide TV · Téléchargements · Enregistrements · Favoris</p>
+  </div>
+  <p class="sous-titre">Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</p>
+</main>
+
+<footer class="bande bas">
+  <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte « EN&nbsp;- », « AR&nbsp;- »… Ce qui n’a pas d’étiquette reste. Réglages&nbsp;▸&nbsp;Catalogue pour défaire.</span></span></label>
+  <div class="boutons">
+    <button class="go primaire" type="button">Compte Xtream</button>
+    <button class="go fantome" type="button">Playlist M3U</button>
+  </div>
+  <p class="reprise">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button><br><span class="muted small">le fichier <code>.aurora</code> rend comptes, réglages, favoris, historique.</span></p>
+</footer>
+
+<span class="etiquette" style="z-index:5">Variante 6 · Le générique</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const $ = (id) => document.getElementById(id);
+  $('dl').innerHTML = `${Aurora.icone('download')} Reprends ta sauvegarde`;
+
+  // Le grain : une petite image de bruit redessinée à 24 images par seconde, étirée à l'écran.
+  const toile = $('grain'), cx = toile.getContext('2d');
+  toile.width = 480; toile.height = 200;
+  const img = cx.createImageData(480, 200), d = img.data;
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches || Aurora.FIGE;
+  let derniere = 0, image = 0;
+  const t0 = performance.now();
+  function boucle(now) {
+    if (now - derniere > 1000 / 24) {
+      derniere = now; image++;
+      for (let i = 0; i < d.length; i += 4) { const v = Math.random() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+      cx.putImageData(img, 0, 0);
+      // Le minutage du projectionniste : heures, minutes, secondes, images (24 i/s).
+      const s = Math.floor((now - t0) / 1000), f = Math.floor(((now - t0) / 1000) * 24) % 24;
+      const p = (n) => String(n).padStart(2, '0');
+      $('minutage').textContent = `${p(Math.floor(s / 3600))}:${p(Math.floor(s / 60) % 60)}:${p(s % 60)}:${p(f)}`;
+    }
+    if (!reduit) requestAnimationFrame(boucle);
+  }
+  requestAnimationFrame(boucle);
+})();
+</script>
+</body>
+</html>

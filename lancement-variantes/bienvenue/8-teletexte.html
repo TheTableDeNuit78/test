@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Télétexte</title>
+<link rel="stylesheet" href="../commun.css">
+<link rel="stylesheet" href="../polices.css">
+<style>
+/*
+ * Variante 8 — « Le télétexte ».
+ * Une page de télétexte, aux règles du genre : 40 colonnes sur 25 lignes, huit couleurs, des
+ * mosaïques de « sixels » pour l'image (ici le Λ), l'heure qui défile dans l'en-tête, et la
+ * barre Fastext en bas — quatre touches de couleur pour les quatre actions de l'écran. On peut
+ * cliquer, ou taper 1, 2, 3, 4 : le compteur de page cherche, puis s'arrête sur la bonne page.
+ */
+:root {
+  --tt-blanc: #ffffff; --tt-jaune: #ffff00; --tt-cyan: #00ffff; --tt-vert: #00ff00;
+  --tt-magenta: #ff00ff; --tt-rouge: #ff0000; --tt-bleu: #0000ff; --tt-noir: #000;
+}
+body { background: #000; }
+.page { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.l { position: absolute; left: 0; height: var(--ch); white-space: pre; font-family: var(--crt); line-height: 1; transform-origin: 0 0; color: var(--tt-blanc); }
+.l.dh { transform-origin: 0 0; }
+:where(.l button) { all: unset; cursor: pointer; }
+.l button:focus-visible { outline: 2px solid var(--tt-blanc); outline-offset: 2px; }
+.j { color: var(--tt-jaune); } .c { color: var(--tt-cyan); } .v { color: var(--tt-vert); } .m { color: var(--tt-magenta); }
+.r { color: var(--tt-rouge); } .b { color: var(--tt-bleu); } .w { color: var(--tt-blanc); }
+.fondB { background: var(--tt-bleu); } .fondR { background: var(--tt-rouge); color: #000; } .fondV { background: var(--tt-vert); color: #000; }
+.fondJ { background: var(--tt-jaune); color: #000; } .fondC { background: var(--tt-cyan); color: #000; }
+.ligneClic:hover { background: #222; }
+#mosaique { position: absolute; image-rendering: pixelated; }
+.balayage { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 3px); }
+.cherche { animation: cligne 0.25s steps(2) infinite; }
+@keyframes cligne { 50% { opacity: 0.2; } }
+</style>
+</head>
+<body>
+<div class="page" id="page" role="main" aria-label="Page 100 du télétexte d’Aurora"></div>
+<div class="balayage" aria-hidden="true"></div>
+<span class="etiquette">Variante 8 · Le télétexte — tape 1, 2, 3 ou 4</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const page = $('page');
+  const COLS = 40, RANGS = 25;
+  let fr = false, numero = 100, cible = 100, recherche = 0;
+
+  // Les lignes : [rang, html, options]. Une colonne = un caractère ; les chaînes font 40 de large au plus.
+  const pad = (s, n) => s + ' '.repeat(Math.max(0, n - [...s].length));
+  const pointilles = (g, d, n = 40) => `${g}${'.'.repeat(Math.max(1, n - [...g].length - [...d].length - 2))} ${d}`;
+  function lignes() {
+    return [
+      [2, `<span class="j">TON ABONNEMENT,</span>`, { dh: true }],
+      [4, `<span class="j">ENFIN RANGÉ.</span>`, { dh: true }],
+      [7, `<span class="c">Guide TV, téléchargements,</span>`],
+      [8, `<span class="c">enregistrements, favoris.</span>`],
+      [10, `<span class="w">Tes identifiants sont chiffrés</span>`],
+      [11, `<span class="w">sur ce PC, et rien ne part ailleurs.</span>`],
+      [13, `<span class="fondB w">${pad(' SOMMAIRE', COLS)}</span>`],
+      [15, `<button class="ligneClic" data-p="110"><span class="r">■</span><span class="w"> ${pointilles('Compte Xtream ', '110', 38)}</span></button>`],
+      [16, `<button class="ligneClic" data-p="120"><span class="v">■</span><span class="w"> ${pointilles('Playlist M3U ', '120', 38)}</span></button>`],
+      [17, `<button class="ligneClic" data-p="130" aria-pressed="${fr}"><span class="j">■</span><span class="w"> ${pointilles(`[${fr ? 'X' : ' '}] Français seulement `, '130', 38)}</span></button>`],
+      [18, `<span class="c">    cache « EN - », « AR - »… ce qui</span>`],
+      [19, `<span class="c">    n'a pas d'étiquette reste. Réglages</span>`],
+      [20, `<span class="c">    ▸ Catalogue pour défaire.</span>`],
+      [21, `<button class="ligneClic" data-p="140"><span class="c">■</span><span class="w"> ${pointilles('Reprendre une sauvegarde ', '140', 38)}</span></button>`],
+      [22, `<span class="v">    fichier .aurora : comptes, réglages…</span>`],
+      [24, `<button class="fondR" data-p="110">${pad(' Xtream', 10)}</button><button class="fondV" data-p="120">${pad(' M3U', 10)}</button><button class="fondJ" data-p="130">${pad(' Français', 10)}</button><button class="fondC" data-p="140">${pad(' Sauvegard', 10)}</button>`],
+    ];
+  }
+
+  let cw = 0, ch = 0, ech = 1;
+  function mesurer() {
+    // La page garde 40 × 25 cases au format 4:3 d'origine, centrée sur le noir.
+    const W = innerWidth, H = innerHeight;
+    ch = Math.floor(Math.min(H / RANGS, W / COLS / 0.8));
+    cw = ch * 0.8;
+    page.style.width = `${cw * COLS}px`; page.style.height = `${ch * RANGS}px`;
+    page.style.setProperty('--ch', `${ch}px`);
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = `${ch}px VT323`;
+    ech = cw / c.measureText('M').width;
+  }
+  const ligne = (r, html, o = {}) => `<div class="l${o.dh ? ' dh' : ''}" style="top:${r * ch}px;font-size:${ch}px;transform:scale(${ech}, ${o.dh ? 2 : 1})">${html}</div>`;
+
+  function entete() {
+    const d = new Date(2026, 9, 4, 21, 34, 7 + Math.floor(performance.now() / 1000));
+    const h = [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
+    const n = recherche ? String(numero).padStart(3, '0') : String(numero);
+    return `<span class="w${recherche ? ' cherche' : ''}">P${n}</span><span class="c">  AURORA ${String(cible)}  </span><span class="w">Sam 04 Oct </span><span class="j">${h}</span>`;
+  }
+  function rendre() {
+    page.innerHTML = `<div id="tete"></div>${lignes().map(([r, h, o]) => ligne(r, h, o)).join('')}<canvas id="mosaique"></canvas>`;
+    $('tete').outerHTML = ligne(0, entete()).replace('class="l"', 'class="l" id="tete"');
+    page.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => aller(+b.dataset.p)));
+    dessinerLambda();
+  }
+
+  // Le Λ en mosaïque séparée : 2 × 3 sixels par case, colonnes 28 à 39, lignes 1 à 8.
+  function dessinerLambda() {
+    const c0 = 28, r0 = 1, nc = 12, nr = 8;
+    const sx = nc * 2, sy = nr * 3;
+    const toile = $('mosaique');
+    toile.style.left = `${c0 * cw}px`; toile.style.top = `${r0 * ch}px`;
+    toile.style.width = `${nc * cw}px`; toile.style.height = `${nr * ch}px`;
+    toile.width = sx * 6; toile.height = sy * 6;
+    const x = toile.getContext('2d');
+    // Le Λ du logo (18,48)-(32,17)-(46,48), ramené dans la grille de sixels.
+    const map = ([px, py]) => [((px - 14) / 36) * sx, ((py - 15) / 36) * sy];
+    const L = map([18, 48]), S = map([32, 17]), R = map([46, 48]);
+    const dist = (p, a, b) => { const vx = b[0] - a[0], vy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / (vx * vx + vy * vy))); return Math.hypot(p[0] - a[0] - vx * t, (p[1] - a[1] - vy * t) * 0.62); };
+    for (let j = 0; j < sy; j++) for (let i = 0; i < sx; i++) {
+      const p = [i + 0.5, j + 0.5];
+      const d = Math.min(dist(p, L, S), dist(p, S, R));
+      if (d > 2.1) continue;
+      x.fillStyle = i < sx * 0.47 ? '#00ffff' : i > sx * 0.53 ? '#ff00ff' : '#ffffff';
+      x.fillRect(i * 6 + 1, j * 6 + 1, 4, 4);
+    }
+  }
+
+  function aller(p) {
+    if (p === 130) { fr = !fr; }
+    cible = p; recherche = 1;
+  }
+  addEventListener('keydown', (e) => { const k = { 1: 110, 2: 120, 3: 130, 4: 140 }[e.key]; if (k) aller(k); });
+
+  // Le compteur de page cherche (comme sur un vrai téléviseur), puis s'arrête.
+  let derniere = 0;
+  function boucle(now) {
+    if (now - derniere > 90) {
+      derniere = now;
+      if (recherche) {
+        numero = numero >= 899 ? 100 : numero + 7;
+        if (++recherche > 14) { recherche = 0; numero = cible; rendre(); }
+      }
+      const t = $('tete'); if (t) t.innerHTML = entete();
+    }
+    requestAnimationFrame(boucle);
+  }
+  document.fonts.load(`20px VT323`).then(() => { mesurer(); rendre(); requestAnimationFrame(boucle); });
+  addEventListener('resize', () => { mesurer(); rendre(); });
+})();
+</script>
+</body>
+</html>

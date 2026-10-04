@@ -15,7 +15,7 @@
  */
 .page {
   position: absolute;
-  inset: 90px 0 0;
+  inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(32px, 4vw, 80px);
@@ -33,7 +33,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  height: min(660px, calc(100vh - 170px));
+  height: min(720px, calc(100vh - 110px));
   min-height: 520px;
 }
 .tuile {
@@ -179,7 +179,6 @@
 </style>
 </head>
 <body>
-<div id="barre"></div>
 
 <main class="page">
   <section class="colonne entre">
@@ -251,9 +250,8 @@
 <script>
 'use strict';
 (() => {
-  const { barre, icone, CHAINES, TITRES, PALETTES, logo, affiche } = Aurora;
+  const { icone, CHAINES, TITRES, PALETTES, logo, affiche } = Aurora;
   const $ = (id) => document.getElementById(id);
-  $('barre').outerHTML = barre();
   $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
 
   const oeil = (id, ico, texte) => { $(id).innerHTML = `${icone(ico)}${texte}`; };

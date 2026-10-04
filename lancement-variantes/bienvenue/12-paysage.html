@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue · Paysage</title>
+<link rel="stylesheet" href="../commun.css">
+<style>
+/*
+ * Variante 12 — « Le paysage ».
+ * Aurora, c'est une aurore boréale : on la dessine, mais en illustration plate, comme une
+ * gravure. L'aurore est faite de traits verticaux d'un pixel (aucun flou), les montagnes sont des
+ * aplats, et le sommet du milieu est le Λ, avec sa crête au dégradé du logo. Le lac reflète le
+ * tout, rayé de vaguelettes. Les rideaux ondulent lentement.
+ */
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; }
+.page { position: fixed; inset: 0; display: flex; align-items: flex-start; padding: clamp(40px, 9vh, 110px) var(--gouttiere) 0; pointer-events: none; }
+.colonne { width: min(42vw, 600px); pointer-events: auto; }
+.colonne .marque { margin-bottom: clamp(24px, 4vh, 44px); }
+.colonne .phrase { color: #b7b6cc; }
+.colonne .langue { margin-top: 24px; }
+.colonne .langue .muted, .colonne .reprise { color: #a3a2b8; }
+.colonne .reprise { margin-top: 12px; }
+.go:not(.primaire) { background: rgba(26, 26, 40, 0.7); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); border-color: rgba(255, 255, 255, 0.14); }
+.lieu { position: fixed; right: var(--gouttiere); bottom: 22px; margin: 0; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(238, 238, 242, 0.45); }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<main class="page">
+  <section class="colonne entre">
+    <span class="marque"><span class="lambda"></span>Aurora</span>
+    <h1 class="titre">Ton abonnement,<br>enfin rangé.</h1>
+    <p class="phrase">Guide TV, téléchargements, enregistrements, favoris. Tes identifiants sont chiffrés sur ce PC, et rien ne part ailleurs.</p>
+    <div class="boutons">
+      <button class="go primaire" type="button">Compte Xtream</button>
+      <button class="go" type="button">Playlist M3U</button>
+    </div>
+    <label class="langue" for="fr"><input id="fr" type="checkbox"><span><strong>N’afficher que le français</strong><span class="muted small"> — cache ce qui porte une autre langue (« EN&nbsp;- », « AR&nbsp;- »). Ce qui n’a aucune étiquette reste. Tu peux le défaire dans Réglages&nbsp;▸&nbsp;Catalogue.</span></span></label>
+    <p class="reprise">Tu réinstalles Aurora ? <button class="lienTexte" type="button" id="dl"></button> <span class="muted small">— le fichier <code>.aurora</code> rend tes comptes, tes réglages, tes favoris et ton historique.</span></p>
+  </section>
+</main>
+<p class="lieu">69° 39′ N · 18° 57′ E — 21:34</p>
+<span class="etiquette" style="bottom:auto;top:12px">Variante 12 · Le paysage</span>
+
+<script src="../commun.js"></script>
+<script>
+'use strict';
+(() => {
+  const { hasard } = Aurora;
+  document.getElementById('dl').innerHTML = `${Aurora.icone('download')} Reprends ta sauvegarde`;
+  const toile = document.getElementById('scene'), cx = toile.getContext('2d');
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches || Aurora.FIGE;
+  const PRISME = [[78, 168, 245], [157, 92, 255], [255, 108, 171]];
+  const teinte = (k) => { k = Math.max(0, Math.min(1, k)); const i = k < 0.5 ? 0 : 1, u = (k - i * 0.5) * 2; return PRISME[i].map((c, j) => Math.round(c + (PRISME[i + 1][j] - c) * u)); };
+
+  let W, H, dpr, horizon, etoiles, chaines;
+  function construire() {
+    dpr = Math.min(2, devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    toile.width = W * dpr; toile.height = H * dpr;
+    horizon = H * 0.8;
+    const alea = hasard(9);
+    etoiles = Array.from({ length: Math.round(W * H / 4200) }, () => ({ x: alea() * W, y: alea() * horizon * 0.9, r: 0.4 + alea() * 1.1, a: 0.3 + alea() * 0.7, ph: alea() * 6.3 }));
+    // Trois chaînes de montagnes en aplats ; au milieu de la plus proche, le Λ.
+    const crete = (base, amp, pas, graine) => { const a = hasard(graine), pts = []; for (let x = -40; x <= W + 40; x += pas * (0.6 + a() * 0.8)) pts.push([x, base - amp * (0.3 + a() * 0.7)]); return pts; };
+    const sx = W * 0.68, sy = H * 0.36, tan = 14 / 31;
+    const lambda = [[sx - (horizon - sy) * tan, horizon], [sx, sy], [sx + (horizon - sy) * tan, horizon]];
+    chaines = [
+      { pts: crete(horizon - H * 0.12, H * 0.16, 70, 2), c: '#1b1834' },
+      { pts: crete(horizon - H * 0.05, H * 0.12, 110, 5), c: '#141228' },
+      { pts: lambda, c: '#0f0e1d', lambda: true },
+      { pts: crete(horizon, H * 0.05, 140, 8), c: '#0b0a16' },
+    ];
+  }
+
+  function rideaux(t, miroir) {
+    // Des traits verticaux : base qui ondule, hauteur qui respire, teinte qui glisse le long du prisme.
+    for (let x = W * 0.22; x < W + 4; x += 3) {
+      const u = x / W;
+      const base = H * (0.5 + 0.06 * Math.sin(u * 7 + t * 0.25) + 0.03 * Math.sin(u * 19 - t * 0.4));
+      const haut = H * (0.12 + 0.16 * (0.5 + 0.5 * Math.sin(u * 11 + t * 0.33)) * (0.6 + 0.4 * Math.sin(u * 3.1 - t * 0.17)));
+      const fond = Math.min(1, (u - 0.22) / 0.25);
+      const [r, g, b] = teinte(u * 0.9 + 0.1 * Math.sin(t * 0.1));
+      let y0 = base - haut, y1 = base;
+      if (miroir) { y0 = 2 * horizon - y0; y1 = 2 * horizon - y1; }
+      const gr = cx.createLinearGradient(0, y1, 0, y0);
+      const a = (miroir ? 0.22 : 0.75) * fond;
+      gr.addColorStop(0, `rgba(${r},${g},${b},${a})`);
+      gr.addColorStop(0.25, `rgba(${r},${g},${b},${a * 0.55})`);
+      gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      cx.strokeStyle = gr;
+      cx.beginPath(); cx.moveTo(x, y1); cx.lineTo(x, y0); cx.stroke();
+    }
+  }
+  function montagnes(miroir) {
+    for (const ch of chaines) {
+      cx.beginPath();
+      const pts = ch.pts.map(([x, y]) => [x, miroir ? 2 * horizon - y : y]);
+      cx.moveTo(-40, horizon);
+      for (const [x, y] of pts) cx.lineTo(x, y);
+      cx.lineTo(W + 40, horizon);
+      cx.closePath();
+      cx.fillStyle = ch.c; cx.fill();
+      if (ch.lambda && !miroir) {
+        // La crête du Λ, au dégradé du logo, sur la moitié haute de la montagne.
+        const [[lx, ly], [sx, sy], [rx, ry]] = ch.pts;
+        const k = 0.42;
+        const gr = cx.createLinearGradient(sx - (sx - lx) * k, sy + (ly - sy) * k, sx + (rx - sx) * k, sy);
+        gr.addColorStop(0, '#4ea8f5'); gr.addColorStop(0.5, '#9d5cff'); gr.addColorStop(1, '#ff6cab');
+        cx.beginPath(); cx.moveTo(sx - (sx - lx) * k, sy + (ly - sy) * k); cx.lineTo(sx, sy); cx.lineTo(sx + (rx - sx) * k, sy + (ry - sy) * k);
+        cx.strokeStyle = gr; cx.lineWidth = 4; cx.lineJoin = 'round'; cx.lineCap = 'round'; cx.stroke(); cx.lineWidth = 1;
+      }
+    }
+  }
+
+  const t0 = performance.now();
+  function image(now) {
+    const t = reduit ? 4 : (now - t0) / 1000;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const ciel = cx.createLinearGradient(0, 0, 0, horizon);
+    ciel.addColorStop(0, '#07070d'); ciel.addColorStop(1, '#141230');
+    cx.fillStyle = ciel; cx.fillRect(0, 0, W, horizon);
+    for (const e of etoiles) { cx.globalAlpha = e.a * (0.6 + 0.4 * Math.sin(t * 1.7 + e.ph * 4)); cx.fillStyle = '#eef0ff'; cx.beginPath(); cx.arc(e.x, e.y, e.r, 0, 6.283); cx.fill(); }
+    cx.globalAlpha = 1;
+    cx.lineWidth = 1.4;
+    rideaux(t, false);
+    montagnes(false);
+    // Le lac : le reflet, puis des vaguelettes qui le rayent.
+    cx.fillStyle = '#08070f'; cx.fillRect(0, horizon, W, H - horizon);
+    cx.save(); cx.beginPath(); cx.rect(0, horizon, W, H - horizon); cx.clip();
+    cx.lineWidth = 1.4; rideaux(t, true); montagnes(true);
+    cx.fillStyle = '#08070f';
+    for (let y = horizon + 2, i = 0; y < H; y += 3 + i * 0.35, i++) { cx.globalAlpha = 0.55; cx.fillRect(0, y + Math.sin(y * 0.3 + t) * 0.6, W, 1.2 + i * 0.05); }
+    cx.restore(); cx.globalAlpha = 1;
+    cx.fillStyle = 'rgba(238,238,242,0.08)'; cx.fillRect(0, horizon, W, 1);
+    if (!reduit) requestAnimationFrame(image);
+  }
+  construire();
+  addEventListener('resize', () => { construire(); if (reduit) requestAnimationFrame(image); });
+  requestAnimationFrame(image);
+})();
+</script>
+</body>
+</html>

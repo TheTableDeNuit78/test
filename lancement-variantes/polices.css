@@ -1,0 +1,17 @@
+/*
+ * Les polices des variantes « de style » (toutes sous licence OFL, sous-ensemble latin).
+ * L'app n'utilise que Familjen Grotesk : retenir une de ces variantes, c'est aussi ajouter sa police.
+ */
+@font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: block; src: url('polices/instrument-serif-400.woff2') format('woff2'); }
+@font-face { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: block; src: url('polices/instrument-serif-400-italique.woff2') format('woff2'); }
+@font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: url('polices/anton-400.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400 700; font-display: block; src: url('polices/jetbrains-mono-400-700.woff2') format('woff2'); }
+@font-face { font-family: 'VT323'; font-weight: 400; font-display: block; src: url('polices/vt323-400.woff2') format('woff2'); }
+@font-face { font-family: 'Unbounded'; font-weight: 400 900; font-display: block; src: url('polices/unbounded-400-900.woff2') format('woff2'); }
+:root {
+  --serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --affiche-font: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  --mono-jb: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --crt: 'VT323', ui-monospace, Consolas, monospace;
+  --pop: 'Unbounded', 'Arial Black', sans-serif;
+}

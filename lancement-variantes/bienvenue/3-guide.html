@@ -28,7 +28,7 @@
 .epg {
   --px: 4.5px; /* une minute */
   position: absolute;
-  top: 15%;
+  top: 8%;
   left: 15%;
   width: 150%;
   display: grid;
@@ -77,7 +77,7 @@
 
 .page {
   position: absolute;
-  inset: 90px 0 0;
+  inset: 0;
   display: flex;
   align-items: center;
   padding: 24px var(--gouttiere) 48px;
@@ -96,7 +96,6 @@
 </head>
 <body>
 <div class="scene" aria-hidden="true"><div class="epg" id="epg"></div></div>
-<div id="barre"></div>
 
 <main class="page">
   <section class="colonne entre">
@@ -118,9 +117,8 @@
 <script>
 'use strict';
 (() => {
-  const { barre, icone, CHAINES, logo, hasard } = Aurora;
+  const { icone, CHAINES, logo, hasard } = Aurora;
   const $ = (id) => document.getElementById(id);
-  $('barre').outerHTML = barre();
   $('dl').innerHTML = `${icone('download')} Reprends ta sauvegarde`;
 
   // Des programmes plausibles selon le genre de la chaîne.
